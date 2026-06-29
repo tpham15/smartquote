@@ -1,0 +1,24 @@
+{
+  "name": "smartquote",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "smoke:import": "node scripts/import-smoke.mjs",
+    "smoke:pdf": "node scripts/pdf-smoke.mjs",
+    "smoke:bom": "node scripts/bom-smoke.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^4.10.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
+  },
+  "type": "module"
+}

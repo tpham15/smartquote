@@ -1,0 +1,24 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://api.anthropic.com https://google.serper.dev https://www.googleapis.com"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "functions": {
+    "api/pdf-extract.js": {
+      "includeFiles": "node_modules/pdfjs-dist/**"
+    }
+  }
+}
