@@ -917,6 +917,14 @@ function NavIcon({ name }) {
 
 function SidebarUsageMini({ billing, usage = {}, onUpgrade }) {
   const planLabel = billing?.label || PLAN_LIMITS[billing?.plan]?.label || "Trial";
+  const planKey = String(billing?.plan || "trial").toLowerCase();
+  const upgradeLabel = billing?.locked
+    ? "Gia hạn gói"
+    : planKey === "business"
+      ? "Xem gói"
+      : planKey === "pro"
+        ? "Nâng lên Business"
+        : "Nâng lên Pro";
   const rows = [
     ["quotes_per_month", "Báo giá"],
     ["ai_claude_request", "Nhập AI"],
@@ -940,7 +948,7 @@ function SidebarUsageMini({ billing, usage = {}, onUpgrade }) {
           </div>
         );
       })}
-      <button className="up" onClick={onUpgrade}>{billing?.locked ? "Gia hạn gói" : "Nâng lên Pro"}</button>
+      <button className="up" onClick={onUpgrade}>{upgradeLabel}</button>
     </div>
   );
 }
@@ -1247,7 +1255,10 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
 
       <div className="main shell-main">
         <header className="topbar">
-          <div className="crumb">{activePrimary.label}{activeSubLabel ? <small>{activeSubLabel}</small> : null}</div>
+          <div className="crumb">
+            <span className="crumb-primary">{activePrimary.label}</span>
+            {activeSubLabel ? <><span className="crumb-sep" aria-hidden="true">/</span><small>{activeSubLabel}</small></> : null}
+          </div>
           <div className="topbar-right">
             {cloud?.enabled && <span className={cloud?.enabled ? "cloud-dot on" : "cloud-dot"}></span>}
             {cloud?.enabled && <span className="cloud-status">{cloudSyncStatus}</span>}
@@ -1535,11 +1546,13 @@ function PlanBanner({ billing, productsCount, onUpgrade, onRefresh }) {
 
   return (
     <div className={`plan-banner ${billing.locked ? "danger" : billing.plan === "trial" ? "trial" : ""}`}>
-      <div>
-        <strong>{billing.label}</strong>
-        <span>{trialText}</span>
-        {productLimit !== Infinity && productLimit != null && <span>Catalog {formatLimit(productsCount)}/{formatLimit(productLimit)}</span>}
-        {productLimit !== Infinity && productLimit != null && <span className="plan-meter"><i style={{ width: `${productPct}%` }} /></span>}
+      <div className="plan-banner-summary">
+        <strong className="plan-banner-name">{billing.label}</strong>
+        <span className="plan-banner-status">{trialText}</span>
+        {productLimit !== Infinity && productLimit != null && (
+          <span className="plan-banner-catalog">Catalog <b>{formatLimit(productsCount)}</b><span aria-hidden="true"> / </span>{formatLimit(productLimit)}</span>
+        )}
+        {productLimit !== Infinity && productLimit != null && <span className="plan-meter" aria-label={`Đã dùng ${productPct}% giới hạn catalog`}><i style={{ width: `${productPct}%` }} /></span>}
       </div>
       <div className="plan-banner-actions">
         <button className="btn-ghost" onClick={onRefresh}>Cập nhật quota</button>
@@ -9394,4 +9407,129 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .sq-confirm-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px;padding-top:4px;}.sq-confirm-primary{border:0;background:var(--primary);color:#fff;border-radius:9px;padding:9px 14px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}.sq-confirm-primary:hover{background:var(--primary-d);}.sq-confirm-primary.danger{background:var(--neg);}.sq-confirm-primary:disabled{opacity:.45;cursor:not-allowed;}
 @keyframes sqToastIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}@keyframes sqModalIn{from{opacity:0;transform:translateY(5px) scale(.985)}to{opacity:1;transform:none}}
 @media(max-width:760px){.sq-toast-region{top:66px;right:14px}.sq-confirm-modal{padding:18px;grid-template-columns:36px minmax(0,1fr)}.sq-confirm-icon{width:34px;height:34px}.room-pack-empty{min-height:360px;padding:28px 20px}.ci-footer{align-items:flex-end;gap:12px}.ci-footer-actions{width:100%;}.ci-footer-actions .btn-primary{flex:1;}}
+
+/* Phase 12.5.6 — UI Spacing & Alignment Cleanup */
+.app-shell .nav-group{width:100%;}
+.app-shell .nav> .nav-group>button{width:100%;min-height:40px;justify-content:flex-start;}
+.app-shell .nav .sub-nav{
+  margin:4px 0 8px;
+  padding:0 0 0 37px;
+  gap:2px;
+  width:100%;
+}
+.app-shell .nav .sub-nav button{
+  width:100%;
+  min-height:32px;
+  padding:6px 8px;
+  justify-content:flex-start;
+  text-align:left;
+  line-height:1.35;
+  white-space:normal;
+}
+.app-shell .nav .sub-nav button.active{background:rgba(41,71,224,.055);}
+
+.app-shell .topbar{column-gap:20px;}
+.topbar .crumb{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;}
+.topbar .crumb .crumb-primary{display:inline-block;}
+.topbar .crumb .crumb-sep{color:#C2C7D0;font-size:13px;font-weight:500;line-height:1;}
+.topbar .crumb small{margin-left:0;color:var(--muted);font-size:13px;line-height:1.3;}
+.topbar-right{gap:12px;}
+.cloud-dot{flex:none;}
+.cloud-status{line-height:1.3;}
+.plan-pill{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:4px 9px;
+  border-radius:var(--r-pill);
+  border:1px solid #DCE2FF;
+  background:var(--primary-soft);
+  color:var(--primary-d);
+  font-size:12px;
+  font-weight:750;
+  line-height:1;
+  white-space:nowrap;
+}
+.plan-pill.locked{border-color:var(--amber-line);background:var(--amber-bg);color:#8A5B11;}
+.cloud-upgrade{min-height:32px;padding:6px 11px;}
+
+.smartquote-content>.plan-banner{margin-bottom:18px;}
+.plan-banner{
+  width:100%;
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:11px 14px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:var(--sh-1);
+}
+.plan-banner-summary{display:flex;align-items:center;gap:9px 11px;flex-wrap:wrap;min-width:0;}
+.plan-banner-name{font-size:13.5px;font-weight:800;color:var(--ink);line-height:1.25;}
+.plan-banner-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  padding:4px 8px;
+  border-radius:var(--r-pill);
+  background:var(--green-bg);
+  color:var(--green);
+  font-size:11.5px;
+  font-weight:750;
+  line-height:1;
+  white-space:nowrap;
+}
+.plan-banner.trial .plan-banner-status{background:var(--primary-soft);color:var(--primary-d);}
+.plan-banner.danger .plan-banner-status{background:var(--red-bg);color:var(--red);}
+.plan-banner-catalog{display:inline-flex;align-items:baseline;gap:3px;color:var(--muted);font-size:12.5px;white-space:nowrap;}
+.plan-banner-catalog b{color:var(--ink-2);font-weight:750;font-variant-numeric:tabular-nums;}
+.plan-meter{display:inline-block;width:96px;height:5px;border-radius:99px;background:#EEF0F4;overflow:hidden;flex:none;}
+.plan-meter>i{display:block;height:100%;border-radius:inherit;background:var(--primary);}
+.plan-banner-actions{display:flex;align-items:center;gap:8px;flex:none;}
+.plan-banner-actions .btn-ghost,.plan-banner-actions .btn-primary{min-height:34px;margin:0;white-space:nowrap;}
+
+.usage-mini{padding:13px;}
+.usage-mini .um-top{margin-bottom:11px;}
+.usage-mini .plan{min-width:0;}
+.um-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;margin-bottom:5px;line-height:1.35;}
+.um-row>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.um-row .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.um-bar{margin-bottom:10px;}
+
+.unified-import{gap:16px;}
+.import-choice-hero,.import-panel-head{padding:20px 22px;gap:20px;}
+.import-choice-hero>div,.import-panel-head>div{min-width:0;}
+.import-choice-hero h1,.import-panel-head h2{margin:4px 0 8px;letter-spacing:-.015em;}
+.import-choice-hero p,.import-panel-head p{max-width:760px;line-height:1.6;overflow-wrap:anywhere;}
+.import-choice-grid{gap:16px;align-items:stretch;grid-auto-rows:1fr;}
+.import-choice-card{
+  height:100%;
+  min-height:226px;
+  padding:22px;
+  gap:0;
+  align-items:flex-start;
+  overflow:hidden;
+}
+.import-choice-icon{margin-bottom:16px;flex:none;}
+.import-choice-card strong{display:block;width:100%;margin:0 0 8px;font-size:17px;line-height:1.35;letter-spacing:-.005em;}
+.import-choice-card small{display:block;width:100%;margin:0;color:var(--muted);font-size:13px;line-height:1.62;overflow-wrap:anywhere;}
+.import-choice-card em{display:block;margin-top:auto;padding-top:18px;font-size:13px;line-height:1.35;}
+.import-choice-note{padding:13px 15px;line-height:1.6;overflow-wrap:anywhere;}
+
+@media(max-width:900px){
+  .plan-banner{align-items:flex-start;flex-direction:column;}
+  .plan-banner-actions{width:100%;}
+  .plan-banner-actions .btn-ghost,.plan-banner-actions .btn-primary{flex:1;}
+}
+@media(max-width:760px){
+  .import-choice-card{min-height:0;}
+  .import-choice-grid{grid-auto-rows:auto;}
+  .topbar .crumb{gap:6px;}
+  .plan-banner-summary{gap:8px;}
+  .plan-meter{width:72px;}
+}
+
 `;
