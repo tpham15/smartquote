@@ -55,7 +55,9 @@
     "smoke:phase12.5.3": "python3 scripts/phase1253-image-geometry-smoke.py",
     "smoke:phase12.5.4": "python3 scripts/phase1254-hard-image-sku-boundary-smoke.py",
     "smoke:phase12.5.5": "python3 scripts/phase1255-orphan-drawing-cleanup-smoke.py",
-    "smoke:phase12.5.6": "node scripts/phase1256-ui-spacing-alignment-smoke.mjs"
+    "smoke:phase12.5.6": "node scripts/phase1256-ui-spacing-alignment-smoke.mjs",
+    "smoke:dark-mode-step2": "node scripts/dark-mode-step2-smoke.mjs",
+    "smoke:dark-mode-step6": "node scripts/dark-mode-step6-qa-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

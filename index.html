@@ -3,13 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('sq_theme');
+          var sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = saved || (sysDark ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
     <title>SmartQuote — Báo giá thông minh</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
       html, body { margin: 0; padding: 0; background: #f7f8fa; }
+      html[data-theme="dark"], html[data-theme="dark"] body { background: #0E1116; color-scheme: dark; }
       #root { min-height: 100vh; }
       .boot { display: flex; align-items: center; justify-content: center; height: 100vh; font-family: "Be Vietnam Pro", -apple-system, sans-serif; color: #737985; }
+      html[data-theme="dark"] .boot { color: #8A90A0; }
     </style>
   </head>
   <body>
