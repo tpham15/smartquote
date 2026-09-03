@@ -1,4 +1,0 @@
-{"schemaVersion":"sq-docbench-ground-truth-v1","documentId":"supplier-xlsx-clean","rows":[
-{"rowId":"r1","kind":"product","source":{"sheet":"Bang gia","row":5},"fields":{"name":"Công tắc thông minh 1 nút","sku":"SQ-SW1","unit":"Cái","unitPrice":1250000,"listPrice":1590000,"section":"Công tắc"},"acceptance":{"criticalFields":["sku","unitPrice"]}},
-{"rowId":"r2","kind":"product","source":{"sheet":"Bang gia","row":6},"fields":{"name":"Cảm biến chuyển động","sku":"SQ-MS1","unit":"Cái","unitPrice":980000,"listPrice":1290000,"section":"Cảm biến"},"acceptance":{"criticalFields":["sku","unitPrice"]}}
-]}

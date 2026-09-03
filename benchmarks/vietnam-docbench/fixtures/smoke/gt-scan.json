@@ -1,4 +1,0 @@
-{"schemaVersion":"sq-docbench-ground-truth-v1","documentId":"scan-price-hard","rows":[
-{"rowId":"s1","kind":"product","source":{"page":2,"row":1,"bbox":[100,200,700,240]},"fields":{"name":"Đèn Spotlight âm trần 7W","sku":"LM-ST7-55-O","unit":"Cái","unitPrice":650000,"section":"Spotlight"},"acceptance":{"criticalFields":["sku","unitPrice"]}},
-{"rowId":"s2","kind":"product","source":{"page":2,"row":2,"bbox":[100,245,700,285]},"fields":{"name":"Đèn Spotlight âm trần 12W","sku":"","unit":"Cái","unitPrice":820000,"section":"Spotlight"},"acceptance":{"criticalFields":["unitPrice"]}}
-]}
