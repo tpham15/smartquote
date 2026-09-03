@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "sq-docbench-manifest-v1",
+  "benchmarkPolicy": "sq-docbench-policy-v1",
+  "id": "phase13-smoke",
+  "version": "1.0.0",
+  "documents": [
+    {
+      "id": "supplier-xlsx-clean",
+      "inputKind": "xlsx",
+      "documentType": "supplier_price_list",
+      "industry": "smarthome",
+      "supplier": "FixtureCo",
+      "tags": [
+        "clean"
+      ],
+      "groundTruth": "gt-supplier.json"
+    },
+    {
+      "id": "scan-price-hard",
+      "inputKind": "scan_pdf",
+      "documentType": "supplier_price_list",
+      "industry": "lighting",
+      "supplier": "FixtureCo",
+      "tags": [
+        "blur",
+        "stamp",
+        "missing_sku"
+      ],
+      "groundTruth": "gt-scan.json"
+    },
+    {
+      "id": "bom-merged",
+      "inputKind": "xlsx",
+      "documentType": "bom",
+      "industry": "mep",
+      "supplier": "",
+      "tags": [
+        "merged_cells"
+      ],
+      "groundTruth": "gt-bom.json"
+    }
+  ]
+}

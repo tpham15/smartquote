@@ -1,0 +1,10 @@
+{"schemaVersion":"sq-docbench-predictions-v1","engine":{"id":"fixture-perfect","version":"1"},"documents":[
+{"documentId":"supplier-xlsx-clean","runtimeMs":40,"rows":[
+{"predictionId":"p1","kind":"product","status":"auto_approved","source":{"sheet":"Bang gia","row":5},"fields":{"name":"Công tắc thông minh 1 nút","sku":"SQ-SW1","unit":"cái","unitPrice":1250000,"listPrice":1590000,"section":"Công tắc"}},
+{"predictionId":"p2","kind":"product","status":"auto_approved","source":{"sheet":"Bang gia","row":6},"fields":{"name":"Cảm biến chuyển động","sku":"SQ-MS1","unit":"Cái","unitPrice":980000,"listPrice":1290000,"section":"Cảm biến"}}]},
+{"documentId":"scan-price-hard","runtimeMs":400,"rows":[
+{"predictionId":"p3","kind":"product","status":"auto_approved","source":{"page":2,"row":1,"bbox":[100,200,700,240]},"fields":{"name":"Đèn Spotlight âm trần 7W","sku":"LM-ST7-55-O","unit":"Cái","unitPrice":650000,"section":"Spotlight"}},
+{"predictionId":"p4","kind":"product","status":"auto_approved","source":{"page":2,"row":2,"bbox":[100,245,700,285]},"fields":{"name":"Đèn Spotlight âm trần 12W","sku":"","unit":"Cái","unitPrice":820000,"section":"Spotlight"}}]},
+{"documentId":"bom-merged","runtimeMs":30,"rows":[
+{"predictionId":"p5","kind":"product","status":"auto_approved","source":{"sheet":"Tang 1","row":12},"fields":{"name":"Ổ cắm đôi","sku":"OC-02","unit":"Cái","quantity":8,"unitPrice":185000,"lineTotal":1480000,"section":"Phòng khách"}}]}
+]}
