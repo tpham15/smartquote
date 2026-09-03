@@ -11,6 +11,28 @@
 import { classifyRow } from "./classifyRows.js";
 import { ROW_CLASS } from "./types.js";
 
+function numericCell(row, col) {
+  if (col == null) return 0;
+  const raw = String(row?.text?.[col] ?? "").trim();
+  if (!raw) return 0;
+  const compact = raw.replace(/\s/g, "");
+  if (/^\d{1,3}(?:[.,]\d{3})+$/.test(compact)) return Number(compact.replace(/[.,]/g, "")) || 0;
+  const n = Number(compact.replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function isQuoteAggregateOnlyRow(row, preMap = {}) {
+  if (!preMap.quoteTable || preMap.lineTotalCol == null) return false;
+  const lineTotal = numericCell(row, preMap.lineTotalCol);
+  if (!(lineTotal > 0)) return false;
+  const qty = numericCell(row, preMap.quantityCol);
+  const unitPrice = numericCell(row, preMap.priceCol);
+  const name = preMap.nameCol == null ? "" : String(row?.text?.[preMap.nameCol] || "").trim();
+  const sku = preMap.skuCol == null ? "" : String(row?.text?.[preMap.skuCol] || "").trim();
+  // Dòng có mỗi thành tiền/tổng nhóm nhưng không có identity + SL + đơn giá là subtotal/header.
+  return qty <= 0 && unitPrice <= 0 && !name && !sku;
+}
+
 /**
  * Phát hiện các region trong 1 sheet.
  * Chiến lược: quét tuần tự, gom các dòng product liên tục thành region.
@@ -47,6 +69,14 @@ export function detectRegions(sheet, preMap = {}) {
     // A detected table header is a hard boundary. Everything above it is
     // document metadata (customer, phone, quote number, address, title...).
     if (row.r <= minSourceRow) continue;
+
+    // Báo giá nhiều tầng có sub-header mang tổng nhóm ở cột Thành tiền.
+    // Đây là boundary/section, không phải product dù classifier tổng quát thấy một số tiền lớn.
+    if (isQuoteAggregateOnlyRow(row, preMap)) {
+      flush();
+      currentSection = row.text.filter((t, c) => c !== preMap.lineTotalCol && String(t || "").trim()).join(" ").trim() || currentSection;
+      continue;
+    }
 
     const cls = classifyRow(row, opt);
 

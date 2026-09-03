@@ -4,10 +4,18 @@
 import * as XLSX from "xlsx";
 import { parsePdfCatalogWithPipeline } from "../pdf/pdfCatalogPipeline.js";
 import { priceUpdatePreviewFromLegacy, productsToImportPreviewResult } from "../previewResult.js";
-import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName } from "../productSanitizer.js";
+import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities } from "../productSanitizer.js";
 import { inferCategory } from "../categoryInference.js";
 
 const uid = (p = "imp") => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+function parseMappedPriceCell(value, rowText = "") {
+  // Mapping thủ công đã biết chính xác cột giá. Luôn parse cell đó trước; chỉ dùng
+  // cả row làm recovery khi cell không parse được. Nếu trộn rowText ngay từ đầu,
+  // thông số như "1.267Gbps" có thể bị chọn nhầm thành 1.267đ thay cho 1.440.000đ.
+  const direct = parseSafePrice(value);
+  return direct > 0 ? direct : parseSafePrice(value, rowText);
+}
 
 /** Đoán cột theo header catalog hiện tại. */
 export function guessCatalogColumnsByName(headers) {
@@ -34,7 +42,7 @@ export function guessCatalogColumnsByName(headers) {
 
 /** Build preview catalog từ rows + colMap thủ công. */
 export function buildCatalogPreview(rawRows, colMap, opts = {}) {
-  return rawRows.map((row, rowOffset) => {
+  const mapped = rawRows.map((row, rowOffset) => {
     const get = (key) => {
       const idx = parseInt(colMap[key]);
       if (isNaN(idx)) return "";
@@ -45,19 +53,25 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
     const rawSku = get("sku");
     const rawName = get("name");
     if (opts.quoteTable && (isLikelyOldQuoteSectionRow(rawName) || isLikelyOldQuoteSectionRow(rawSku))) return null;
-    if (opts.quoteTable && /^(?:bh|bảo\s*hành|bao\s*hanh)\s*\d{1,3}\s*(?:tháng|thang|năm|nam|months?|years?)$/i.test(rawSku)) return null;
-    const sku = rawSku || extractSkuFromText(rowText);
+    const schemaRecovery = opts.quoteTable && isWarrantyPseudoSku(rawSku)
+      ? recoverQuoteSectionSchemaIdentity({ name: rawName, sku: rawSku, specs: get("specs") })
+      : { name: rawName, sku: rawSku, specs: get("specs"), recovered: false, warranty: "" };
+    if (opts.quoteTable && isWarrantyPseudoSku(rawSku) && !schemaRecovery.recovered) return null;
+    const sku = schemaRecovery.recovered ? schemaRecovery.sku : (rawSku || extractSkuFromText(rowText));
     const supplier = cleanSupplierName(get("supplier"), opts.defaultSupplier || "");
-    const category = inferCategory({ category: get("category"), name: get("name"), sku, specs: get("specs"), supplier, rawText: rowText, sheetName: opts.sheetName }, "Chung");
-    const displayName = get("name") || (sku ? `${category !== "Chung" ? category : "Sản phẩm"} ${sku}` : "");
-    const oldListPrice = parseSafePrice(get("listPrice"), rowText);
-    const currentListPrice = parseSafePrice(get("currentListPrice"), rowText);
+    const category = inferCategory({ category: get("category"), name: schemaRecovery.name || get("name"), sku, specs: schemaRecovery.specs || get("specs"), supplier, rawText: rowText, sheetName: opts.sheetName }, "Chung");
+    const displayName = schemaRecovery.name || get("name") || (sku ? `${category !== "Chung" ? category : "Sản phẩm"} ${sku}` : "");
+    const oldListPrice = parseMappedPriceCell(get("listPrice"), rowText);
+    const currentListPrice = parseMappedPriceCell(get("currentListPrice"), rowText);
     const effectiveListPrice = currentListPrice || oldListPrice;
-    let specs = get("specs");
+    let specs = schemaRecovery?.specs || get("specs");
+    if (schemaRecovery?.recovered && schemaRecovery.warranty) {
+      specs = [specs, `Bảo hành: ${schemaRecovery.warranty}`].filter(Boolean).join(" · ");
+    }
     if (currentListPrice > 0 && oldListPrice > 0 && oldListPrice !== currentListPrice) {
       specs = (specs ? specs + " · " : "") + `Giá niêm yết cũ: ${oldListPrice.toLocaleString("vi-VN")}đ`;
     }
-    let costPrice = parseSafePrice(get("costPrice"), rowText);
+    let costPrice = parseMappedPriceCell(get("costPrice"), rowText);
     if (!costPrice && currentListPrice > 0) costPrice = currentListPrice;
     // Khi user mở "Sửa mapping" cho một báo giá chuẩn, chỉ các dòng có Đơn giá
     // mới đủ điều kiện thành catalog product. Header/section/tổng/quy trình đều có
@@ -75,7 +89,7 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       costPrice,
       listPrice: finalListPrice,
       publicPrice: finalListPrice,
-      minRetailPrice: parseSafePrice(get("minRetailPrice"), rowText),
+      minRetailPrice: parseMappedPriceCell(get("minRetailPrice"), rowText),
       priceMode: finalListPrice > 0 ? "fixed" : "markup",
       specs,
       image: get("image"),
@@ -88,6 +102,7 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       }
     };
   }).filter(p => p && p.name && p.name.length > 1);
+  return dedupeCatalogIdentities(mapped).products;
 }
 
 /** Đọc Excel thô để mở lại màn hình mapping cột thủ công. */
@@ -177,7 +192,7 @@ export function parseSupplierSheetRows(rows) {
     const row = rows[r] || [];
     const sku = skuCol !== -1 ? String(row[skuCol] ?? "").trim() : "";
     const name = nameCol !== -1 ? String(row[nameCol] ?? "").trim() : "";
-    const cost = parsePrice(row[priceCol], row.join(" "));
+    const cost = parseMappedPriceCell(row[priceCol], row.join(" "));
     if ((!sku && !name) || isNaN(cost) || cost <= 0) continue;
     items.push({ sku, name, costPrice: cost });
   }

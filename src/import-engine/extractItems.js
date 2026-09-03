@@ -3,7 +3,7 @@
 // ============================================================
 import { classifyRow } from "./classifyRows.js";
 import { ROW_CLASS } from "./types.js";
-import { parseSafePrice, extractSkuFromText, extractSkuCandidatesFromText, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow } from "./productSanitizer.js";
+import { parseSafePrice, extractSkuFromText, extractSkuCandidatesFromText, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity } from "./productSanitizer.js";
 import { inferCategory } from "./categoryInference.js";
 
 const PRICE_SCALE_SUSPECT_LIMIT = 1_000_000_000;
@@ -96,13 +96,6 @@ function cleanSkuForDisplay(sku) {
   return compactText(sku).replace(/\s+/g, " ").replace(/\s*[-–—]\s*/g, "-");
 }
 
-function looksLikeWarrantyPseudoSku(v) {
-  const s = normalizeAscii(v);
-  if (!s) return false;
-  // Quan sát thực tế từ báo giá cũ: ô "Mã thiết bị" có thể chứa "BH 36 tháng"
-  // do dữ liệu catalog lịch sử bị lệch cột. Đây là mô tả bảo hành, không phải model.
-  return /^(?:bh|bao\s*hanh)\s*\d{1,3}\s*(?:thang|nam|months?|years?)$/.test(s);
-}
 
 function cleanModelText(sku) {
   // Giữ model chính, bỏ bớt cân nặng/notes phụ phía sau trong cùng cell.
@@ -337,8 +330,14 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
 
   let name = get("name");
   const rawSkuCell = get("sku");
-  if (map?._quoteTable && looksLikeWarrantyPseudoSku(rawSkuCell)) return null;
-  let sku = cleanModelText(rawSkuCell);
+  let schemaDriftRecovery = null;
+  if (map?._quoteTable && isWarrantyPseudoSku(rawSkuCell)) {
+    schemaDriftRecovery = recoverQuoteSectionSchemaIdentity({ name, sku: rawSkuCell, specs: get("specs") });
+    // Nếu cột Tên không chứa SKU thật, đây vẫn chỉ là pseudo-SKU bảo hành như cũ.
+    if (!schemaDriftRecovery.recovered) return null;
+    name = schemaDriftRecovery.name;
+  }
+  let sku = cleanModelText(schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell);
   const hiddenSku = extractSkuFromHiddenCells(row, map);
   if (!sku && hiddenSku) sku = hiddenSku;
   const issues = [];
@@ -348,6 +347,15 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   let listPrice = currentListPrice || oldListPrice;
   let minRetailPrice = parsePrice(get("minRetailPrice"), priceScaleForKey(map, "minRetailPrice"));
   let specs = get("specs");
+  if (schemaDriftRecovery?.recovered && schemaDriftRecovery.warranty) {
+    specs = appendSpecLine(specs, `Bảo hành: ${schemaDriftRecovery.warranty}`);
+    issues.push(issue(
+      "section_schema_drift_recovered",
+      "info",
+      "Đã khôi phục SKU/tên sản phẩm từ section có cấu trúc cột khác",
+      "sku"
+    ));
+  }
   const quantity = parseQuantity(get("quantity"));
   const lineTotal = parsePrice(get("lineTotal"), priceScaleForKey(map, "lineTotal"));
 
@@ -525,7 +533,15 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
 export function extractItemsWithStats(sheet, region, map, headerSourceRow, fileSupplier) {
   const items = [];
   const stats = { totalRows: 0, products: 0, notes: 0, totals: 0, sections: 0, blank: 0, headers: 0, skipped: 0 };
-  const opt = { priceCol: map.price ?? null, nameCol: map.name ?? null, maxCol: sheet.maxCol };
+  const opt = {
+    priceCol: map.price ?? null,
+    nameCol: map.name ?? null,
+    skuCol: map.sku ?? null,
+    quantityCol: map.quantity ?? null,
+    lineTotalCol: map.lineTotal ?? null,
+    quoteTable: !!map._quoteTable,
+    maxCol: sheet.maxCol,
+  };
   let sectionName = region.sectionName || "";
 
   // lấy các row trong [startRow, endRow] theo r-index

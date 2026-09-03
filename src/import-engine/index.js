@@ -23,6 +23,7 @@ import { needsAIFallback, runAIFallback } from "./aiFallback.js";
 import { legacyParse } from "./legacyParser.js";
 import { STATUS } from "./types.js";
 import { engineResultToImportPreviewResult } from "./previewResult.js";
+import { dedupeCatalogIdentities } from "./productSanitizer.js";
 
 const MAX_AI_FALLBACK_SHEETS_PER_IMPORT = 5;
 
@@ -81,7 +82,15 @@ export async function runImport(file, ctx = {}) {
     const { sheet, headerRow, headerIndex, map, mapConfidence } = ps;
     minMapConf = Math.min(minMapConf, mapConfidence);
     const headerSourceRow = Number.isInteger(headerRow?.r) ? headerRow.r : -1;
-    const preMap = { priceCol: map.price ?? null, nameCol: map.name ?? null, minSourceRow: headerSourceRow };
+    const preMap = {
+      priceCol: map.price ?? null,
+      nameCol: map.name ?? null,
+      skuCol: map.sku ?? null,
+      quantityCol: map.quantity ?? null,
+      lineTotalCol: map.lineTotal ?? null,
+      quoteTable: !!map._quoteTable,
+      minSourceRow: headerSourceRow,
+    };
     const regions = detectRegions(sheet, preMap);
     for (const region of regions) {
       const out = extractItemsWithStats(sheet, region, map, headerSourceRow, wb.fileSupplier);
@@ -139,6 +148,19 @@ export async function runImport(file, ctx = {}) {
     }
   }
 
+  // ---- Catalog identity dedupe ----
+  // Báo giá có thể lặp cùng SKU ở nhiều phòng/tầng. Catalog Preview phải biểu diễn
+  // một product identity duy nhất, không phải mọi occurrence của báo giá.
+  let dedupeStats = { deduped: 0, conflicts: 0 };
+  if (scored.length > 0) {
+    const dedupedResult = dedupeCatalogIdentities(scored);
+    scored = dedupedResult.products;
+    dedupeStats = dedupedResult;
+    if (dedupeStats.deduped > 0) {
+      warnings.push(`Đã gộp ${dedupeStats.deduped} dòng lặp theo SKU/tên thành product identity duy nhất${dedupeStats.conflicts ? ` · ${dedupeStats.conflicts} identity có giá khác nhau cần kiểm tra` : ""}.`);
+    }
+  }
+
   // ---- Fallback cuối: legacy nếu vẫn rỗng ----
   if (scored.length === 0) {
     try {
@@ -163,9 +185,9 @@ export async function runImport(file, ctx = {}) {
   const stats = {
     total: scored.length,
     sourceRows: extractionStats.totalRows || scored.length,
-    // skipped ở extractionStats là các dòng note/total/blank/header đã bỏ qua từ classifier.
-    // Các dòng sản phẩm đã trích nhưng sau đó được nhận diện là subtotal cũng có status="skipped"
-    // và sẽ được cộng thêm ở previewResult.buildSummary để không hiện như lỗi nặng.
+    // "skipped" chỉ dành cho dòng thật sự không phải catalog data. Occurrence trùng đã
+    // được MERGE vào cùng product identity, không được báo là "dòng đã bỏ qua" vì dễ
+    // khiến user nghĩ SmartQuote làm mất dữ liệu. Số merge vẫn nằm trong warnings/details.
     skipped: extractionStats.skipped || 0,
     noteRows: extractionStats.notes || 0,
     matched: scored.filter((i) => i.status === STATUS.MATCHED).length,

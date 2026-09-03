@@ -324,6 +324,179 @@ export function extractSkuFromText(rawText) {
   return candidates[0] || "";
 }
 
+/**
+ * Một số báo giá lịch sử dùng cột "Mã thiết bị" để ghi bảo hành (vd "BH 36 tháng"),
+ * trong khi SKU thật lại nằm ở cột Tên hàng hoá. Đây là schema drift theo section,
+ * không phải dòng rác nếu cột Tên thực sự chứa model hợp lệ.
+ */
+export function isWarrantyPseudoSku(value = "") {
+  const s = asciiFold(value);
+  if (!s) return false;
+  return /^(?:bh|bao\s*hanh)\s*\d{1,3}\s*(?:thang|nam|months?|years?)$/.test(s);
+}
+
+function descriptiveNameFromSpecs(rawSpecs = "") {
+  const cleanLine = (x) => String(x || "")
+    .replace(/^[\s"'“”‘’*•\-–—]+/, "")
+    .replace(/[\s"'“”‘’]+$/, "")
+    .trim();
+  const isSpecOnlyStart = (line) => /^(tinh\s*nang|thong\s*so|dien\s*ap|nguon|cong\s*suat|nhiet\s*do|kich\s*thuoc|bao\s*hanh|cri\b|quang\s*thong|goc\s*chieu)/.test(asciiFold(line));
+  const marker = /\b(?:Tính\s*năng|Thông\s*số|Điện\s*áp|Nguồn|Công\s*suất|Nhiệt\s*độ|Kích\s*thước|Bảo\s*hành|CRI|Quang\s*thông|Góc\s*chiếu)\b/i;
+  const headBeforeSpecs = (value) => {
+    const line = cleanLine(value);
+    const m = marker.exec(line);
+    return cleanLine(m && m.index >= 4 ? line.slice(0, m.index) : line);
+  };
+
+  const lines = String(rawSpecs || "").split(/\r?\n/).map(headBeforeSpecs).filter(Boolean);
+  for (const line of lines) {
+    if (line.length >= 4 && line.length <= 110 && !isSpecOnlyStart(line)) return line;
+  }
+
+  // normalizeWorkbook cố ý collapse newline. Khi đó vẫn cắt theo marker thông số.
+  const head = headBeforeSpecs(text(rawSpecs));
+  if (head.length >= 4 && head.length <= 110 && !isSpecOnlyStart(head)) return head;
+  return "";
+}
+
+export function recoverQuoteSectionSchemaIdentity({ name = "", sku = "", specs = "" } = {}) {
+  const rawName = text(name);
+  const rawSku = text(sku);
+  const detectedSku = extractSkuFromText(rawName);
+  const sameIdentity = detectedSku && asciiFold(detectedSku).replace(/[^a-z0-9]+/g, "") === asciiFold(rawName).replace(/[^a-z0-9]+/g, "");
+  const promotedSku = sameIdentity ? rawName.replace(/\s*[-–—]\s*/g, "-").trim() : detectedSku;
+  if (!isWarrantyPseudoSku(rawSku) || !promotedSku) {
+    return { name: rawName, sku: rawSku, specs: text(specs), recovered: false, warranty: "" };
+  }
+  const descriptive = descriptiveNameFromSpecs(specs);
+  return {
+    name: descriptive || `Sản phẩm ${promotedSku}`,
+    sku: promotedSku,
+    specs: text(specs),
+    recovered: true,
+    warranty: rawSku,
+  };
+}
+
+function stableCatalogSkuKey(value = "") {
+  const raw = text(value);
+  if (!raw || /^(?:n\/?a|na|null|none|—|-|khong\s*co)$/i.test(asciiFold(raw))) return "";
+  if (isWarrantyPseudoSku(raw)) return "";
+  return asciiFold(raw).replace(/[^a-z0-9]+/g, "");
+}
+
+function stableCatalogNameKey(product = {}) {
+  const name = asciiFold(product?.name || "").replace(/[^a-z0-9]+/g, " ").trim();
+  if (!name || name.length < 4) return "";
+  const supplier = asciiFold(product?.supplier || "").replace(/[^a-z0-9]+/g, " ").trim();
+  return `${supplier}|${name}`;
+}
+
+function catalogIdentityKey(product = {}) {
+  const sku = stableCatalogSkuKey(product?.sku);
+  if (sku) return `sku:${sku}`;
+  const name = stableCatalogNameKey(product);
+  return name ? `name:${name}` : "";
+}
+
+function productEvidenceScore(product = {}) {
+  let score = Number(product?.confidence || product?._meta?.confidence || 0) * 20;
+  const sku = stableCatalogSkuKey(product?.sku);
+  if (sku) score += 12;
+  if (text(product?.name).length >= 6) score += 6;
+  if (text(product?.specs).length >= 20) score += 4;
+  if (Number(product?.costPrice ?? product?.price ?? 0) > 0) score += 5;
+  if (product?.status === "matched" || product?._meta?.status === "matched") score += 2;
+  if (product?.status === "review" || product?._meta?.status === "review") score -= 3;
+  return score;
+}
+
+function mergeIssues(a = [], b = []) {
+  const out = [];
+  const seen = new Set();
+  for (const item of [...(a || []), ...(b || [])]) {
+    if (!item) continue;
+    const k = typeof item === "string" ? item : `${item.code || ""}|${item.level || ""}|${item.message || ""}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+  }
+  return out;
+}
+
+/**
+ * Catalog import phải trả về PRODUCT IDENTITIES, không phải mọi occurrence trong báo giá.
+ * Exact SKU được ưu tiên; thiếu SKU mới fallback theo supplier+name. Nếu cùng identity có
+ * giá khác nhau đáng kể thì vẫn gộp nhưng hạ về review để người dùng xác nhận.
+ */
+export function dedupeCatalogIdentities(products = []) {
+  const out = [];
+  const byKey = new Map();
+  let deduped = 0;
+  let conflicts = 0;
+
+  for (const original of products || []) {
+    if (!original) continue;
+    const item = { ...original };
+    const key = catalogIdentityKey(item);
+    if (!key || !byKey.has(key)) {
+      if (key) byKey.set(key, out.length);
+      out.push(item);
+      continue;
+    }
+
+    deduped += 1;
+    const idx = byKey.get(key);
+    const previous = out[idx];
+    const winner = productEvidenceScore(item) > productEvidenceScore(previous) ? item : previous;
+    const loser = winner === item ? previous : item;
+    const previousPrice = Number(previous?.costPrice ?? previous?.price ?? 0) || 0;
+    const itemPrice = Number(item?.costPrice ?? item?.price ?? 0) || 0;
+    const priceConflict = previousPrice > 0 && itemPrice > 0 && Math.abs(previousPrice - itemPrice) > Math.max(100, Math.round(Math.min(previousPrice, itemPrice) * 0.01));
+
+    const sources = [];
+    const addSource = (source) => {
+      if (!source) return;
+      const k = `${source.sheet || ""}|${source.rowIndex ?? ""}|${source.rawText || ""}`;
+      if (!sources.some((x) => x._k === k)) sources.push({ ...source, _k: k });
+    };
+    for (const source of previous.sourceOccurrences || []) addSource(source);
+    addSource(previous.source);
+    for (const source of item.sourceOccurrences || []) addSource(source);
+    addSource(item.source);
+
+    let merged = {
+      ...loser,
+      ...winner,
+      name: text(winner.name) || text(loser.name),
+      sku: text(winner.sku) || text(loser.sku),
+      specs: text(winner.specs).length >= text(loser.specs).length ? winner.specs : loser.specs,
+      supplier: text(winner.supplier) || text(loser.supplier),
+      unit: text(winner.unit) || text(loser.unit),
+      issues: mergeIssues(previous.issues, item.issues),
+      sourceOccurrences: sources.map(({ _k, ...source }) => source),
+    };
+
+    if (priceConflict) {
+      conflicts += 1;
+      merged.issues = mergeIssues(merged.issues, [issue(
+        "duplicate_identity_price_conflict",
+        "warning",
+        `Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (${previousPrice.toLocaleString("vi-VN")}đ / ${itemPrice.toLocaleString("vi-VN")}đ)`,
+        "costPrice",
+        "Kiểm tra giá đúng trước khi cập nhật catalog"
+      )]);
+      if ("status" in merged) merged.status = "review";
+      if ("confidence" in merged) merged.confidence = Math.min(Number(merged.confidence || 0.7), 0.64);
+      if (merged._meta) merged._meta = { ...merged._meta, status: "review", canonicalStatus: "need_review", issues: mergeIssues(merged._meta.issues, merged.issues) };
+    }
+
+    out[idx] = merged;
+  }
+
+  return { products: out, deduped, conflicts };
+}
+
 function cleanUnit(unit) {
   const raw = stripWeird(unit);
   if (!raw) return "Cái";
@@ -347,7 +520,7 @@ export function getPriceCandidates(value, extraText = "") {
 
 
 const OLD_QUOTE_FILE_RE = /(^|[\s_\-])(bg|bao\s*gia|bang\s*bao\s*gia|quote|quotation)([\s_\-]|$)|bg\s*kh|bao\s*gia/i;
-const OLD_QUOTE_SECTION_PREFIX_RE = /^(?:san\s*pham\s*)?(?:[ivxlcdm]+|\d+)\s*[\.\/\)]\s*(?:tang|lau|phong|khu|khu\s*vuc|hang\s*muc|giai\s*phap|he\s*thong|thiet\s*bi|vat\s*tu|cong\s*tac|camera|cam\s*bien|chieu\s*sang|am\s*thanh|mang|wifi|rem|den|khoa|cong|motor|san\s*pham)\b/i;
+const OLD_QUOTE_SECTION_PREFIX_RE = /^(?:san\s*pham\s*)?(?:[ivxlcdm]+|\d+)\s*[.\/)]{1,3}\s*(?:tang|lau|phong|khu|khu\s*vuc|hang\s*muc|giai\s*phap|he\s*thong|thiet\s*bi|vat\s*tu|cong\s*tac|bo\s*dieu\s*khien|camera|cam\s*bien|chieu\s*sang|am\s*thanh|mang|wifi|rem|den|khoa|cong|motor|san\s*pham)\b/i;
 const OLD_QUOTE_GROUP_WORD_RE = /^(?:san\s*pham\s*)?(?:giai\s*phap|he\s*thong|hang\s*muc|nhom|tong\s*hop|tong|vat\s*tu\s*phu|phu\s*kien\s*phu|goi\s*vat\s*tu|goi\s*phu\s*kien)\b/i;
 const OLD_QUOTE_CONTEXT_RE = /\b(bang\s*bao\s*gia|bao\s*gia|khach\s*hang|so\s*bao\s*gia|nguoi\s*bao\s*gia|dia\s*diem\s*cong\s*trinh)\b/i;
 
@@ -374,6 +547,9 @@ export function isLikelyOldQuoteAggregateProduct(product = {}, opts = {}) {
   if (!oldQuoteContext) return false;
 
   const sku = text(p.sku);
+  // Mapping lỗi có thể chép chính sub-header vào cả Tên và SKU. Phải nhận diện
+  // cấu trúc group/subtotal TRƯỚC khi xem một ô SKU không-rỗng là bằng chứng product.
+  if (isLikelyOldQuoteSectionRow(p.name) || isLikelyOldQuoteSectionRow(sku)) return true;
   if (sku && !/^(n\/?a|na|null|none|—|-)$/.test(sku)) return false;
 
   const name = asciiFold(p.name);
@@ -459,7 +635,9 @@ export function sanitizeCatalogProduct(product, opts = {}) {
     ));
   }
 
-  if (!userAccepted && isLikelyNonProductRow([p.name, p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" "))) {
+  // Bao gồm identity + giá đã parse trong evidence. Một sản phẩm thật có SKU/giá rõ
+  // không được biến thành non-product chỉ vì specs chứa câu "Bảo hành 36 tháng".
+  if (!userAccepted && isLikelyNonProductRow([p.name, p.sku, p.costPrice, p.specs, p._meta?.source?.rawText, p.source?.rawText, p.rawText].filter(Boolean).join(" "))) {
     issues.push(issue("non_product_row", "error", "Dòng này giống ghi chú/điều khoản, không phải sản phẩm", "name", "Xóa dòng hoặc chọn lại khoảng dòng import"));
   }
 
