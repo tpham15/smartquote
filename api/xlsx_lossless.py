@@ -1899,13 +1899,32 @@ def build_lossless_workbook(raw: bytes, data: dict, mapping_hint: dict | None = 
         else:
             _set_sheet_cell(root, labor_ref, labor_total, "number")
     if vat_ref:
-        _set_sheet_cell(root, vat_ref, 0, "number")
-    if grand_ref:
-        refs = [r for r in (subtotal_ref, labor_ref, vat_ref) if r]
-        if refs:
-            _set_sheet_cell(root, grand_ref, "+".join(refs), "formula")
+        vat_total = float(calc.get("vatTotal") or 0)
+        vat_percent = float(calc.get("vatPercent") or 0) / 100
+        if vat_percent > 0 and subtotal_ref:
+            tax_base = f"({subtotal_ref}+{labor_ref})" if labor_ref else subtotal_ref
+            _set_sheet_cell(root, vat_ref, f"{tax_base}*{vat_percent:.10f}", "formula")
         else:
-            _set_sheet_cell(root, grand_ref, calc.get("grand") or 0, "number")
+            _set_sheet_cell(root, vat_ref, vat_total, "number")
+    if grand_ref:
+        if vat_ref:
+            refs = [r for r in (subtotal_ref, labor_ref, vat_ref) if r]
+            if refs:
+                _set_sheet_cell(root, grand_ref, "+".join(refs), "formula")
+            else:
+                _set_sheet_cell(root, grand_ref, calc.get("grand") or 0, "number")
+        else:
+            # Mẫu không có ô VAT riêng: vẫn giữ formula cũ khi VAT=0; nếu VAT>0,
+            # cộng VAT trực tiếp vào grand để không làm rơi thuế mà không cần chèn thêm row.
+            base_refs = [r for r in (subtotal_ref, labor_ref) if r]
+            vat_percent = float(calc.get("vatPercent") or 0) / 100
+            if base_refs and vat_percent > 0:
+                base_formula = "+".join(base_refs)
+                _set_sheet_cell(root, grand_ref, f"({base_formula})*(1+{vat_percent:.10f})", "formula")
+            elif base_refs:
+                _set_sheet_cell(root, grand_ref, "+".join(base_refs), "formula")
+            else:
+                _set_sheet_cell(root, grand_ref, calc.get("grand") or 0, "number")
 
     _update_dimension(root)
     overrides = {sheet_path: _xml_bytes(root)}

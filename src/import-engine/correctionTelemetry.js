@@ -1,10 +1,11 @@
-import { tenantStorageGetItem, tenantStorageSetItem } from "../storage/tenantStorage.js";
+import { tenantStorageGetItem, tenantStorageSetItem, getTenantStorageScope } from "../storage/tenantStorage.js";
 
 // Phase 14.0 append-only local telemetry. Stores before/after + source evidence,
 // not only the learned final value. This is the seed dataset for later product
 // knowledge / benchmark work. Tenant-scoped through tenantStorage.
 const KEY = "sq_pilot_correction_events_v1";
 const MAX_EVENTS = 5000;
+const EXPORT_META_KEY = "sq_pilot_correction_export_meta_v1";
 
 function cloneSafe(value) {
   try { return JSON.parse(JSON.stringify(value)); } catch { return null; }
@@ -69,16 +70,52 @@ export function recordCorrectionEvent({ action, before = null, after = null, fil
   }
 }
 
-export function getCorrectionTelemetryStats() {
+function loadExportMeta() {
+  try {
+    const parsed = JSON.parse(tenantStorageGetItem(EXPORT_META_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch { return {}; }
+}
+
+export function buildCorrectionEvidenceExport() {
   const events = loadCorrectionEvents();
+  const exportedAt = new Date().toISOString();
   const byAction = {};
   for (const event of events) byAction[event.action] = (byAction[event.action] || 0) + 1;
+  return {
+    schemaVersion: "smartquote-pilot-evidence-v1",
+    exportedAt,
+    tenantScope: getTenantStorageScope() || "local",
+    summary: {
+      total: events.length,
+      edited: byAction.edit || 0,
+      approved: byAction.approve || 0,
+      deleted: byAction.delete || 0,
+      imported: byAction.import || 0,
+    },
+    corrections: events,
+  };
+}
+
+export function markCorrectionEvidenceExported(exportedAt = new Date().toISOString()) {
+  return tenantStorageSetItem(EXPORT_META_KEY, JSON.stringify({ exportedAt }));
+}
+
+export function getCorrectionTelemetryStats() {
+  const events = loadCorrectionEvents();
+  const meta = loadExportMeta();
+  const lastExportAt = meta.exportedAt || null;
+  const byAction = {};
+  for (const event of events) byAction[event.action] = (byAction[event.action] || 0) + 1;
+  const unexported = lastExportAt ? events.filter((e) => String(e.occurredAt || "") > lastExportAt).length : events.length;
   return {
     total: events.length,
     edited: byAction.edit || 0,
     approved: byAction.approve || 0,
     deleted: byAction.delete || 0,
     imported: byAction.import || 0,
+    unexported,
+    lastExportAt,
     latestAt: events.at(-1)?.occurredAt || null,
   };
 }

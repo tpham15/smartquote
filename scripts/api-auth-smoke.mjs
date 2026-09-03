@@ -3,10 +3,14 @@ import { readFileSync } from 'node:fs';
 import { PLAN_LIMITS, getMonthlyLimit, monthStartIso } from '../api/_lib/limits.js';
 import { normalizeUnits } from '../api/_lib/usage.js';
 
-const sourceSql = readFileSync(new URL('../supabase/phase8_1_plan_limits_source.sql', import.meta.url), 'utf8');
+const sourceSql = [
+  '../supabase/phase8_1_plan_limits_source.sql',
+  '../supabase/phase10_plan_capabilities.sql',
+].map((rel) => readFileSync(new URL(rel, import.meta.url), 'utf8')).join('\n\n');
 function parseLimit(plan, feature) {
   const re = new RegExp(`\\('${plan}',\\s*'${feature}',\\s*'monthly',\\s*(-?\\d+)\\)`);
-  const match = sourceSql.match(re);
+  const matches = [...sourceSql.matchAll(new RegExp(re.source, "g"))];
+  const match = matches.at(-1);
   assert.ok(match, `Missing ${plan}.${feature} in SQL source`);
   const value = Number(match[1]);
   return value < 0 ? Infinity : value;

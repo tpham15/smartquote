@@ -93,6 +93,19 @@ const strong = assessPdfPositiveEvidence({
 assert.equal(strong.positive, true);
 assert.equal(strong.autoApprove, true);
 
+// 3b) Residual false-product probes may stay in review to protect recall, but must never auto-approve.
+for (const probe of [
+  ["Đặt cọc trước", "Đặt cọc trước 2.000.000", 2_000_000],
+  ["STK tại MB Bank", "STK 0123456789 tại MB Bank", 123_456_789],
+  ["Tuổi thọ 30.000 giờ 4000K", "Tuổi thọ 30.000 giờ 4000K", 30_000],
+]) {
+  const residual = assessPdfPositiveEvidence({
+    name: probe[0], costPrice: probe[2],
+    _meta: { engine: "pdf-v3-text-heuristic", source: { type: "pdf", rawText: probe[1] } },
+  }, "pdf-v3-text-heuristic");
+  assert.equal(residual.autoApprove, false);
+}
+
 // 4) Grounding matches the original pdfjs row and preserves bbox/parts.
 const page = {
   page: 2,
@@ -132,6 +145,14 @@ assert.equal(events[0].before.name, "Sai tên");
 assert.equal(events[0].after.costPrice, 1_250_000);
 assert.equal(events[0].source.page, 2);
 assert.deepEqual(events[0].source.bbox, page.rows[1].bbox);
+const preExportStats = telemetry.getCorrectionTelemetryStats();
+assert.equal(preExportStats.unexported, 1);
+const exportBundle = telemetry.buildCorrectionEvidenceExport();
+assert.equal(exportBundle.schemaVersion, "smartquote-pilot-evidence-v1");
+assert.equal(exportBundle.corrections.length, 1);
+assert.equal(exportBundle.summary.edited, 1);
+assert.equal(telemetry.markCorrectionEvidenceExported(exportBundle.exportedAt), true);
+assert.equal(telemetry.getCorrectionTelemetryStats().unexported, 0);
 
 // 7) Static pilot wiring: click-to-source viewer + API coordinates + no new OCR routing.
 const smartQuote = fs.readFileSync(path.join(root, "src/SmartQuote.jsx"), "utf8");
@@ -140,6 +161,9 @@ assert.match(smartQuote, /PdfGroundingViewer/);
 assert.match(smartQuote, /ci-ground-price/);
 assert.match(smartQuote, /applyCommercialValidation/);
 assert.match(smartQuote, /recordCorrectionEvent/);
+assert.match(smartQuote, /hasManualReviewOnlyIssue/);
+assert.match(smartQuote, /pdf_ocr_uncertain/);
+assert.match(smartQuote, /exportPilotCorrectionEvidence/);
 assert.match(api, /pageWidth/);
 assert.match(api, /pageHeight/);
 assert.match(api, /bbox:/);

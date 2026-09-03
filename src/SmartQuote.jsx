@@ -34,7 +34,8 @@ import {
   listCorrectionLearningStats,
 } from "./import-engine/correctionLearning.js";
 import { applyCommercialValidation } from "./import-engine/businessValidator.js";
-import { recordCorrectionEvent, getCorrectionTelemetryStats } from "./import-engine/correctionTelemetry.js";
+import { recordCorrectionEvent, getCorrectionTelemetryStats, buildCorrectionEvidenceExport, markCorrectionEvidenceExported } from "./import-engine/correctionTelemetry.js";
+import { calculateQuoteTotals, normalizePercent } from "./quoteMath.js";
 
 // ============================================================
 // SmartQuote — App báo giá smarthome
@@ -516,7 +517,7 @@ const buildSeedTemplates = () => [];
 
 const buildDefaultCompany = () => ({
   name: "", phone: "", address: "", taxCode: "",
-  laborPercent: 0, quoteNumber: "", salesPerson: "", salesPhone: "",
+  laborPercent: 0, vatPercent: 8, quoteNumber: "", salesPerson: "", salesPhone: "",
   website: "", googleApiKey: "", googleCx: "",
   logoUrl: "", bankInfo: "", introText: "",
   quoteTemplate: buildDefaultQuoteTemplateConfig("smarthome_pro"),
@@ -2139,6 +2140,14 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
     );
 
   // ---- Tính toán tổng tiền ----
+  // VAT mặc định lấy từ Cài đặt công ty, nhưng mỗi báo giá có thể override độc lập.
+  // Báo giá cũ chưa có vatPercent sẽ tự dùng default hiện tại của công ty.
+  const defaultVatPercent = normalizePercent(company?.vatPercent, 8);
+  const quoteVatRaw = customer?.vatPercent;
+  const vatPercent = quoteVatRaw !== undefined && quoteVatRaw !== null && quoteVatRaw !== ""
+    ? normalizePercent(quoteVatRaw, defaultVatPercent)
+    : defaultVatPercent;
+
   const calc = useMemo(() => {
     let deviceTotal = 0;
     let pointCount = 0;
@@ -2150,11 +2159,10 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         pointCount += l.qty;
       });
     });
-    const laborTotal = Math.round((deviceTotal * (company.laborPercent || 0)) / 100);
-    const grand = deviceTotal + laborTotal;
-    return { deviceTotal, pointCount, laborTotal, grand };
+    const totals = calculateQuoteTotals({ deviceTotal, laborPercent: company.laborPercent, vatPercent });
+    return { ...totals, pointCount };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms, productById, company]);
+  }, [rooms, productById, company.laborPercent, vatPercent]);
 
   const grossMarginPct = useMemo(() => {
     let baseTotal = 0;
@@ -2219,6 +2227,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
       quoteNumber: quote.customer?.quoteNumber || quote.quote_number || "",
       category: quote.customer?.category || quote.category || "",
       customerId: quote.customer?.customerId || quote.customer_id || null,
+      vatPercent: quote.customer?.vatPercent ?? quote.calc?.vatPercent ?? company?.vatPercent ?? 8,
     });
     setRooms(Array.isArray(quote.rooms) && quote.rooms.length ? quote.rooms : defaultRooms());
     setQuoteStatus(quote.status || "draft");
@@ -2554,7 +2563,27 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
             <div className="s-rows">
               <Row label={`Tiền hàng (${calc.pointCount} thiết bị)`} value={VND(calc.deviceTotal)} />
               <Row label={`Nhân công, lập trình (${company.laborPercent}%)`} value={VND(calc.laborTotal)} />
-              <div className="s-row"><span>VAT (0%)</span><b>—</b></div>
+              <div className="s-row vat-summary-row">
+                <span className="vat-summary-label">
+                  VAT
+                  <span className="vat-rate-control">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={vatPercent}
+                      aria-label="VAT báo giá (%)"
+                      onChange={(e) => {
+                        const next = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                        setCustomer({ ...customer, vatPercent: next });
+                      }}
+                    />
+                    <em>%</em>
+                  </span>
+                </span>
+                <b>{VND(calc.vatTotal)}</b>
+              </div>
               <div className="s-row big"><span>Tổng cộng</span><b className="num">{VND(calc.grand)}</b></div>
             </div>
             <div className="s-actions">
@@ -4883,6 +4912,28 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     try { setCorrectionStats(getCorrectionTelemetryStats()); } catch {}
   };
 
+  const exportPilotCorrectionEvidence = () => {
+    try {
+      const bundle = buildCorrectionEvidenceExport();
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `smartquote-pilot-evidence-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      markCorrectionEvidenceExported(bundle.exportedAt);
+      setCorrectionStats(getCorrectionTelemetryStats());
+      notify.success(`Đã xuất ${bundle.summary.total} correction event. Giữ file này cho buổi review pilot.`);
+    } catch (error) {
+      console.error(error);
+      notify.error("Không xuất được pilot evidence. Hãy thử lại trước khi xóa cache trình duyệt.");
+    }
+  };
+
   const recordPilotCorrection = (action, before, after, reason = "", issues = []) => {
     try {
       recordCorrectionEvent({
@@ -5427,6 +5478,10 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const isPriceSafetyIssue = (it) => ["price_column_uncertain", "price_scaled_from_header", "price_scale_suspect"].includes(issueCode(it));
   const hasPriceColumnUncertainIssue = (p, index) => getPreviewIssues(p, index).some(isPriceColumnUncertainIssue);
   const hasPriceSafetyIssue = (p, index) => getPreviewIssues(p, index).some(isPriceSafetyIssue);
+  // Low-evidence PDF rows must be inspected one-by-one. They may remain in review
+  // to protect recall, but bulk approval must never turn them into silent false-products.
+  const isManualReviewOnlyIssue = (it) => ["pdf_ocr_uncertain"].includes(issueCode(it));
+  const hasManualReviewOnlyIssue = (p, index) => getPreviewIssues(p, index).some(isManualReviewOnlyIssue);
   const priceSafetyRows = () => parsed
     .map((p, index) => ({ p, index, issues: getPreviewIssues(p, index).filter(isPriceSafetyIssue) }))
     .filter((r) => r.issues.length);
@@ -5451,10 +5506,11 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     const warningOnly = rows.filter(({ p, index }) => isWarningOnlyProduct(p, index)).length;
     const priceUncertain = rows.filter(({ p, index }) => hasPriceColumnUncertainIssue(p, index)).length;
     const priceSafety = rows.filter(({ p, index }) => hasPriceSafetyIssue(p, index)).length;
-    const safeWarningOnly = rows.filter(({ p, index }) => isWarningOnlyProduct(p, index) && !hasPriceColumnUncertainIssue(p, index)).length;
+    const manualOnly = rows.filter(({ p, index }) => hasManualReviewOnlyIssue(p, index)).length;
+    const safeWarningOnly = rows.filter(({ p, index }) => isWarningOnlyProduct(p, index) && !hasPriceColumnUncertainIssue(p, index) && !hasManualReviewOnlyIssue(p, index)).length;
     const clean = list.length - blocking - warningOnly;
     const skipped = importResult?.summary?.skipped || 0;
-    return { clean: Math.max(0, clean), warningOnly, safeWarningOnly, blocking, priceUncertain, priceSafety, skipped, willImport: Math.max(0, clean), needFix: warningOnly + blocking };
+    return { clean: Math.max(0, clean), warningOnly, safeWarningOnly, manualOnly, blocking, priceUncertain, priceSafety, skipped, willImport: Math.max(0, clean), needFix: warningOnly + blocking };
   };
 
   const getPreviewStatusForRow = (p, index) => getLineForProductIndex(index, p)?.status || p?._meta?.canonicalStatus || p?._meta?.status || "auto_approved";
@@ -5594,15 +5650,16 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       message: [
         "SmartQuote chỉ duyệt các dòng cảnh báo nhẹ.",
         counts.priceUncertain && !priceColumnConfirmed ? `${counts.priceUncertain} dòng có rủi ro giá sẽ không được duyệt tự động.` : "",
+        counts.manualOnly ? `${counts.manualOnly} dòng PDF evidence thấp bắt buộc xem từng dòng; SmartQuote sẽ không duyệt hàng loạt.` : "",
         counts.blocking ? `${counts.blocking} dòng lỗi nặng vẫn được giữ lại để bạn Sửa/Xóa.` : "",
       ].filter(Boolean).join("\n\n"),
       confirmLabel: "Duyệt các dòng này",
     });
     if (!ok) return;
     setParsed(prev => {
-      const rowsToLearn = prev.filter((p, i) => isWarningOnlyProduct(p, i) && !hasPriceColumnUncertainIssue(p, i));
+      const rowsToLearn = prev.filter((p, i) => isWarningOnlyProduct(p, i) && !hasPriceColumnUncertainIssue(p, i) && !hasManualReviewOnlyIssue(p, i));
       const next = prev.map((p, i) => {
-        if (!isWarningOnlyProduct(p, i) || hasPriceColumnUncertainIssue(p, i)) return p;
+        if (!isWarningOnlyProduct(p, i) || hasPriceColumnUncertainIssue(p, i) || hasManualReviewOnlyIssue(p, i)) return p;
         return {
           ...p,
           _meta: {
@@ -6128,7 +6185,8 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <div><span>Confidence</span><strong>{Math.round((importResult?.overallConfidence || 0) * 100)}%</strong></div>
                 <div><span>Template</span><strong>{importResult?.templateKnown ? "đã nhớ" : (importResult?.detectedTemplateId ? "mới" : "—")}</strong></div>
                 <div><span>Đã học</span><strong>{learningStats ? `${learningStats.skuRules} SKU · ${learningStats.rawRules} raw · ${learningStats.supplierProfiles} nhà cung cấp` : "—"}</strong></div>
-                <div><span>Correction evidence</span><strong>{correctionStats ? `${correctionStats.total} sự kiện · ${correctionStats.edited} sửa · ${correctionStats.approved} duyệt · ${correctionStats.deleted} xóa` : "—"}</strong></div>
+                <div><span>Correction evidence</span><strong>{correctionStats ? `${correctionStats.total} sự kiện · ${correctionStats.edited} sửa · ${correctionStats.approved} duyệt · ${correctionStats.deleted} xóa · ${correctionStats.unexported} chưa export` : "—"}</strong></div>
+                <div><span>Pilot evidence</span><strong><button type="button" className="btn-mini" onClick={exportPilotCorrectionEvidence} disabled={!correctionStats?.total}>Export JSON</button></strong></div>
                 <div><span>Nguồn</span><strong>{file?.name || "import"}</strong></div>
               </div>
               {learningNotice && <div className="ci-learning-note compact">{learningNotice}</div>}
@@ -7531,7 +7589,9 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
     sampleCalc.pointCount += Number(l.qty) || 0;
   }));
   sampleCalc.laborTotal = Math.round(sampleCalc.deviceTotal * ((Number(company?.laborPercent) || 0) / 100));
-  sampleCalc.grand = sampleCalc.deviceTotal + sampleCalc.laborTotal;
+  sampleCalc.vatPercent = normalizePercent(company?.vatPercent, 8);
+  sampleCalc.vatTotal = Math.round((sampleCalc.deviceTotal + sampleCalc.laborTotal) * (sampleCalc.vatPercent / 100));
+  sampleCalc.grand = sampleCalc.deviceTotal + sampleCalc.laborTotal + sampleCalc.vatTotal;
 
   const previewPdf = () => {
     const html = buildQuotePrintHTML({
@@ -8038,6 +8098,7 @@ function Settings({ company, setCompany, markups, setMarkups, data, onImport }) 
             <Field label="Mã số thuế" value={company.taxCode} onChange={(v) => set("taxCode", v)} />
             <Field label="Điện thoại công ty" value={company.phone} onChange={(v) => set("phone", v)} />
             <NumField label="Nhân công, lập trình (% tiền hàng)" value={company.laborPercent} onChange={(v) => set("laborPercent", v)} />
+            <NumField label="VAT mặc định (%)" value={company.vatPercent ?? 8} onChange={(v) => set("vatPercent", Math.max(0, Math.min(100, v)))} />
             <Field label="Địa chỉ" value={company.address} onChange={(v) => set("address", v)} full />
             <Field label="Website" value={company.website || ""} onChange={(v) => set("website", v)} full />
             <Field label="Người báo giá" value={company.salesPerson || ""} onChange={(v) => set("salesPerson", v)} />
@@ -8224,6 +8285,7 @@ function buildQuotePrintHTML({ company, customer, rooms, productById, lineSalePr
       ${summaryRows}
       <tr><td class="sl lbl">Tổng tiền hàng:</td><td class="sr">${vnd(calc.deviceTotal)}</td></tr>
       ${template.sections?.showLabor === false ? "" : `<tr><td class="sl lbl">Nhân công / thi công (${company.laborPercent || 0}%)</td><td class="sr">${vnd(calc.laborTotal)}</td></tr>`}
+      <tr><td class="sl lbl">VAT (${Number(calc.vatPercent || 0).toLocaleString("vi-VN")}%)</td><td class="sr">${vnd(calc.vatTotal)}</td></tr>
       <tr class="grand-row"><td class="sl lbl">Tổng giá trị hợp đồng</td><td class="sr">${vnd(calc.grand)}</td></tr>
     </table>`;
   const termsBlock = template.sections?.showTerms === false || !terms.length ? "" : `<div class="foot"><strong>Điều khoản:</strong><ul>${terms.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
@@ -8428,6 +8490,7 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
   // --- Từng khu vực ---
   const sectionTotalRows = [];
   const sectionNames = [];
+  const validSectionTotalsByRow = new Map();
   let sttGlobal = 0; // STT toàn bảng
   rooms.forEach((room, idx) => {
     const validLines = room.lines.filter((l) => productById[l.productId]);
@@ -8453,7 +8516,8 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
     const lastItemExcelRow = R;
 
     formulas.push({ r: secRow, c: 10, f: `SUM(K${firstItemExcelRow}:K${lastItemExcelRow})`, v: sectionSum });
-    money.push([secRow, 9]);
+    money.push([secRow, 10]);
+    validSectionTotalsByRow.set(secRow, sectionSum);
     sectionTotalRows.push(secRow);
     sectionNames.push(room.name.replace(/\n/g," "));
   });
@@ -8469,8 +8533,8 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
     push([sectionNames[i], "", "", "", "", "", "", "", "", ""]);
     merges.push({ s: { r: R-1, c: 0 }, e: { r: R-1, c: 9 } });
     const ref = `K${secRow + 1}`;
-    const v = aoa[secRow]?.[9] || 0;
-    formulas.push({ r: R-1, c: 9, f: ref, v: typeof v === "number" ? v : 0 });
+    const v = validSectionTotalsByRow.get(secRow) || 0;
+    formulas.push({ r: R-1, c: 9, f: ref, v });
     money.push([R-1, 9]);
   });
 
@@ -8480,19 +8544,25 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
   push(["Tổng tiền hàng:", "", "", "", "", "", "", "", "", ""]);
   merges.push({ s: { r: hangRow, c: 0 }, e: { r: hangRow, c: 9 } });
   formulas.push({ r: hangRow, c: 10, f: sumRefs2 || "0", v: calc.deviceTotal });
-  money.push([hangRow, 9]);
+  money.push([hangRow, 10]);
 
   const ncRow = R;
   push([`Nhân công thi công lắp đặt và cài đặt lập trình cấu hình và set theo ngữ cảnh CĐT (${company.laborPercent}%):`, "", "", "", "", "", "", "", "", ""]);
   merges.push({ s: { r: ncRow, c: 0 }, e: { r: ncRow, c: 9 } });
   formulas.push({ r: ncRow, c: 10, f: `K${hangRow+1}*${(company.laborPercent||0)/100}`, v: calc.laborTotal });
-  money.push([ncRow, 9]);
+  money.push([ncRow, 10]);
+
+  const vatRow = R;
+  push([`VAT (${Number(calc.vatPercent || 0).toLocaleString("vi-VN")}%)`, "", "", "", "", "", "", "", "", ""]);
+  merges.push({ s: { r: vatRow, c: 0 }, e: { r: vatRow, c: 9 } });
+  formulas.push({ r: vatRow, c: 10, f: `(K${hangRow+1}+K${ncRow+1})*${(Number(calc.vatPercent)||0)/100}`, v: calc.vatTotal || 0 });
+  money.push([vatRow, 10]);
 
   const hdRow = R;
   push(["Tổng giá trị hợp đồng", "", "", "", "", "", "", "", "", ""]);
   merges.push({ s: { r: hdRow, c: 0 }, e: { r: hdRow, c: 9 } });
-  formulas.push({ r: hdRow, c: 10, f: `K${hangRow+1}+K${ncRow+1}`, v: calc.grand });
-  money.push([hdRow, 9]);
+  formulas.push({ r: hdRow, c: 10, f: `K${hangRow+1}+K${ncRow+1}+K${vatRow+1}`, v: calc.grand });
+  money.push([hdRow, 10]);
 
   push([]);
   push(["* Lưu ý: Báo giá chỉ có giá trị trong vòng 14 ngày kể từ ngày báo giá, sau thời gian này giá sẽ thay đổi theo nhà sản xuất."]);
@@ -9721,6 +9791,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .s-rows{margin:16px 0;border-top:1px solid var(--hair);padding-top:14px;}
 .s-row,.summary .sum-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:5px 0;border:0;}
 .s-row b,.summary .sum-row b{color:var(--ink);font-weight:600;}
+.vat-summary-row{align-items:center;gap:10px;}
+.vat-summary-label{display:flex;align-items:center;gap:8px;}
+.vat-rate-control{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--hair);border-radius:8px;padding:2px 6px;background:var(--surface-soft);color:var(--ink);}
+.vat-rate-control input{width:42px;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;text-align:right;padding:1px 0;}
+.vat-rate-control em{font-style:normal;font-size:12px;color:var(--muted);}
 .s-row.big{font-size:var(--fs-md);color:var(--ink);font-weight:700;border-top:1px solid var(--hair);margin-top:6px;padding-top:12px;}
 .s-actions{display:flex;flex-direction:column;gap:9px;}
 .s-actions .btn.primary{width:100%;padding:12px;font-size:var(--fs-md);}

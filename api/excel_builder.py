@@ -314,11 +314,23 @@ def build_excel(data: dict) -> bytes:
     ws.cell(R,11).fill = fill(GRAY_BG)
     R+=1
 
+    # VAT — tính trên tiền hàng + nhân công. Quote-level calc.vatPercent có thể override default công ty.
+    vat_pct = float(calc.get("vatPercent", company.get("vatPercent", 8)) or 0) / 100
+    vat_r = R
+    row_h(R,16)
+    mr(R,1,10, f"VAT ({vat_pct * 100:g}%):", font(True,11), fill(GRAY_BG), align("left"), border())
+    ws.cell(R,11, f"=(K{hang_r}+K{nc_r})*{vat_pct}").number_format = "#,##0"
+    ws.cell(R,11).font = font(True,11)
+    ws.cell(R,11).alignment = align("right")
+    ws.cell(R,11).border = border()
+    ws.cell(R,11).fill = fill(GRAY_BG)
+    R+=1
+
     # Giá trị HĐ
     row_h(R,20)
     mr(R,1,10,"TỔNG GIÁ TRỊ HỢP ĐỒNG:", font(True,13,WHITE), fill(BRAND),
        align("left"), border(BRAND))
-    ws.cell(R,11, f"=K{hang_r}+K{nc_r}").number_format = "#,##0"
+    ws.cell(R,11, f"=K{hang_r}+K{nc_r}+K{vat_r}").number_format = "#,##0"
     ws.cell(R,11).font = Font(name="Arial",bold=True,size=13,color=WHITE)
     ws.cell(R,11).alignment = align("right")
     ws.cell(R,11).fill = fill(BRAND)
@@ -365,6 +377,7 @@ if __name__ == "__main__":
             "salesPerson": "Nhân viên mẫu",
             "salesPhone": "0900000000",
             "laborPercent": 0,
+            "vatPercent": 8,
         },
         "customer": {
             "name": "KHÁCH HÀNG MẪU",
@@ -386,7 +399,7 @@ if __name__ == "__main__":
                 ],
             },
         ],
-        "calc": {"deviceTotal": 0, "laborTotal": 0, "grand": 0},
+        "calc": {"deviceTotal": 0, "laborTotal": 0, "vatPercent": 8, "vatTotal": 0, "grand": 0},
     }
 
     out = build_excel(data)

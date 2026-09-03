@@ -594,13 +594,33 @@ def _build_workbook_v2(data: dict) -> bytes:
         else:
             ws[labor_ref] = labor_total
     if vat_ref:
-        ws[vat_ref] = 0
+        vat_total = float(calc.get("vatTotal") or 0)
+        vat_percent = float(calc.get("vatPercent") or 0) / 100
+        if not structural_edit and not section_row:
+            ws[vat_ref] = vat_total
+        elif vat_percent > 0 and subtotal_ref:
+            tax_base = f"SUM({subtotal_ref},{labor_ref})" if labor_ref else subtotal_ref
+            ws[vat_ref] = f"={tax_base}*{vat_percent:.6f}"
+        else:
+            ws[vat_ref] = vat_total
     if grand_ref:
         if not structural_edit and not section_row:
             ws[grand_ref] = float(calc.get("grand") or 0)
-        else:
+        elif vat_ref:
             parts = [ref for ref in (subtotal_ref, labor_ref, vat_ref) if ref]
             ws[grand_ref] = f"=SUM({','.join(parts)})" if parts else float(calc.get("grand") or 0)
+        else:
+            # Template không có ô VAT riêng: giữ công thức subtotal+labor khi VAT=0;
+            # nếu VAT>0, cộng thuế trực tiếp trong công thức grand.
+            base_parts = [ref for ref in (subtotal_ref, labor_ref) if ref]
+            vat_percent = float(calc.get("vatPercent") or 0) / 100
+            if base_parts and vat_percent > 0:
+                base_formula = "+".join(base_parts)
+                ws[grand_ref] = f"=({base_formula})*(1+{vat_percent:.6f})"
+            elif base_parts:
+                ws[grand_ref] = f"={'+'.join(base_parts)}"
+            else:
+                ws[grand_ref] = float(calc.get("grand") or 0)
 
     # Preserve print area where possible. If the old print area ended below the edited region,
     # openpyxl may not shift it perfectly, so extend it to the current used range as a safe default.
