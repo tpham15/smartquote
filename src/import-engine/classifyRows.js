@@ -6,6 +6,11 @@ import { ROW_CLASS } from "./types.js";
 import { getPriceCandidates, isLikelyNonProductRow, isLikelyBillableServiceRow, extractSkuFromText, isLikelyOldQuoteSectionRow } from "./productSanitizer.js";
 
 // Từ khoá NHIỄU (không bao giờ là sản phẩm) — chung mọi ngành
+
+// Metadata đầu báo giá: chỉ mô tả khách hàng/chứng từ, tuyệt đối không phải catalog product.
+// Dùng anchor + dấu ':' để tránh chặn mô tả sản phẩm có các từ như "điện thoại" trong specs.
+const DOCUMENT_METADATA_RE = /^\s*(khách\s*hàng|khach\s*hang|công\s*trình|cong\s*trinh|địa\s*điểm(?:\s*công\s*trình)?|dia\s*diem(?:\s*cong\s*trinh)?|điện\s*thoại|dien\s*thoai|số\s*điện\s*thoại|so\s*dien\s*thoai|số\s*báo\s*giá|so\s*bao\s*gia|ngày|ngay|email|người\s*báo\s*giá|nguoi\s*bao\s*gia|hạng\s*mục|hang\s*muc|mst|mã\s*số\s*thuế|ma\s*so\s*thue|showroom|vpgd)\s*[:：]/i;
+
 const NOISE_PATTERNS = [
   /^tổng\s*(cộng|tiền|giá trị|kết)/i,
   /^cộng\b/i,
@@ -76,6 +81,9 @@ export function classifyRow(row, opt = {}) {
 
   if (!joined || row.filled === 0) return ROW_CLASS.BLANK;
 
+  // 0. DOCUMENT METADATA: hard skip trước khi đọc bất kỳ số nào như giá.
+  if (DOCUMENT_METADATA_RE.test(joined)) return ROW_CLASS.NOTE;
+
   // 0. BILLABLE SERVICE: nhân công/lắp đặt/thi công/bảo hành mở rộng có giá là hạng mục báo giá.
   if (isLikelyBillableServiceRow(joined)) return ROW_CLASS.PRODUCT;
 
@@ -143,4 +151,4 @@ export function classifyRows(rows, opt) {
   return rows.map((row) => ({ row, class: classifyRow(row, opt) }));
 }
 
-export { hasMoneyValue, NOISE_PATTERNS };
+export { hasMoneyValue, NOISE_PATTERNS, DOCUMENT_METADATA_RE };

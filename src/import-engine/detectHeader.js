@@ -38,7 +38,7 @@ function headerScore(row) {
  * @param {number} searchLimit - chỉ tìm trong N dòng đầu
  * @returns {{headerRow: ?import('./types').NormalizedRow, headerIndex: number, score: number}}
  */
-export function detectHeader(rows, searchLimit = 15) {
+export function detectHeader(rows, searchLimit = 40) {
   let best = null;
   let bestScore = 1; // ngưỡng tối thiểu
   let bestIdx = -1;

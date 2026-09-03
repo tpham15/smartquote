@@ -4,7 +4,7 @@
 import * as XLSX from "xlsx";
 import { parsePdfCatalogWithPipeline } from "../pdf/pdfCatalogPipeline.js";
 import { priceUpdatePreviewFromLegacy, productsToImportPreviewResult } from "../previewResult.js";
-import { parseSafePrice, isLikelyNonProductRow, extractSkuFromText, cleanSupplierName } from "../productSanitizer.js";
+import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName } from "../productSanitizer.js";
 import { inferCategory } from "../categoryInference.js";
 
 const uid = (p = "imp") => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -25,7 +25,7 @@ export function guessCatalogColumnsByName(headers) {
     else if (!m.listPrice && /(giá\s*(công bố|cong bo|niêm yết|niem yet)|giá\s*bán\s*lẻ\s*công\s*bố|gia\s*ban\s*le\s*cong\s*bo|public|list\s*price|msrp)/.test(label)) m.listPrice = idx;
     else if (!m.minRetailPrice && /(giá\s*bán\s*lẻ\s*thấp\s*nhất|gia\s*ban\s*le\s*thap\s*nhat|map|minimum|retail\s*min)/.test(label)) m.minRetailPrice = idx;
     else if (!m.costPrice && /(giá\s*(đại lý|dai ly|nhập|nhap|gốc|goc|vốn|von)|cost|dealer|wholesale|đơn giá nhập)/.test(label)) m.costPrice = idx;
-    else if (!m.costPrice && /giá|price|đơn giá|thành tiền/.test(label)) m.costPrice = idx;
+    else if (!m.costPrice && /(giá|price|đơn giá)/.test(label) && !/thành\s*tiền|line\s*total|amount/.test(label)) m.costPrice = idx;
     else if (!m.specs && /thông số|kỹ thuật|spec|mô tả|tính năng|đặc điểm|quy cách/.test(label)) m.specs = idx;
     else if (!m.image && /hình\s*ảnh|hinh\s*anh|^ảnh$|^anh$|image|photo|thumbnail|url\s*ảnh|link\s*ảnh/.test(label)) m.image = idx;
   });
@@ -41,8 +41,12 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       return String(row[idx] ?? "").trim();
     };
     const rowText = (row || []).join(" ");
-    if (isLikelyNonProductRow(rowText)) return null;
-    const sku = get("sku") || extractSkuFromText(rowText);
+    if (isLikelyNonProductRow(rowText) || (opts.quoteTable && isLikelyBillableServiceRow(rowText))) return null;
+    const rawSku = get("sku");
+    const rawName = get("name");
+    if (opts.quoteTable && (isLikelyOldQuoteSectionRow(rawName) || isLikelyOldQuoteSectionRow(rawSku))) return null;
+    if (opts.quoteTable && /^(?:bh|bảo\s*hành|bao\s*hanh)\s*\d{1,3}\s*(?:tháng|thang|năm|nam|months?|years?)$/i.test(rawSku)) return null;
+    const sku = rawSku || extractSkuFromText(rowText);
     const supplier = cleanSupplierName(get("supplier"), opts.defaultSupplier || "");
     const category = inferCategory({ category: get("category"), name: get("name"), sku, specs: get("specs"), supplier, rawText: rowText, sheetName: opts.sheetName }, "Chung");
     const displayName = get("name") || (sku ? `${category !== "Chung" ? category : "Sản phẩm"} ${sku}` : "");
@@ -55,6 +59,12 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
     }
     let costPrice = parseSafePrice(get("costPrice"), rowText);
     if (!costPrice && currentListPrice > 0) costPrice = currentListPrice;
+    // Khi user mở "Sửa mapping" cho một báo giá chuẩn, chỉ các dòng có Đơn giá
+    // mới đủ điều kiện thành catalog product. Header/section/tổng/quy trình đều có
+    // thể mang text ở cột Tên nhưng không có unit price — bỏ ở đây để preview không nhiễu.
+    if (opts.quoteTable && !(costPrice > 0)) return null;
+    const quoteFixedPrice = !!opts.quoteTable && costPrice > 0 && effectiveListPrice === 0;
+    const finalListPrice = quoteFixedPrice ? costPrice : effectiveListPrice;
     return {
       id: uid("imp"),
       name: displayName,
@@ -63,10 +73,10 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       supplier,
       unit: get("unit") || "Cái",
       costPrice,
-      listPrice: effectiveListPrice,
-      publicPrice: effectiveListPrice,
+      listPrice: finalListPrice,
+      publicPrice: finalListPrice,
       minRetailPrice: parseSafePrice(get("minRetailPrice"), rowText),
-      priceMode: effectiveListPrice > 0 ? "fixed" : "markup",
+      priceMode: finalListPrice > 0 ? "fixed" : "markup",
       specs,
       image: get("image"),
       _meta: {

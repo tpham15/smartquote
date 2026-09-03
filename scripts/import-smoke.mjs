@@ -28,6 +28,8 @@ async function fileLike(filePath) {
 
 async function runGuardrails() {
   assert(parseSafePrice('03-05 ngày') === 0, '03-05 ngày must not parse as price');
+  assert(parseSafePrice('1 Trình bày giải pháp') === 0, '1 Trình bày must not parse as 1 triệu');
+  assert(parseSafePrice('1 tr') === 1000000, '1 tr must still parse as 1.000.000');
   const note = sanitizeCatalogProduct({ name: '- Thi công: Hoàn thành sau 7 ngày kể từ ngày ký hợp đồng', costPrice: 0, unit: 'Cái' });
   assert((note._meta?.issues || []).some(i => i.code === 'non_product_row'), 'Thi công row must be flagged as non-product');
   const p = sanitizeCatalogProduct({ name: 'Mã khóa sử dụng: OSN-3381, OSN-KBT06', specs: '', costPrice: 1200000, unit: 'Cái' });

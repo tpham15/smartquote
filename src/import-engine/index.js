@@ -78,12 +78,13 @@ export async function runImport(file, ctx = {}) {
   let minMapConf = 1;
   const extractionStats = { totalRows: 0, skipped: 0, notes: 0, totals: 0, sections: 0, headers: 0, blank: 0, products: 0 };
   for (const ps of perSheet) {
-    const { sheet, headerIndex, map, mapConfidence } = ps;
+    const { sheet, headerRow, headerIndex, map, mapConfidence } = ps;
     minMapConf = Math.min(minMapConf, mapConfidence);
-    const preMap = { priceCol: map.price ?? null, nameCol: map.name ?? null };
+    const headerSourceRow = Number.isInteger(headerRow?.r) ? headerRow.r : -1;
+    const preMap = { priceCol: map.price ?? null, nameCol: map.name ?? null, minSourceRow: headerSourceRow };
     const regions = detectRegions(sheet, preMap);
     for (const region of regions) {
-      const out = extractItemsWithStats(sheet, region, map, headerIndex, wb.fileSupplier);
+      const out = extractItemsWithStats(sheet, region, map, headerSourceRow, wb.fileSupplier);
       allRaw = allRaw.concat(out.items);
       for (const [k, v] of Object.entries(out.stats || {})) extractionStats[k] = (extractionStats[k] || 0) + (Number(v) || 0);
     }

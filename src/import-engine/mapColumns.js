@@ -9,6 +9,8 @@ const FIELD_RULES = [
   { key: "name",     patterns: [/tên\s*(sản phẩm|hàng|thiết bị|vật tư)?/i, /sản phẩm/i, /hàng ho[áa]/i, /diễn giải/i, /^mô tả$/i, /^thiết bị$/i, /^vật tư$/i, /tên gọi/i, /hạng\s*mục/i, /hang\s*muc/i] },
   { key: "specs",    patterns: [/thông số/i, /quy cách/i, /đặc điểm/i, /tính năng/i, /kỹ thuật/i, /mô tả (chi tiết|kỹ thuật|sản phẩm)/i, /phương thức/i, /màu sắc/i] },
   { key: "unit",     patterns: [/^đvt$/i, /đơn vị/i, /^dvt$/i, /^unit$/i] },
+  { key: "quantity", patterns: [/^số\s*lượng$/i, /^so\s*luong$/i, /^sl$/i, /^qty$/i, /^quantity$/i] },
+  { key: "lineTotal", patterns: [/^thành\s*tiền$/i, /^thanh\s*tien$/i, /line\s*total/i, /^amount$/i] },
   { key: "category", patterns: [/nhóm/i, /loại\b/i, /danh mục/i, /chủng loại/i, /phân loại/i, /category/i] },
   { key: "supplier", patterns: [/nhà cung cấp/i, /^ncc$/i, /hãng/i, /xuất xứ/i, /thương hiệu/i, /brand/i, /nsx/i] },
   // Giá hiện hành / giá điều chỉnh: đây là giá công bố hiện tại, KHÔNG phải giá nhập.
@@ -20,7 +22,7 @@ const FIELD_RULES = [
   { key: "minRetailPrice", patterns: [/bán\s*lẻ\s*thấp\s*nhất/i, /ban\s*le\s*thap\s*nhat/i, /đại\s*l[ýi]\s*bán\s*lẻ\s*thấp\s*nhất/i] },
   // giá nhập/vốn: ưu tiên cột giá THẤP (nhập/npp/đại lý/vốn) hơn giá lẻ/bán
   { key: "price",    patterns: [/giá\s*(nhập|vốn|gốc|npp|đại lý|sỉ)/i, /giá\s*đại\s*l[íi]\b/i, /giá\s*bán\s*cho\s*đại\s*l[ýi]/i] },
-  { key: "price2",   patterns: [/đơn giá/i, /^giá$/i, /price/i, /thành tiền/i] },
+  { key: "price2",   patterns: [/đơn giá/i, /^giá$/i, /^unit\s*price$/i, /^price$/i] },
 ];
 
 function normalizeHeaderTextForPrice(v) {
@@ -48,6 +50,39 @@ function isStrongCostPriceLabel(label = "") {
 function isRetailLikePriceLabel(label = "") {
   const s = normalizeHeaderTextForPrice(label);
   return /ban\s*le|cong\s*bo|niem\s*yet|gia\s*moi|dieu\s*chinh|ap\s*dung|map|retail|public|list/.test(s);
+}
+
+function parseNumericCell(value) {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const raw = String(value).trim();
+  if (!raw) return 0;
+  const normalized = raw.replace(/\s/g, "");
+  if (/^\d{1,3}(?:[.,]\d{3})+$/.test(normalized)) {
+    const n = Number(normalized.replace(/[.,]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
+  const digits = normalized.replace(/[^\d.-]/g, "");
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function arithmeticPriceEvidence(rows, map) {
+  if (map?.quantity == null || map?.price == null || map?.lineTotal == null) return { tested: 0, matched: 0, ratio: 0 };
+  let tested = 0;
+  let matched = 0;
+  for (const row of rows || []) {
+    const qty = parseNumericCell(row?.text?.[map.quantity]);
+    const unitPrice = parseNumericCell(row?.text?.[map.price]);
+    const lineTotal = parseNumericCell(row?.text?.[map.lineTotal]);
+    if (!(qty > 0 && unitPrice >= 100 && lineTotal >= 100)) continue;
+    tested += 1;
+    const expected = qty * unitPrice;
+    const tolerance = Math.max(2, Math.round(Math.abs(lineTotal) * 0.002));
+    if (Math.abs(expected - lineTotal) <= tolerance) matched += 1;
+    if (tested >= 20) break;
+  }
+  return { tested, matched, ratio: tested ? matched / tested : 0 };
 }
 
 function pickSampleRows(rows, colIdx, sampleSize = 18) {
@@ -90,7 +125,7 @@ const DIMENSION_RE = /(?:^|\b)[LWH]?\s*\d{2,4}(?:[.,]\d+)?\s*[*x×]\s*[LWH]?\s*\
 const HIDDEN_SKU_HEADER_RE = /hình\s*ảnh|hinh\s*anh|^ảnh$|^anh$|image|photo|model\s*ẩn|ma\s*an/i;
 const FEATURE_HEADER_RE = /tính\s*năng|tinh\s*nang|phương\s*thức|phuong\s*thuc|mở\s*khóa|mo\s*khoa|chức\s*năng|chuc\s*nang|đặc\s*điểm|dac\s*diem/i;
 const NAME_SOURCE_HEADER_RE = /thông\s*số|thong\s*so|kỹ\s*thuật|ky\s*thuat|quy\s*cách|qui\s*cách|quy\s*cach|mô\s*tả|mo\s*ta|tính\s*năng|tinh\s*nang|đặc\s*điểm|dac\s*diem/i;
-const TIER_PRICE_HEADER_RE = /(^|\b)(từ|tu)\s*\d+|trên\s*\d+|tren\s*\d+|\d+\s*[-–]\s*\d+\s*bộ|\d+\s*bo|số\s*lượng|so\s*luong|quantity\s*break|bulk|tier/i;
+const TIER_PRICE_HEADER_RE = /(^|\b)(từ|tu)\s*\d+|trên\s*\d+|tren\s*\d+|\d+\s*[-–]\s*\d+\s*bộ|\d+\s*bo|quantity\s*break|bulk|tier/i;
 const EFFECTIVE_PRICE_DATE_RE = /(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/;
 // Header chắc chắn KHÔNG phải cột tên — không được suy luận chọn làm name.
 // Ngăn bug chọn nhầm "Bảo hành"/"Số lượng"/"Xuất xứ" làm cột tên khi file thiếu cột tên thật.
@@ -174,6 +209,7 @@ export function mapColumns(headerRow, dataRows, maxCol) {
           } else if (map[rule.key] == null) {
             map[rule.key] = c;
             used.add(c);
+            if (rule.key === "name" && /tên\s*(sản\s*phẩm|hàng|thiết\s*bị|vật\s*tư)|hàng\s*ho[áa]|product\s*name/i.test(label)) map._lockedName = true;
             if (["currentListPrice", "listPrice", "minRetailPrice"].includes(rule.key)) rememberPriceScale(map, c, label);
           }
           break;
@@ -189,7 +225,7 @@ export function mapColumns(headerRow, dataRows, maxCol) {
   const featureCols = collectHeaderCols(headerRow, maxCol, FEATURE_HEADER_RE);
   const nameSourceCols = collectHeaderCols(headerRow, maxCol, NAME_SOURCE_HEADER_RE);
   const tierPriceCols = collectHeaderCols(headerRow, maxCol, TIER_PRICE_HEADER_RE)
-    .filter((c) => c !== map.currentListPrice && c !== map.listPrice && c !== map.price && c !== map.sku && c !== map.name);
+    .filter((c) => c !== map.currentListPrice && c !== map.listPrice && c !== map.price && c !== map.quantity && c !== map.lineTotal && c !== map.sku && c !== map.name);
   if (hiddenSkuCols.length) map._hiddenSkuCols = hiddenSkuCols;
   if (featureCols.length) map._featureCols = featureCols;
   if (nameSourceCols.length) map._nameSourceCols = nameSourceCols;
@@ -292,6 +328,26 @@ export function mapColumns(headerRow, dataRows, maxCol) {
     }
   }
 
+  // ---- Quote-table evidence ----
+  // Một báo giá chuẩn có Tên + SL + Đơn giá (+ Thành tiền) là một schema khác catalog giá vốn.
+  // "Đơn giá" trong schema này được giữ làm giá fixed của báo giá cũ, nên không yêu cầu user
+  // xác nhận "giá mua vào". Nếu có Thành tiền, dùng arithmetic làm bằng chứng bổ sung.
+  const explicitUnitPrice = /đơn\s*giá|don\s*gia|unit\s*price/i.test(String(map._priceSourceLabel || ""));
+  const quoteHeaderShape = explicitUnitPrice && map.name != null && map.quantity != null && map.price != null && map.lineTotal != null;
+  if (quoteHeaderShape) {
+    map._quoteTable = true;
+    map._priceColUncertain = false;
+  }
+  if (map.quantity != null && map.price != null && map.lineTotal != null) {
+    const ev = arithmeticPriceEvidence(dataRows, map);
+    map._priceArithmeticEvidence = ev;
+    if (ev.tested >= 2 && ev.ratio >= 0.8 || (explicitUnitPrice && ev.tested >= 1 && ev.ratio === 1)) {
+      map._priceArithmeticConfirmed = true;
+      map._priceColUncertain = false;
+      map._quoteTable = true;
+    }
+  }
+
   // ---- Guardrail: nếu cột name thực chất là thông số dài, đổi sang cột tên ngắn hơn ----
   if (map.name != null) {
     const nameHeaderLabel = headerRow ? String(headerRow.text[map.name] || "").trim() : "";
@@ -329,7 +385,7 @@ export function mapColumns(headerRow, dataRows, maxCol) {
         delete map.name;
         map._deriveNameFromSku = true;
       }
-    } else if (looksLikeBadNameColumn(dataRows, map.name, 12) && map.sku != null) {
+    } else if (looksLikeBadNameColumn(dataRows, map.name, 12) && map.sku != null && !map._lockedName) {
       delete map.name;
       map._deriveNameFromSku = true;
     }
@@ -345,6 +401,9 @@ export function mapColumns(headerRow, dataRows, maxCol) {
   if (map.currentListPrice != null) conf += 0.09;
   if (map.sku != null) conf += 0.2;
   if (map.unit != null) conf += 0.05;
+  if (map.quantity != null) conf += 0.04;
+  if (map.lineTotal != null) conf += 0.04;
+  if (map._priceArithmeticConfirmed) conf += 0.08;
   if (map.specs != null) conf += 0.05;
 
   return { map, confidence: Math.min(1, conf) };

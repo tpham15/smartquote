@@ -23,8 +23,10 @@ const required = [
   'select option{background:var(--card);color:var(--ink);}',
   'input[type="checkbox"],input[type="radio"]{accent-color:var(--primary);}',
   ':root[data-theme="dark"] input:-webkit-autofill,',
-  '.ci-row-blocking td{background:var(--red-row-bg);}',
-  '.ci-row-review td{background:var(--amber-bg);}',
+  '.ci-row-blocking td{background:transparent;}',
+  '.ci-row-blocking td:first-child{box-shadow:inset 3px 0 0 var(--red);}',
+  '.ci-row-review td{background:transparent;}',
+  '.ci-row-review td:first-child{box-shadow:inset 3px 0 0 var(--amber);}',
   '.ci-summary-pills .ok,.ci-status.ok{background:var(--green-bg);color:var(--green);}',
   '.app-shell .brand-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--primary),var(--primary-d));',
 ];

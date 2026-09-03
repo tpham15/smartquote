@@ -19,6 +19,7 @@ const UNIT_ALLOW_RE = /^(cái|cai|chiếc|chiec|bộ|bo|bộ\.|cặp|cap|m|mét|
 const NON_PRODUCT_ROW_RE = /(^|\b)(hàng\s*đặt|hang\s*dat|thi\s*công|thi\s*cong|giao\s*hàng|giao\s*hang|vận\s*chuyển|van\s*chuyen|bảo\s*hành|bao\s*hanh|bảo\s*trì|bao\s*tri|thanh\s*toán|thanh\s*toan|điều\s*khoản|dieu\s*khoan|điều\s*kiện|dieu\s*kien|hiệu\s*lực|hieu\s*luc|hợp\s*đồng|hop\s*dong|tạm\s*ứng|tam\s*ung|nghiệm\s*thu|nghiem\s*thu|lưu\s*ý|luu\s*y|ghi\s*chú|ghi\s*chu)(\b|:)/i;
 const BILLABLE_SERVICE_ROW_RE = /(^|\b)(nhân\s*công|nhan\s*cong|công\s*lắp|cong\s*lap|lắp\s*đặt|lap\s*dat|thi\s*công|thi\s*cong|bảo\s*hành\s*mở\s*rộng|bao\s*hanh\s*mo\s*rong|khảo\s*sát|khao\s*sat|dịch\s*vụ|dich\s*vu)(\b|:)/i;
 const CONTACT_OR_BANK_RE = /(ngân\s*hàng|ngan\s*hang|tài\s*khoản|tai\s*khoan|số\s*tk|so\s*tk|hotline|website|email|địa\s*chỉ|dia\s*chi|mst|mã\s*số\s*thuế|ma\s*so\s*thue)/i;
+const DOCUMENT_METADATA_RE = /^\s*(khách\s*hàng|khach\s*hang|công\s*trình|cong\s*trinh|địa\s*điểm(?:\s*công\s*trình)?|dia\s*diem(?:\s*cong\s*trinh)?|điện\s*thoại|dien\s*thoai|số\s*điện\s*thoại|so\s*dien\s*thoai|số\s*báo\s*giá|so\s*bao\s*gia|ngày|ngay|email|người\s*báo\s*giá|nguoi\s*bao\s*gia|hạng\s*mục|hang\s*muc|mst|mã\s*số\s*thuế|ma\s*so\s*thue|showroom|vpgd)\s*[:：]/i;
 const SKU_CANDIDATE_RE = /\b(?:[A-Z]{2,}[A-Z0-9]*[-_/][A-Z0-9][A-Z0-9._\-/]{1,}|[A-Z]{2,}\d{2,}[A-Z0-9._\-/]*|[A-Z0-9]{2,}-[A-Z0-9]{2,}(?:[-_/][A-Z0-9]{1,})*)\b/g;
 
 function text(v) {
@@ -148,25 +149,31 @@ function looksLikePhoneNumberToken(token = "") {
 
 function extractPricesFromText(raw) {
   const s = String(raw ?? "");
+  if (DOCUMENT_METADATA_RE.test(s)) return [];
+  // Loại số điện thoại có dấu chấm/khoảng trắng trước khi tìm token tiền.
+  const scan = s.replace(/\b(?:0[35789]\d{2}|84[35789]\d{1,2})[.\s-]?\d{3}[.\s-]?\d{3}\b/g, " ");
   const candidates = [];
 
   // Số có đơn vị triệu/tr: 1,2 triệu / 1.2 tr / 12 triệu.
-  for (const m of s.matchAll(/\b(\d+(?:[,.]\d{1,2})?)\s*(triệu|tr|trieu)\b/gi)) {
+  // "tr" chỉ là đơn vị khi kết thúc token. Không match tiền tố của từ Việt như
+  // "1 Trình bày..." (JS \b coi ký tự có dấu là non-word nên regex cũ đọc nhầm thành 1 triệu).
+  for (const m of scan.matchAll(/\b(\d+(?:[,.]\d{1,2})?)\s*(triệu|trieu|tr)(?=\s|$|[đ₫.,;:)\]])/gi)) {
     const base = parseLocalizedPriceToken(m[1]);
     const n = Math.round(base * 1_000_000);
     if (Number.isFinite(n)) candidates.push(n);
   }
 
   // Các giá có dấu phân tách nghìn: 7.200.000, 7,200,000, 768.000đ
-  for (const m of s.matchAll(/\d{1,3}(?:[\.,]\d{3}){1,4}(?:\.\d{1,2})?/g)) {
+  for (const m of scan.matchAll(/\d{1,3}(?:[\.,]\d{3}){1,4}(?:\.\d{1,2})?/g)) {
     // Không biến định dạng US decimal 1,234.56 thành giá VND 123.456 hoặc 1.235.
     if (/^\d{1,3}(?:,\d{3})+\.\d{1,2}$/.test(m[0])) continue;
+    if (looksLikePhoneNumberToken(m[0])) continue;
     const n = parseLocalizedPriceToken(m[0]);
     if (Number.isFinite(n)) candidates.push(Math.round(n));
   }
 
   // Các số dài không có dấu phân cách: 7200000. Loại ngày YYYYMMDD.
-  for (const m of s.matchAll(/\b\d{5,10}\b/g)) {
+  for (const m of scan.matchAll(/\b\d{5,10}\b/g)) {
     const n = Number(m[0]);
     if (Number.isFinite(n) && !looksLikeYyyymmdd(n) && !looksLikePhoneNumberToken(m[0])) candidates.push(n);
   }
@@ -251,7 +258,7 @@ export function isLikelyBillableServiceRow(rawText) {
 export function isLikelyNonProductRow(rawText, opts = {}) {
   const raw = text(rawText);
   if (!raw) return false;
-  if (CONTACT_OR_BANK_RE.test(raw)) return true;
+  if (DOCUMENT_METADATA_RE.test(raw) || CONTACT_OR_BANK_RE.test(raw)) return true;
   if (!NON_PRODUCT_ROW_RE.test(raw)) return false;
   const sku = extractSkuFromText(raw);
   const prices = extractPricesFromText(raw);

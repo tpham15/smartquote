@@ -3,7 +3,7 @@
 // ============================================================
 import { classifyRow } from "./classifyRows.js";
 import { ROW_CLASS } from "./types.js";
-import { parseSafePrice, extractSkuFromText, extractSkuCandidatesFromText, isLikelyBillableServiceRow } from "./productSanitizer.js";
+import { parseSafePrice, extractSkuFromText, extractSkuCandidatesFromText, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow } from "./productSanitizer.js";
 import { inferCategory } from "./categoryInference.js";
 
 const PRICE_SCALE_SUSPECT_LIMIT = 1_000_000_000;
@@ -27,6 +27,20 @@ function parsePrice(s, scale = 1) {
   if (!base && safeScale > 1) base = parseDecimalForScaledColumn(s);
   if (!base) return 0;
   return Math.round(base * safeScale);
+}
+
+function parseQuantity(s) {
+  const raw = String(s ?? "").trim().replace(/\s/g, "");
+  if (!raw) return 0;
+  const n = Number(raw.replace(",", ".").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function isArithmeticMatch(qty, unitPrice, lineTotal) {
+  if (!(qty > 0 && unitPrice > 0 && lineTotal > 0)) return false;
+  const expected = qty * unitPrice;
+  const tolerance = Math.max(2, Math.round(Math.abs(lineTotal) * 0.002));
+  return Math.abs(expected - lineTotal) <= tolerance;
 }
 
 function priceScaleForCol(map, col) {
@@ -80,6 +94,14 @@ function normalizeAscii(v) {
 
 function cleanSkuForDisplay(sku) {
   return compactText(sku).replace(/\s+/g, " ").replace(/\s*[-–—]\s*/g, "-");
+}
+
+function looksLikeWarrantyPseudoSku(v) {
+  const s = normalizeAscii(v);
+  if (!s) return false;
+  // Quan sát thực tế từ báo giá cũ: ô "Mã thiết bị" có thể chứa "BH 36 tháng"
+  // do dữ liệu catalog lịch sử bị lệch cột. Đây là mô tả bảo hành, không phải model.
+  return /^(?:bh|bao\s*hanh)\s*\d{1,3}\s*(?:thang|nam|months?|years?)$/.test(s);
 }
 
 function cleanModelText(sku) {
@@ -249,6 +271,9 @@ function shortenFeatureForName(feature) {
 
 function shouldDeriveName(name, sku, map) {
   const n = compactText(name);
+  // Header tên sản phẩm rõ ràng là source-of-truth. Không được rút tên thương mại
+  // thành type + SKU chỉ vì profiler thấy dữ liệu ngắn/lặp.
+  if (map?._lockedName && n) return false;
   if (map?._deriveNameFromSku) return true;
   if (!n && sku) return true;
   if (!sku) return false;
@@ -311,7 +336,9 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   };
 
   let name = get("name");
-  let sku = cleanModelText(get("sku"));
+  const rawSkuCell = get("sku");
+  if (map?._quoteTable && looksLikeWarrantyPseudoSku(rawSkuCell)) return null;
+  let sku = cleanModelText(rawSkuCell);
   const hiddenSku = extractSkuFromHiddenCells(row, map);
   if (!sku && hiddenSku) sku = hiddenSku;
   const issues = [];
@@ -321,6 +348,8 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   let listPrice = currentListPrice || oldListPrice;
   let minRetailPrice = parsePrice(get("minRetailPrice"), priceScaleForKey(map, "minRetailPrice"));
   let specs = get("specs");
+  const quantity = parseQuantity(get("quantity"));
+  const lineTotal = parsePrice(get("lineTotal"), priceScaleForKey(map, "lineTotal"));
 
   const tierPrices = priceCandidatesFromCols(row, map._tierPriceCols || [], map)
     .filter((n) => n >= 1000 && (!currentListPrice || n <= currentListPrice * 1.05));
@@ -348,7 +377,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   if (price === 0) {
     const priceCandidates = [];
     for (let c = 0; c < row.text.length; c++) {
-      if (c === map.name || c === map.sku || c === map.listPrice || c === map.currentListPrice || c === map.minRetailPrice || (map._tierPriceCols || []).includes(c)) continue;
+      if (c === map.name || c === map.sku || c === map.quantity || c === map.lineTotal || c === map.listPrice || c === map.currentListPrice || c === map.minRetailPrice || (map._tierPriceCols || []).includes(c)) continue;
       const n = parsePrice(row.text[c], priceScaleForCol(map, c));
       if (n > 0) priceCandidates.push(n);
     }
@@ -408,6 +437,11 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   if (!name || name.length < 2) return null;
   if (!sku && /^sản phẩm$/i.test(compactText(name))) return null;
 
+  // Báo giá cũ đôi khi lưu chính tên section/group vào cột Tên hoặc Mã,
+  // rồi gắn giá tổng nhóm như thể là một sản phẩm. Ở catalog import, đây không
+  // phải product identity và phải bị loại dù hàng có SL/Đơn giá.
+  if (map?._quoteTable && (isLikelyOldQuoteSectionRow(name) || isLikelyOldQuoteSectionRow(sku))) return null;
+
   // Generic subtotal guard: tên chỉ là LOẠI sản phẩm chung + KHÔNG có SKU + specs rỗng
   // → nghi là dòng tổng nhóm (category subtotal), không phải sản phẩm thật.
   // Ví dụ: một dòng tên nhóm chung, không SKU/specs, có thể chỉ là subtotal của các dòng bên dưới.
@@ -416,7 +450,27 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
 
   const cellRefs = row.cells.map((c) => c.ref);
   maybePushPriceScaleIssues(issues, map, price);
+
+  if (quantity > 0 && price > 0 && lineTotal > 0) {
+    if (isArithmeticMatch(quantity, price, lineTotal)) {
+      issues.push(issue("line_total_verified", "info", "Đã xác nhận Đơn giá × Số lượng = Thành tiền", "costPrice"));
+    } else {
+      issues.push(issue("line_total_mismatch", "warning", "Đơn giá × Số lượng không khớp Thành tiền", "costPrice", "Kiểm tra lại số lượng, đơn giá và thành tiền"));
+    }
+  }
+
   const kind = isLikelyBillableServiceRow(row.joined) ? "service" : "product";
+  // Catalog import từ báo giá: nhân công/thi công là charge của chứng từ, không phải product master.
+  if (map?._quoteTable && kind === "service") return null;
+
+  // Trong báo giá, "Đơn giá" là giá bán đã chốt trên chứng từ, không phải bằng chứng của giá vốn.
+  // Giữ nó ở fixed/listPrice để màn báo giá không cộng markup thêm một lần nữa.
+  const quoteUnitPrice = !!map?._quoteTable && /đơn\s*giá|don\s*gia|unit\s*price/i.test(String(map?._priceSourceLabel || ""));
+  if (quoteUnitPrice && price > 0 && listPrice === 0) {
+    listPrice = price;
+    issues.push(issue("quoted_unit_price_as_fixed", "info", "Đơn giá từ báo giá cũ được giữ làm giá cố định", "listPrice"));
+  }
+
   if (kind === "service") {
     if (!/dịch vụ|nhân công|thi công|lắp đặt|bảo hành/i.test(String(earlyCategory || ""))) {
       // Giữ category cũ nếu đã có; sanitizer/inference vẫn có thể điều chỉnh ở bước sau.
@@ -435,7 +489,9 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
     costPrice: price,
     listPrice,
     minRetailPrice,
-    priceMode: listPrice > 0 ? "fixed" : "markup",
+    priceMode: (listPrice > 0 || map?._quoteTable) ? "fixed" : "markup",
+    quantity: quantity || undefined,
+    lineTotal: lineTotal || undefined,
     specs,
     _priceStrategy: currentListPrice > 0 ? {
       type: "effective_list_price",
@@ -462,11 +518,11 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
  * @param {import('./types').NormalizedSheet} sheet
  * @param {import('./types').Region} region
  * @param {import('./types').ColumnMap} map
- * @param {number} headerIndex - chỉ số dòng header (loại trừ)
+ * @param {number} headerSourceRow - row.r của dòng header (loại trừ)
  * @param {string} fileSupplier
  * @returns {Object[]}
  */
-export function extractItemsWithStats(sheet, region, map, headerIndex, fileSupplier) {
+export function extractItemsWithStats(sheet, region, map, headerSourceRow, fileSupplier) {
   const items = [];
   const stats = { totalRows: 0, products: 0, notes: 0, totals: 0, sections: 0, blank: 0, headers: 0, skipped: 0 };
   const opt = { priceCol: map.price ?? null, nameCol: map.name ?? null, maxCol: sheet.maxCol };
@@ -474,8 +530,8 @@ export function extractItemsWithStats(sheet, region, map, headerIndex, fileSuppl
 
   // lấy các row trong [startRow, endRow] theo r-index
   for (const row of sheet.rows) {
+    if (Number.isInteger(headerSourceRow) && headerSourceRow >= 0 && row.r <= headerSourceRow) { if (row.r === headerSourceRow) stats.headers += 1; continue; }
     if (row.r < region.startRow || row.r > region.endRow) continue;
-    if (row.r === headerIndex) { stats.headers += 1; continue; }
     stats.totalRows += 1;
 
     const cls = classifyRow(row, opt);
@@ -499,8 +555,8 @@ export function extractItemsWithStats(sheet, region, map, headerIndex, fileSuppl
   return { items, stats };
 }
 
-export function extractItems(sheet, region, map, headerIndex, fileSupplier) {
-  return extractItemsWithStats(sheet, region, map, headerIndex, fileSupplier).items;
+export function extractItems(sheet, region, map, headerSourceRow, fileSupplier) {
+  return extractItemsWithStats(sheet, region, map, headerSourceRow, fileSupplier).items;
 }
 
 export { parsePrice, rowToItem };

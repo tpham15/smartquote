@@ -5335,12 +5335,29 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       notify.warning("File không có đủ dữ liệu (cần ít nhất 1 dòng tiêu đề + dòng data).");
       return;
     }
-    // Tìm hàng header — hàng có nhiều text nhất trong 10 dòng đầu
+    // Tìm hàng header theo NGỮ NGHĨA, không theo "nhiều chữ nhất". Báo giá thường có
+    // 5–12 dòng metadata (khách hàng, địa điểm, điện thoại...) trước bảng sản phẩm.
+    // Scoring semantic tránh chọn nhầm metadata làm header khi user mở "Sửa mapping".
     let headerRowIdx = 0;
-    let maxTextCells = 0;
-    for (let i = 0; i < Math.min(10, rows.length); i++) {
-      const textCount = (rows[i] || []).filter(c => c && String(c).trim().length > 1 && isNaN(c)).length;
-      if (textCount > maxTextCells) { maxTextCells = textCount; headerRowIdx = i; }
+    let bestHeaderScore = -1;
+    for (let i = 0; i < Math.min(40, rows.length); i++) {
+      const candidate = (rows[i] || []).map((h, idx) => ({ label: String(h ?? `Cột ${idx + 1}`).trim(), idx }));
+      const guessed = guessCatalogColumnsByName(candidate);
+      const labels = candidate.map(h => h.label.toLowerCase()).filter(Boolean);
+      const hasQty = labels.some(x => /^(số\s*lượng|sl|qty|quantity)$/.test(x));
+      const hasUnitPrice = labels.some(x => /đơn\s*giá|unit\s*price/.test(x) && !/thành\s*tiền/.test(x));
+      const hasLineTotal = labels.some(x => /thành\s*tiền|line\s*total|amount/.test(x));
+      let score = 0;
+      if (guessed.name != null) score += 4;
+      if (guessed.sku != null) score += 3;
+      if (guessed.costPrice != null) score += 3;
+      if (guessed.unit != null) score += 1;
+      if (guessed.supplier != null) score += 1;
+      if (hasQty) score += 3;
+      if (hasUnitPrice) score += 4;
+      if (hasLineTotal) score += 3;
+      if (hasQty && hasUnitPrice && hasLineTotal && guessed.name != null) score += 8;
+      if (score > bestHeaderScore) { bestHeaderScore = score; headerRowIdx = i; }
     }
     const hdrs = (rows[headerRowIdx] || []).map((h, i) => ({ label: String(h ?? `Cột ${i+1}`).trim(), idx: i }));
     const dataRows = rows.slice(headerRowIdx + 1).filter(r => r.some(c => c !== null && c !== ""));
@@ -5388,10 +5405,14 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     try {
       const mapping = await autoMapCatalogColumnsWithClaude({ headers: hdrs, sampleRows, fileName });
       cloud?.refreshBilling?.();
-      const mapped = {};
-      Object.entries(mapping || {}).forEach(([k, v]) => { if (v !== null && v !== undefined) mapped[k] = String(v); });
+      // Deterministic-first: AI chỉ điền field còn thiếu, không ghi đè mapping rõ từ header
+      // (đặc biệt không đổi "Đơn giá" sang "Thành tiền").
+      const mapped = { ...guessed };
+      Object.entries(mapping || {}).forEach(([k, v]) => {
+        if ((mapped[k] === null || mapped[k] === undefined || mapped[k] === "") && v !== null && v !== undefined) mapped[k] = String(v);
+      });
       setColMap(mapped);
-      setAiStatus("✓ AI nhận diện xong");
+      setAiStatus("✓ Đã nhận diện cột — ưu tiên mapping chắc chắn từ header");
     } catch {
       setAiStatus(guessed.name ? "✓ Đã đoán cột theo tên — kiểm tra lại bên dưới" : "Chọn cột thủ công bên dưới");
     }
@@ -5408,10 +5429,15 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
   const buildPreview = () => {
     const selected = getManualSelectedRows();
+    const manualHeaderLabels = (headers || []).map(h => String(h?.label || "").toLowerCase());
+    const quoteTable = manualHeaderLabels.some(x => /đơn\s*giá|unit\s*price/.test(x))
+      && manualHeaderLabels.some(x => /thành\s*tiền|line\s*total|amount/.test(x))
+      && manualHeaderLabels.some(x => /^(số\s*lượng|sl|qty|quantity)$/.test(x));
     const rawPreview = buildCatalogPreview(selected.rows, colMap, {
       startRowIndex: selected.start - 1,
       defaultSupplier: file?.name?.replace(/\.(xlsx|xls)$/i, "") || "",
       sheetName: file?.name || "manual-mapping.xlsx",
+      quoteTable,
     });
     const learned = applyLearningIfAllowed(rawPreview, { fileName: file?.name || "manual-mapping.xlsx" });
     const result = sanitizeImportedProducts(learned.products, { fileName: file?.name || "manual-mapping.xlsx" });

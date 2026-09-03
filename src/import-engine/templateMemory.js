@@ -7,8 +7,8 @@ import { tenantStorageGetItem, tenantStorageSetItem, tenantStorageRemoveItem, te
 // Browser/localStorage first; later this can be swapped for backend DB.
 // ============================================================
 
-const ENGINE_TPL_KEY = "sq_import_templates";
-const CATALOG_TPL_PREFIX = "sq_catalog_template_";
+const ENGINE_TPL_KEY = "sq_import_templates_v2";
+const CATALOG_TPL_PREFIX = "sq_catalog_template_v2_";
 const MAX_ENGINE_TEMPLATES = 80;
 const MAX_CATALOG_TEMPLATES = 80;
 
@@ -82,7 +82,7 @@ export function saveEngineTemplateMapping(templateId, mappingBySheet, meta = {})
     all[templateId] = {
       mappingBySheet,
       savedAt: Date.now(),
-      version: 1,
+      version: 2,
       ...meta,
     };
     const keys = Object.keys(all);
@@ -114,7 +114,7 @@ export function saveCatalogTemplate({ headers = [], fileName = "", colMap = {}, 
     name: name || supplierKeyFromFileName(fileName) || fileName || "Template catalog",
     fileName,
     savedAt: Date.now(),
-    version: 1,
+    version: 2,
     signature: buildCatalogTemplateSignature(headers, fileName),
     colMap: { ...(colMap || {}) },
     manualStartRow,
