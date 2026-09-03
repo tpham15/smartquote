@@ -5472,7 +5472,16 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     const productIssues = p?._meta?.issues || p?.issues || [];
     const line = Number.isInteger(index) ? getLineForProductIndex(index, p) : null;
     const lineIssues = line?.issues || [];
-    return [...productIssues, ...lineIssues].filter(Boolean);
+    const seen = new Set();
+    return [...productIssues, ...lineIssues].filter(Boolean).filter((it) => {
+      // Info/provenance belongs in diagnostics, not in the customer-facing
+      // “Vấn đề” column and must never make a clean row require review.
+      if (issueLevel(it) === "info") return false;
+      const sig = `${issueCode(it)}:${typeof it === "string" ? it : (it?.message || "")}`;
+      if (seen.has(sig)) return false;
+      seen.add(sig);
+      return true;
+    });
   };
   const isPriceColumnUncertainIssue = (it) => issueCode(it) === "price_column_uncertain";
   const isPriceSafetyIssue = (it) => ["price_column_uncertain", "price_scaled_from_header", "price_scale_suspect"].includes(issueCode(it));
@@ -6228,7 +6237,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
 
             {importResult?.summary?.needReview > 0 && (
               <div className="ci-review-copy">
-                <span>Dòng vàng là các dòng SmartQuote chưa chắc chắn. Bạn có thể <strong>Sửa</strong>, <strong>Duyệt</strong> hoặc <strong>Xóa</strong> ngay trong app.</span>
+                <span>Dòng có vạch vàng là các dòng SmartQuote chưa chắc chắn. Bạn có thể <strong>Sửa</strong>, <strong>Duyệt</strong> hoặc <strong>Xóa</strong> ngay trong app.</span>
                 {getPreviewCounts(parsed).warningOnly > 0 ? <button type="button" className="ci-inline-link" onClick={approveAllPreviewRows}>Duyệt nhanh cảnh báo nhẹ</button> : null}
               </div>
             )}
@@ -8976,11 +8985,12 @@ const CSS = `
 .ci-error-nav{display:flex;gap:6px;margin-left:auto;}
 .ci-error-nav button{border:1px solid var(--line);background:var(--red-bg);color:var(--red);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;}
 .ci-error-nav button:disabled{opacity:.45;cursor:not-allowed;background:var(--surface2);color:var(--muted);border-color:var(--line);}
-.ci-row-blocking td{background:var(--red-row-bg);}
+.ci-row-blocking td{background:transparent;}
 .ci-row-blocking td:first-child{box-shadow:inset 3px 0 0 var(--red);}
-.ci-row-review td{background:var(--amber-bg);}
-.ci-row-focus td{box-shadow:inset 0 2px 0 var(--red), inset 0 -2px 0 var(--red);}
-.ci-row-focus td:first-child{box-shadow:inset 3px 0 0 var(--red), inset 0 2px 0 var(--red), inset 0 -2px 0 var(--red);}
+.ci-row-review td{background:transparent;}
+.ci-row-review td:first-child{box-shadow:inset 3px 0 0 var(--amber);}
+.ci-row-focus td{box-shadow:inset 0 2px 0 var(--primary), inset 0 -2px 0 var(--primary);}
+.ci-row-focus td:first-child{box-shadow:inset 3px 0 0 var(--primary), inset 0 2px 0 var(--primary), inset 0 -2px 0 var(--primary);}
 .ci-warnings{font-size:12px;color:var(--amber);display:flex;flex-direction:column;gap:3px;}
 .ci-status{display:inline-block;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;background:var(--bg);color:var(--text2);}
 .ci-source{font-size:10.5px;color:var(--muted);font-weight:400;margin-top:2px;}
@@ -9134,8 +9144,10 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .ci-mini-ok{border-color:var(--line)!important;background:var(--green-bg)!important;color:var(--green)!important;}
 .ci-review-copy{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber);border-radius:12px;padding:9px 11px;font-size:12.5px;line-height:1.5;margin-bottom:10px;}
 
-.ci-row-price-warn td{background:var(--amber-bg)!important;}
-.ci-row-price-danger td{background:var(--amber-bg)!important;box-shadow:inset 3px 0 0 var(--amber-line);}
+.ci-row-price-warn td{background:transparent!important;}
+.ci-row-price-warn td:first-child{box-shadow:inset 3px 0 0 var(--amber);}
+.ci-row-price-danger td{background:transparent!important;}
+.ci-row-price-danger td:first-child{box-shadow:inset 3px 0 0 var(--amber);}
 .ci-price-tag{display:inline-flex;align-items:center;gap:4px;width:max-content;border-radius:999px;padding:3px 8px;margin:0 0 5px;font-size:11px;font-weight:900;letter-spacing:.01em;}
 .ci-price-tag.warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line);}
 .ci-price-tag.danger{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line);}

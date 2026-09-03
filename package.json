@@ -94,9 +94,10 @@
     "setup:phase13.1F:paddle-api": "bash scripts/phase131f-setup-official-api.sh",
     "doctor:phase13.1F:paddle-api": "node scripts/phase131f-doctor.mjs",
     "bench:phase13.1F:paddle-api": "node scripts/phase131f-run-official-api.mjs",
-    "smoke:phase14.0": "npm run smoke:phase14.0:vat && npm run smoke:phase14.0:quote-table-pdf && node scripts/phase140-pilot-reliability-smoke.mjs && npm run smoke:core-review && npm run smoke:pdf && npm run smoke:import && npm run smoke:phase12.6.1 && npm run smoke:phase12.6 && npm run smoke:dark-mode-step6 && npm run smoke:phase12.5.6 && npm run smoke:phase12.5.5 && npm run smoke:phase12.4.3 && npm run smoke:tenant && npm run smoke:white-label && npm run smoke:phase12.4.1",
+    "smoke:phase14.0": "npm run smoke:phase14.0:vat && npm run smoke:phase14.0:quote-table-pdf && npm run smoke:phase14.0:catalog-preview && node scripts/phase140-pilot-reliability-smoke.mjs && npm run smoke:core-review && npm run smoke:pdf && npm run smoke:import && npm run smoke:phase12.6.1 && npm run smoke:phase12.6 && npm run smoke:dark-mode-step6 && npm run smoke:phase12.5.6 && npm run smoke:phase12.5.5 && npm run smoke:phase12.4.3 && npm run smoke:tenant && npm run smoke:white-label && npm run smoke:phase12.4.1",
     "smoke:phase14.0:vat": "node scripts/phase140-vat-smoke.mjs && python3 scripts/phase140-vat-excel-smoke.py",
-    "smoke:phase14.0:quote-table-pdf": "node scripts/phase140-quote-table-pdf-smoke.mjs"
+    "smoke:phase14.0:quote-table-pdf": "node scripts/phase140-quote-table-pdf-smoke.mjs",
+    "smoke:phase14.0:catalog-preview": "node scripts/phase140-catalog-preview-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

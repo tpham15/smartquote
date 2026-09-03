@@ -36,8 +36,44 @@ function normalizePrice(value) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function repairVietnameseGlyphSpacing(value) {
+  const source = String(value ?? "").normalize("NFC");
+  const tokens = source.split(/\s+/).filter(Boolean);
+  const single = (token) => /^\p{L}$/u.test(token || "");
+  const marked = (token) => /^[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]$/iu.test(token || "");
+  const out = [];
+  for (let i = 0; i < tokens.length;) {
+    if (single(tokens[i]) && marked(tokens[i + 1])) {
+      if (single(tokens[i + 2])) {
+        out.push(tokens[i] + tokens[i + 1] + tokens[i + 2]);
+        i += 3;
+      } else {
+        out.push(tokens[i] + tokens[i + 1]);
+        i += 2;
+      }
+      continue;
+    }
+    out.push(tokens[i]);
+    i += 1;
+  }
+  return out.join(" ");
+}
+
+
 function normalizeText(value) {
-  return String(value ?? "").replace(/\s+/g, " ").trim();
+  return repairVietnameseGlyphSpacing(String(value ?? "").replace(/[\uFFFE\uFFFF]/g, "-")).replace(/\s+/g, " ").trim();
+}
+
+function normalizePdfSku(value) {
+  return String(value ?? "")
+    .normalize("NFC")
+    .replace(/[\uFFFE\uFFFF]/g, "-")
+    .replace(/\s*[-–—]\s*/g, "-")
+    .replace(/\s*\/\s*/g, "/")
+    .replace(/\s+/g, "")
+    .replace(/-{2,}/g, "-")
+    .replace(/^[-/]+|[-/]+$/g, "")
+    .trim();
 }
 
 function isLumiLightingContext(ctx = {}) {
@@ -229,13 +265,9 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
   } else if (isHeuristic && evidence.autoApprove) {
     meta.canonicalStatus = "auto_approved";
     meta.status = "new";
-    meta.confidence = Math.max(Number(meta.confidence || 0), hasClearSku(item.sku) ? 0.84 : 0.78);
-    issues.push(simpleIssue(
-      "pdf_positive_evidence_checked",
-      "info",
-      `Đủ bằng chứng sản phẩm (${evidence.reasons.join(", ")})`,
-      "name"
-    ));
+    meta.confidence = Math.max(Number(meta.confidence || 0), evidence.signals?.quoteArithmeticMatched ? 0.92 : (hasClearSku(item.sku) ? 0.86 : 0.8));
+    // Positive evidence is provenance, not a user-facing problem. Keep it in
+    // productEvidence instead of issues so clean rows remain visually clean.
   } else if (isHeuristic) {
     meta.canonicalStatus = meta.canonicalStatus || "need_review";
     meta.status = meta.status || "review";
@@ -243,7 +275,7 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
     issues.push(simpleIssue(
       "pdf_ocr_uncertain",
       "warning",
-      `${OCR_UNCERTAIN_MESSAGE} · evidence ${evidence.score}`,
+      "PDF chưa đủ chắc chắn — vui lòng đối chiếu tên, mã và giá với nguồn",
       "name",
       "Bấm nguồn để đối chiếu; Sửa nếu tên/giá chưa đúng; Xóa nếu đây là dòng rác"
     ));
@@ -718,7 +750,7 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
       const sanitized = sanitizeCatalogProduct({
         id: uid("imp"),
         name,
-        sku: normalizeText(it.sku),
+        sku: normalizePdfSku(it.sku),
         category: normalizeText(it.category) || "Chung",
         supplier: normalizeText(it.supplier) || supplierGuess,
         unit: normalizeText(it.unit) || "Cái",
@@ -942,13 +974,107 @@ function mergePdfDuplicates(oldItem, item) {
   return merged;
 }
 
+function skuIdentityKey(value = "") {
+  return normalizePdfSku(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function skuIdentityCompatible(a = "", b = "") {
+  const ka = skuIdentityKey(a);
+  const kb = skuIdentityKey(b);
+  if (!ka || !kb) return !ka || !kb;
+  if (ka === kb) return true;
+  const shorter = ka.length <= kb.length ? ka : kb;
+  const longer = ka.length > kb.length ? ka : kb;
+  // PDF/AI commonly drops a wrapped suffix (e.g. LM-2G2W vs LM-2G2W-C(G)).
+  // Prefix matching is allowed only for a substantial model stem.
+  return shorter.length >= 6 && longer.startsWith(shorter);
+}
+
+function canonicalProductNameKey(value = "") {
+  return normalizeVietnameseKey(normalizeText(value))
+    .replace(/\b(?:cai|chiec|bo|set|pcs?)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isStrongQuoteTableBaseline(items = []) {
+  const active = (items || []).filter((x) => x && x?._meta?.canonicalStatus !== "skipped" && !x?._skipReason);
+  if (active.length < 3) return false;
+  const arithmetic = active.filter((x) => !!x?._meta?.productEvidence?.quoteArithmeticMatched).length;
+  const grounded = active.filter((x) => !!x?._meta?.source?.bbox).length;
+  return arithmetic >= 3 && arithmetic / active.length >= 0.7 && grounded / active.length >= 0.7;
+}
+
+function findCompatibleProductIndex(items = [], item = {}) {
+  const sku = normalizePdfSku(item?.sku);
+  const name = canonicalProductNameKey(item?.name);
+  let best = -1;
+  let bestScore = -1;
+  for (let i = 0; i < items.length; i++) {
+    const existing = items[i];
+    const existingSku = normalizePdfSku(existing?.sku);
+    const existingName = canonicalProductNameKey(existing?.name);
+    let score = 0;
+    if (sku && existingSku && skuIdentityKey(sku) === skuIdentityKey(existingSku)) score += 6;
+    else if (sku && existingSku && skuIdentityCompatible(sku, existingSku)) score += 4;
+    if (name && existingName && name === existingName) score += 5;
+    else if (name && existingName && (name.includes(existingName) || existingName.includes(name)) && Math.min(name.length, existingName.length) >= 12) score += 2;
+    if (Number(item?.costPrice || 0) > 0 && Number(existing?.costPrice || 0) === Number(item?.costPrice || 0)) score += 1;
+    if (score > bestScore) { bestScore = score; best = i; }
+  }
+  return bestScore >= 5 ? best : -1;
+}
+
+function enrichDeterministicQuoteAnchor(anchor = {}, ai = {}) {
+  const anchorMeta = anchor?._meta || {};
+  const aiSpecs = normalizeText(ai?.specs);
+  const anchorSpecs = normalizeText(anchor?.specs);
+  return {
+    ...anchor,
+    // Identity + arithmetic-verified price stay deterministic. AI is enrichment only.
+    name: normalizeText(anchor?.name),
+    sku: normalizePdfSku(anchor?.sku),
+    costPrice: Number(anchor?.costPrice || 0) || 0,
+    listPrice: Number(anchor?.listPrice || 0) || 0,
+    publicPrice: Number(anchor?.publicPrice || anchor?.listPrice || 0) || 0,
+    supplier: normalizeText(anchor?.supplier || ai?.supplier),
+    specs: [anchorSpecs, aiSpecs && aiSpecs !== anchorSpecs ? aiSpecs : ""].filter(Boolean).join(" | ").slice(0, 1000),
+    image: anchor?.image || ai?.image || "",
+    _meta: {
+      ...anchorMeta,
+      issues: [...(anchorMeta.issues || [])],
+      canonicalStatus: anchorMeta.canonicalStatus || "auto_approved",
+      status: anchorMeta.status || "new",
+      confidence: Math.max(Number(anchorMeta.confidence || 0), 0.9),
+      aiEnriched: true,
+    },
+  };
+}
+
+function mergeQuoteTableCandidates(heuristicItems = [], aiItems = [], opts = {}) {
+  const base = dedupeProducts(heuristicItems, opts);
+  if (!isStrongQuoteTableBaseline(heuristicItems)) {
+    return dedupeProducts([...heuristicItems, ...aiItems], opts);
+  }
+  // When a selectable-text quotation has arithmetic-verified, grounded rows,
+  // deterministic table extraction is the source of truth. AI may enrich a
+  // matching product, but cannot invent extra catalog identities.
+  for (const ai of aiItems || []) {
+    if (!ai || ai?._meta?.canonicalStatus === "skipped" || ai?._skipReason) continue;
+    const idx = findCompatibleProductIndex(base, ai);
+    if (idx < 0) continue;
+    base[idx] = enrichDeterministicQuoteAnchor(base[idx], ai);
+  }
+  return base;
+}
+
 function dedupeProducts(items, opts = {}) {
   const aliasMap = new Map();
   const out = [];
 
   function keysFor(item) {
-    const sku = normalizeText(item?.sku).toLowerCase().replace(/[\s\-\/\._()]/g, "");
-    const name = normalizeVietnameseKey(stripLightingVariantFromName(item?.name));
+    const sku = skuIdentityKey(item?.sku).toLowerCase();
+    const name = canonicalProductNameKey(stripLightingVariantFromName(item?.name));
     return { sku: sku ? `sku:${sku}` : "", name: name ? `name:${name}` : "" };
   }
   function bindAliases(item, index) {
@@ -977,10 +1103,11 @@ function dedupeProducts(items, opts = {}) {
     if (idx == null && keys.name && aliasMap.has(keys.name)) {
       const candidateIdx = aliasMap.get(keys.name);
       const existing = out[candidateIdx];
-      const a = normalizeText(existing?.sku);
-      const b = normalizeText(item?.sku);
-      // Name aliases are only safe when one side lacks SKU or both agree.
-      if (!a || !b || keysFor(existing).sku === keys.sku) idx = candidateIdx;
+      const a = normalizePdfSku(existing?.sku);
+      const b = normalizePdfSku(item?.sku);
+      // Same canonical name can merge a truncated wrapped SKU only when model
+      // stems are compatible; unrelated non-empty SKUs remain separate products.
+      if (!a || !b || skuIdentityCompatible(a, b)) idx = candidateIdx;
     }
 
     if (idx != null) {
@@ -1124,8 +1251,8 @@ function columnParts(row = {}, minX = -Infinity, maxX = Infinity) {
 }
 
 function compactSkuFragments(parts = []) {
-  const raw = parts.map((p) => normalizeText(p.str)).filter(Boolean).join("");
-  return raw.replace(/\s+/g, "").replace(/-{2,}/g, "-").replace(/^[-/]+|[-/]+$/g, "");
+  const raw = parts.map((p) => String(p?.str || "")).filter(Boolean).join("");
+  return normalizePdfSku(raw);
 }
 
 function reconstructPdfTableRow(page = {}, rowIndex = 0, layout = null) {
@@ -1141,8 +1268,9 @@ function reconstructPdfTableRow(page = {}, rowIndex = 0, layout = null) {
   const unitMin = supplierMax;
   const unitMax = (layout.unitX + layout.qtyX) / 2;
 
-  const nameParts = [...columnParts(row, nameMin, nameMax)];
-  const skuParts = [...columnParts(row, skuMin, skuMax)];
+  const columnTolerance = 8;
+  const nameParts = [...columnParts(row, Math.max(0, nameMin - columnTolerance), nameMax - 2)];
+  const skuParts = [...columnParts(row, skuMin - columnTolerance, skuMax - 4)];
   // Wrapped table cells continue on following visual lines at the same x column.
   // Only append the name fragment when that continuation line also carries SKU text;
   // otherwise it is usually the long description/specs cell.
@@ -1150,10 +1278,10 @@ function reconstructPdfTableRow(page = {}, rowIndex = 0, layout = null) {
     const next = rows[j];
     const nextMoney = extractMoneyValues(next.text || "");
     if (nextMoney.length >= 1) break; // next product/subtotal row
-    const nextSku = columnParts(next, skuMin, skuMax);
+    const nextSku = columnParts(next, skuMin - columnTolerance, skuMax - 4);
     if (!nextSku.length) break;
     skuParts.push(...nextSku);
-    nameParts.push(...columnParts(next, nameMin, nameMax));
+    nameParts.push(...columnParts(next, Math.max(0, nameMin - columnTolerance), nameMax - 2));
   }
 
   const name = normalizeText(nameParts.map((p) => p.str).join(" ")).replace(/^\d+[.)\-\s]+/, "");
@@ -1369,7 +1497,7 @@ export async function parsePdfCatalogWithPipeline(params) {
   }
 
   const aiItems = normalizePdfItems(aiRaw, supplierGuess, "pdf-v3-ai-jsonl");
-  const finalItems = dedupeProducts([...heuristicItems, ...aiItems], { fileName: file.name, supplierGuess });
+  const finalItems = mergeQuoteTableCandidates(heuristicItems, aiItems, { fileName: file.name, supplierGuess });
 
   if (finalItems.length) {
     const warn = [];
@@ -1423,4 +1551,9 @@ export {
   classifyPdfStructuralRow,
   inferPdfTableColumnLayout,
   reconstructPdfTableRow,
+  repairVietnameseGlyphSpacing,
+  normalizePdfSku,
+  skuIdentityCompatible,
+  isStrongQuoteTableBaseline,
+  mergeQuoteTableCandidates,
 };

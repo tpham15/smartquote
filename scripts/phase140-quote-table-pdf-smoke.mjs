@@ -6,6 +6,10 @@ import {
   dedupeProducts,
   inferPdfQuoteRowEconomics,
   classifyPdfStructuralRow,
+  repairVietnameseGlyphSpacing,
+  normalizePdfSku,
+  skuIdentityCompatible,
+  mergeQuoteTableCandidates,
 } from "../src/import-engine/pdf/pdfCatalogPipeline.js";
 
 const part = (x, str) => ({ x, width: Math.max(6, str.length * 5), height: 10, str });
@@ -20,6 +24,12 @@ const productRow = (stt, nameParts, skuParts, supplier, unit, qty, unitPrice, to
   [part(53, String(stt)), ...nameParts.map((v, i) => part(76 + i * 20, v)), ...skuParts.map((v, i) => part(235 + i * 18, v)), part(309, supplier), part(374, unit), part(408, String(qty)), part(437, `${unitPrice}đ`), part(500, `${total}đ`)],
 );
 
+
+assert.equal(repairVietnameseGlyphSpacing("Công t ắ c c ơ thông minh"), "Công tắc cơ thông minh");
+assert.equal(normalizePdfSku("LM-2G2W\uFFFE C(G)"), "LM-2G2W-C(G)");
+assert.equal(normalizePdfSku("DS- 2CD1047G2H- LIUF"), "DS-2CD1047G2H-LIUF");
+assert.equal(skuIdentityCompatible("LM-2G2W", "LM-2G2W-C(G)"), true);
+assert.equal(skuIdentityCompatible("LM-2G2W", "LM-3G2W-C(G)"), false);
 assert.deepEqual(classifyPdfStructuralRow("MST: 0123456789 · ĐT: 0900 123 456").kind, "header_contact");
 assert.deepEqual(classifyPdfStructuralRow("II. Tầng 2 86.004.000đ"), { kind: "section_subtotal", catalogEligible: false, category: "Tầng 2" });
 assert.deepEqual(classifyPdfStructuralRow("Nhân công, lập trình hệ thống (10%): 26.920.700đ").kind, "quote_summary_or_service");
@@ -67,6 +77,40 @@ assert.equal(merged.costPrice, 1080000);
 assert.equal(merged.sku, "LM-2G2W-C(G)");
 assert.equal(merged._meta.canonicalStatus, "auto_approved");
 assert.ok(!(merged._meta.issues || []).some((i) => ["price_unreasonable", "pdf_ocr_uncertain"].includes(i.code)));
+
+// Strong arithmetic-grounded quote tables use deterministic identities as the
+// catalog source of truth. AI may enrich a matching truncated SKU but cannot
+// append hallucinated products.
+const truncatedAi = normalizePdfItems([{
+  name: "Công t ắ c c ơ thông minh Lumes 2 nút", sku: "LM-2G2W", costPrice: 1080000,
+  rawText: "Công tắc cơ thông minh Lumes 2 nút", sourcePage: 1,
+}], "Báo giá khách hàng", "pdf-v3-ai-jsonl");
+const hallucinatedAi = normalizePdfItems([{
+  name: "Phí cấu hình hệ thống", sku: "AI-FAKE-01", costPrice: 999000,
+  rawText: "Phí cấu hình hệ thống 999.000đ", sourcePage: 1,
+}], "Báo giá khách hàng", "pdf-v3-ai-jsonl");
+const thirdDeterministic = {
+  ...normalized[0],
+  id: "third",
+  name: "Camera ngoài trời",
+  sku: "DS-TEST-01",
+  costPrice: 1935000,
+  _meta: {
+    ...(normalized[0]._meta || {}),
+    source: { ...(normalized[0]._meta?.source || {}), row: 9 },
+    productEvidence: { ...(normalized[0]._meta?.productEvidence || {}), quoteArithmeticMatched: true },
+    issues: [],
+    canonicalStatus: "auto_approved",
+    status: "new",
+  },
+};
+const deterministicQuote = [...normalized, thirdDeterministic];
+const quoteMerged = mergeQuoteTableCandidates(deterministicQuote, [...truncatedAi, ...hallucinatedAi], { fileName: "Báo giá khách hàng.pdf", supplierGuess: "Báo giá khách hàng" });
+assert.equal(quoteMerged.length, 3, "AI-only identities must not inflate an arithmetic-verified quote table");
+const quoteSwitch = quoteMerged.find((x) => x.name.includes("Lumes 2"));
+assert.equal(quoteSwitch.sku, "LM-2G2W-C(G)", "full deterministic SKU must beat truncated AI SKU");
+assert.equal(quoteSwitch._meta.canonicalStatus, "auto_approved");
+assert.equal((quoteSwitch._meta.issues || []).filter((i) => i.level !== "info").length, 0);
 
 console.log("✓ Phase 14.0 quote-table PDF fix smoke PASS");
 console.log("  SL × đơn giá = thành tiền confirms unit price");
