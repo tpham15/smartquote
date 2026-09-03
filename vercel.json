@@ -37,10 +37,5 @@
       "source": "/((?!api).*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/pdf-extract.js": {
-      "includeFiles": "node_modules/pdfjs-dist/**"
-    }
-  }
+  ]
 }
