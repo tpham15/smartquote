@@ -11,7 +11,7 @@
 import { normalizeWorkbook } from "./normalizeWorkbook.js";
 import { detectHeader } from "./detectHeader.js";
 import { mapColumns } from "./mapColumns.js";
-import { detectRegions } from "./detectRegions.js";
+import { detectRegions, isQuoteContextSubtotalRow } from "./detectRegions.js";
 import { extractItemsWithStats } from "./extractItems.js";
 import { matchCatalog } from "./matchCatalog.js";
 import { validateItems } from "./validateItems.js";
@@ -77,7 +77,7 @@ export async function runImport(file, ctx = {}) {
   // ---- Trích items từ tất cả sheet/region ----
   let allRaw = [];
   let minMapConf = 1;
-  const extractionStats = { totalRows: 0, skipped: 0, notes: 0, totals: 0, sections: 0, headers: 0, blank: 0, products: 0 };
+  const extractionStats = { totalRows: 0, skipped: 0, contextSubtotals: 0, notes: 0, totals: 0, sections: 0, headers: 0, blank: 0, products: 0 };
   for (const ps of perSheet) {
     const { sheet, headerRow, headerIndex, map, mapConfidence } = ps;
     minMapConf = Math.min(minMapConf, mapConfidence);
@@ -91,6 +91,11 @@ export async function runImport(file, ctx = {}) {
       quoteTable: !!map._quoteTable,
       minSourceRow: headerSourceRow,
     };
+    if (map._quoteTable) {
+      extractionStats.contextSubtotals += sheet.rows.filter((row) =>
+        row.r > headerSourceRow && isQuoteContextSubtotalRow(row, preMap)
+      ).length;
+    }
     const regions = detectRegions(sheet, preMap);
     for (const region of regions) {
       const out = extractItemsWithStats(sheet, region, map, headerSourceRow, wb.fileSupplier);
@@ -188,7 +193,8 @@ export async function runImport(file, ctx = {}) {
     // "skipped" chỉ dành cho dòng thật sự không phải catalog data. Occurrence trùng đã
     // được MERGE vào cùng product identity, không được báo là "dòng đã bỏ qua" vì dễ
     // khiến user nghĩ SmartQuote làm mất dữ liệu. Số merge vẫn nằm trong warnings/details.
-    skipped: extractionStats.skipped || 0,
+    skipped: (extractionStats.skipped || 0) + (extractionStats.contextSubtotals || 0),
+    contextSubtotals: extractionStats.contextSubtotals || 0,
     noteRows: extractionStats.notes || 0,
     matched: scored.filter((i) => i.status === STATUS.MATCHED).length,
     new: scored.filter((i) => i.status === STATUS.NEW).length,

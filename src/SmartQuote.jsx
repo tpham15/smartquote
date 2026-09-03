@@ -5023,12 +5023,22 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   ];
 
   const isOldQuoteImportForFile = (fileName = "") => importSourceKind === "old_quote" || isLikelyOldQuoteFileName(fileName);
-  const oldQuoteGuardSkipCount = (items = []) => (items || []).filter((p) => p?._meta?.oldQuoteGuardSkipped).length;
-  const oldQuoteGuardWarnings = (items = [], fileName = "") => {
-    const count = oldQuoteGuardSkipCount(items);
+  const isCatalogSkippedProduct = (p) => {
+    const status = String(p?._meta?.canonicalStatus || p?._meta?.status || p?.status || "").toLowerCase();
+    return status === "skipped" || !!p?._skipReason || !!p?._meta?.skipReason || !!p?._meta?.oldQuoteGuardSkipped;
+  };
+  const catalogSkipCount = (items = []) => (items || []).filter(isCatalogSkippedProduct).length;
+  const splitCatalogPreviewProducts = (items = []) => {
+    const all = (items || []).filter(Boolean);
+    const skipped = all.filter(isCatalogSkippedProduct);
+    const active = all.filter((p) => !isCatalogSkippedProduct(p));
+    return { active, skipped, skippedCount: skipped.length };
+  };
+  const catalogSkipWarnings = (items = [], fileName = "", upstreamSkipped = 0) => {
+    const count = catalogSkipCount(items) + Math.max(0, Number(upstreamSkipped) || 0);
     if (!count) return [];
     const modeText = isOldQuoteImportForFile(fileName) ? "báo giá cũ" : "file có cấu trúc báo giá";
-    return [`Đã bỏ qua ${count} dòng hạng mục/tổng nhóm từ ${modeText}; các dòng này không được lưu vào danh mục sản phẩm.`];
+    return [`Đã tự bỏ qua ${count} dòng không thuộc catalog từ ${modeText} (subtotal/nhóm/vật tư phụ/ngữ cảnh); các dòng này không được lưu vào danh mục sản phẩm.`];
   };
   const sanitizeImportedProducts = (items, opts = {}) => {
     const sourceName = opts.sourceFileName || opts.fileName || file?.name || "";
@@ -5125,13 +5135,17 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       else { seen[key] = deduped.length; deduped.push(p); }
     });
 
-    const cleanDeduped = sanitizeImportedProducts(deduped, { fileName: `${fileList.length} files` });
+    const cleanDedupedAll = sanitizeImportedProducts(deduped, { fileName: `${fileList.length} files` });
+    const cleanDedupedSplit = splitCatalogPreviewProducts(cleanDedupedAll);
+    const cleanDeduped = cleanDedupedSplit.active;
+    const upstreamSkipped = filePreviews.reduce((sum, p) => sum + Number(p?.summary?.skipped || 0), 0);
+    const totalSkipped = upstreamSkipped + cleanDedupedSplit.skippedCount;
     setParsed(cleanDeduped);
     setLearningNotice(totalLearningHits > 0 ? `✓ Áp dụng ${totalLearningHits} học từ lần sửa trước` : "");
     refreshLearningStats();
     const batchWarnings = [
       ...filePreviews.flatMap((p) => p?.warnings || []),
-      ...oldQuoteGuardWarnings(cleanDeduped, `${fileList.length} files`),
+      ...catalogSkipWarnings(cleanDedupedSplit.skipped, `${fileList.length} files`, upstreamSkipped),
     ];
     setImportResult(productsToImportPreviewResult({
       products: cleanDeduped,
@@ -5139,10 +5153,9 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       engine: "mixed",
       importType: "catalog_batch",
       warnings: batchWarnings,
-      summary: { skipped: filePreviews.reduce((sum, p) => sum + Number(p?.summary?.skipped || 0), 0) },
+      summary: { skipped: totalSkipped },
     }));
-    const skippedByOldQuoteGuard = oldQuoteGuardSkipCount(cleanDeduped);
-    setAiStatus(`✓ Đọc xong ${fileList.length} file — ${cleanDeduped.length - skippedByOldQuoteGuard} sản phẩm có thể nhập${skippedByOldQuoteGuard ? ` · bỏ qua ${skippedByOldQuoteGuard} dòng hạng mục/tổng nhóm` : ""}`);
+    setAiStatus(`✓ Đọc xong ${fileList.length} file — ${cleanDeduped.length} sản phẩm có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""}`);
     setStep("preview");
   };
 
@@ -5191,11 +5204,14 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
         return;
       }
       const learned = applyLearningIfAllowed(items, { fileName: f.name, detectedIndustry: preview?.detectedIndustry || result?.domain });
-      const cleanItems = sanitizeImportedProducts(learned.products, { fileName: f.name });
+      const cleanItemsAll = sanitizeImportedProducts(learned.products, { fileName: f.name });
+      const cleanItemsSplit = splitCatalogPreviewProducts(cleanItemsAll);
+      const cleanItems = cleanItemsSplit.active;
+      const upstreamSkipped = Number(preview?.summary?.skipped || 0);
+      const totalSkipped = upstreamSkipped + cleanItemsSplit.skippedCount;
       setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
       refreshLearningStats();
       setParsed(cleanItems);
-      const skippedByOldQuoteGuard = oldQuoteGuardSkipCount(cleanItems);
       setImportResult(productsToImportPreviewResult({
         products: cleanItems,
         fileName: f.name,
@@ -5203,17 +5219,17 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
         detectedIndustry: preview?.detectedIndustry || "unknown",
         detectedTemplateId: preview?.detectedTemplateId || null,
         templateKnown: !!preview?.templateKnown,
-        warnings: [...(preview?.warnings || []), ...oldQuoteGuardWarnings(cleanItems, f.name)],
-        summary: { skipped: (preview?.summary?.skipped || 0) + skippedByOldQuoteGuard, noteRows: preview?.summary?.noteRows || 0 },
+        warnings: [...(preview?.warnings || []), ...catalogSkipWarnings(cleanItemsSplit.skipped, f.name, upstreamSkipped)],
+        summary: { skipped: totalSkipped, noteRows: preview?.summary?.noteRows || 0 },
       }));
       const s = result.stats;
       setBatchLog([
-        `✓ ${f.name}: ${Math.max(0, cleanItems.length - skippedByOldQuoteGuard)} SP có thể nhập${skippedByOldQuoteGuard ? ` · bỏ qua ${skippedByOldQuoteGuard} dòng hạng mục/tổng nhóm` : ""} (${result.engine}${result.domain ? ", " + result.domain : ""})`,
+        `✓ ${f.name}: ${cleanItems.length} SP có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""} (${result.engine}${result.domain ? ", " + result.domain : ""})`,
         `   khớp catalog: ${s.matched} · mới: ${s.new} · cần xem: ${s.review} · loại: ${s.rejected}`,
         ...(result.warnings || []).map(w => `   ⚠ ${w}`),
-        ...oldQuoteGuardWarnings(cleanItems, f.name).map(w => `   ⏭ ${w}`),
+        ...catalogSkipWarnings(cleanItemsSplit.skipped, f.name, upstreamSkipped).map(w => `   ⏭ ${w}`),
       ]);
-      setAiStatus(`✓ Đọc xong — ${Math.max(0, cleanItems.length - skippedByOldQuoteGuard)} sản phẩm có thể nhập${skippedByOldQuoteGuard ? ` · bỏ qua ${skippedByOldQuoteGuard} dòng hạng mục/tổng nhóm` : ""}`);
+      setAiStatus(`✓ Đọc xong — ${cleanItems.length} sản phẩm có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""}`);
       setStep("preview");
       cloud?.refreshBilling?.();
     } catch (e) {
@@ -5236,21 +5252,24 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
         return;
       }
       const learned = applyLearningIfAllowed(items, { fileName: f.name, detectedIndustry: items.importPreview?.detectedIndustry || "pdf" });
-      const cleanItems = sanitizeImportedProducts(learned.products, { fileName: f.name });
+      const cleanItemsAll = sanitizeImportedProducts(learned.products, { fileName: f.name });
+      const cleanItemsSplit = splitCatalogPreviewProducts(cleanItemsAll);
+      const cleanItems = cleanItemsSplit.active;
+      const upstreamSkipped = Number(items.importPreview?.summary?.skipped || 0);
+      const totalSkipped = upstreamSkipped + cleanItemsSplit.skippedCount;
       setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
       refreshLearningStats();
       setParsed(cleanItems);
-      const skippedByOldQuoteGuard = oldQuoteGuardSkipCount(cleanItems);
       setImportResult(productsToImportPreviewResult({
         products: cleanItems,
         fileName: f.name,
         engine: items.importPreview?.engine || "pdf-v2",
         detectedIndustry: items.importPreview?.detectedIndustry || "pdf",
-        warnings: [...(items.importPreview?.warnings || []), ...oldQuoteGuardWarnings(cleanItems, f.name)],
-        summary: { skipped: (items.importPreview?.summary?.skipped || 0) + skippedByOldQuoteGuard },
+        warnings: [...(items.importPreview?.warnings || []), ...catalogSkipWarnings(cleanItemsSplit.skipped, f.name, upstreamSkipped)],
+        summary: { skipped: totalSkipped },
       }));
-      setBatchLog([`✓ ${f.name}: ${Math.max(0, cleanItems.length - skippedByOldQuoteGuard)} sản phẩm có thể nhập${skippedByOldQuoteGuard ? ` · bỏ qua ${skippedByOldQuoteGuard} dòng hạng mục/tổng nhóm` : ""}`]);
-      setAiStatus(`✓ AI đọc xong — ${Math.max(0, cleanItems.length - skippedByOldQuoteGuard)} sản phẩm có thể nhập${skippedByOldQuoteGuard ? ` · bỏ qua ${skippedByOldQuoteGuard} dòng hạng mục/tổng nhóm` : ""}`);
+      setBatchLog([`✓ ${f.name}: ${cleanItems.length} sản phẩm có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""}`]);
+      setAiStatus(`✓ AI đọc xong — ${cleanItems.length} sản phẩm có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""}`);
       setStep("preview");
       cloud?.refreshBilling?.();
     } catch (e) {
@@ -5440,7 +5459,9 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       quoteTable,
     });
     const learned = applyLearningIfAllowed(rawPreview, { fileName: file?.name || "manual-mapping.xlsx" });
-    const result = sanitizeImportedProducts(learned.products, { fileName: file?.name || "manual-mapping.xlsx" });
+    const resultAll = sanitizeImportedProducts(learned.products, { fileName: file?.name || "manual-mapping.xlsx" });
+    const resultSplit = splitCatalogPreviewProducts(resultAll);
+    const result = resultSplit.active;
     setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
     refreshLearningStats();
     setParsed(result);
@@ -5449,8 +5470,8 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       products: result,
       fileName: file?.name || "manual-mapping.xlsx",
       engine: "manual-column-mapping",
-      warnings: [...rangeWarnings, ...oldQuoteGuardWarnings(result, file?.name || "manual-mapping.xlsx")],
-      summary: { skipped: oldQuoteGuardSkipCount(result) },
+      warnings: [...rangeWarnings, ...catalogSkipWarnings(resultSplit.skipped, file?.name || "manual-mapping.xlsx")],
+      summary: { skipped: resultSplit.skippedCount },
     }));
     setStep("preview");
   };
@@ -6223,6 +6244,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <div><span>Correction evidence</span><strong>{correctionStats ? `${correctionStats.total} sự kiện · ${correctionStats.edited} sửa · ${correctionStats.approved} duyệt · ${correctionStats.deleted} xóa · ${correctionStats.unexported} chưa export` : "—"}</strong></div>
                 <div><span>Pilot evidence</span><strong><button type="button" className="btn-mini" onClick={exportPilotCorrectionEvidence} disabled={!correctionStats?.total}>Export JSON</button></strong></div>
                 <div><span>Nguồn</span><strong>{file?.name || "import"}</strong></div>
+                <div><span>Không thuộc catalog</span><strong>{importResult?.summary?.skipped ? `${importResult.summary.skipped} dòng tự bỏ qua` : "0"}</strong></div>
               </div>
               {learningNotice && <div className="ci-learning-note compact">{learningNotice}</div>}
               {(importResult?.warnings || []).length > 0 && (

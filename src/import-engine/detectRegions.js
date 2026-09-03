@@ -21,7 +21,7 @@ function numericCell(row, col) {
   return Number.isFinite(n) ? n : 0;
 }
 
-function isQuoteAggregateOnlyRow(row, preMap = {}) {
+export function isQuoteAggregateOnlyRow(row, preMap = {}) {
   if (!preMap.quoteTable || preMap.lineTotalCol == null) return false;
   const lineTotal = numericCell(row, preMap.lineTotalCol);
   if (!(lineTotal > 0)) return false;
@@ -31,6 +31,32 @@ function isQuoteAggregateOnlyRow(row, preMap = {}) {
   const sku = preMap.skuCol == null ? "" : String(row?.text?.[preMap.skuCol] || "").trim();
   // Dòng có mỗi thành tiền/tổng nhóm nhưng không có identity + SL + đơn giá là subtotal/header.
   return qty <= 0 && unitPrice <= 0 && !name && !sku;
+}
+
+function foldQuoteLabel(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Subtotal theo khu vực/tầng trong báo giá (vd. "Tầng 1 | 50.139.000").
+ * Đây là ngữ cảnh bố trí, không phải catalog identity. Tách riêng khỏi section
+ * tổng quát để UI có thể báo chính xác số dòng đã tự bỏ qua mà không đếm mọi
+ * heading I./II./III. như dữ liệu bị mất.
+ */
+export function isQuoteContextSubtotalRow(row, preMap = {}) {
+  if (!isQuoteAggregateOnlyRow(row, preMap)) return false;
+  const label = row.text
+    .filter((t, c) => c !== preMap.lineTotalCol && String(t || "").trim())
+    .join(" ")
+    .trim();
+  const folded = foldQuoteLabel(label);
+  return /^(?:tong\s+)?(?:tang|lau|floor)\s*(?:\d+|tret|mai|ham)\b/.test(folded);
 }
 
 /**
