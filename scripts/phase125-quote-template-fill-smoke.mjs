@@ -22,7 +22,7 @@ assert(exportBlock.indexOf('exportQuoteExcelWithTemplate') < exportBlock.indexOf
 assert(!src.includes('const exportExcelTemplate = async'), 'duplicate template export handler must be removed');
 assert(!src.includes('>Xuất theo mẫu Excel</button>'), 'duplicate template export button must be removed');
 assert(src.includes('Mẫu Excel dùng khi xuất'), 'quote screen template selector missing');
-assert(src.includes('Nút “Xuất Excel” sẽ điền dữ liệu báo giá hiện tại trực tiếp vào mẫu này.'), 'quote→template explanation missing');
+assert(src.includes('Nút “Xuất báo giá” mặc định tạo file Excel và điền dữ liệu hiện tại trực tiếp vào mẫu này.'), 'quote→template explanation missing');
 assert(src.includes('defaultExcelQuoteTemplateId'), 'dealer default Excel template id missing');
 assert(src.includes('Đặt làm mẫu mặc định'), 'settings action to choose default Excel template missing');
 assert(src.includes('Không có template => mới dùng workbook generic của SmartQuote.'), 'no-template-only fallback contract missing');

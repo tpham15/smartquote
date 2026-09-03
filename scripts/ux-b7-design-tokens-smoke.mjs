@@ -34,10 +34,10 @@ assertIncludes('--radius:var(--r-md);--radius-lg:var(--r-card);', 'legacy radius
 
 // Core action buttons use the primary token; Excel remains secondary/ghost.
 assertIncludes('.btn-primary{background:var(--c-primary);', 'primary button token');
-assertIncludes('.btn-pdf{flex:1;background:var(--c-primary);', 'PDF primary action token');
-assertIncludes('.btn-pdf:hover{background:var(--c-primary-dark);}', 'PDF hover token');
+assertIncludes('.btn-export-primary{width:100%;background:var(--c-primary);', 'quote export primary action token');
+assertIncludes('.btn-export-primary:hover{background:var(--c-primary-dark);}', 'quote export hover token');
 assertIncludes('.btn-excel{background:var(--surface);color:var(--c-text);border:1px solid var(--line2);', 'Excel secondary style');
-assertNotIncludes('.btn-pdf{flex:1;background:#DC2626', 'old red PDF primary');
+assertNotIncludes('.btn-export-primary{width:100%;background:#DC2626', 'old red primary export');
 assertNotIncludes('.btn-excel{background:#15803D', 'old green Excel primary');
 
 // Typography cleanup: app/body use the design-system font, not the old system stack as the app font.

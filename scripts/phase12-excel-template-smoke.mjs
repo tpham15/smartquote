@@ -18,7 +18,7 @@ assert(jsx.includes('Phase 12 chỉ nhận file .xlsx'), 'missing xlsx-only uplo
 assert(jsx.includes('exportQuoteExcelWithTemplate'), 'missing template export function');
 assert(jsx.includes('/api/excel-template'), 'missing template export API call');
 assert(jsx.includes('Mẫu Excel dùng khi xuất'), 'missing quote screen template selector');
-assert(jsx.includes('Nút “Xuất Excel” sẽ điền dữ liệu báo giá hiện tại trực tiếp vào mẫu này.'), 'missing unified template-fill export guidance');
+assert(jsx.includes('Nút “Xuất báo giá” mặc định tạo file Excel và điền dữ liệu hiện tại trực tiếp vào mẫu này.'), 'missing unified template-fill export guidance');
 assert(!jsx.includes('Upload mẫu PDF'), 'must not introduce PDF template upload');
 assert(api.includes('load_workbook'), 'API must use openpyxl load_workbook to preserve xlsx template');
 assert(api.includes('Phase 12 chỉ hỗ trợ mẫu Excel .xlsx'), 'API missing xlsx-only guard');

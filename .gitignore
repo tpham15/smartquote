@@ -8,3 +8,17 @@ dist/
 benchmarks/vietnam-docbench/private/**
 !benchmarks/vietnam-docbench/private/.gitkeep
 benchmarks/vietnam-docbench/reports/**
+
+# Local/generated artifacts
+*.log
+coverage/
+.vite/
+.venv/
+.venv_*
+__pycache__/
+*.pyc
+
+# Phase 13 external runtime/model caches
+.paddleocr/
+paddle-model-cache/
+phase13-evidence/

@@ -21,11 +21,12 @@ assertIncludes('quoteManageOpen &&', 'quote management collapsed body');
 assertIncludes('⋯ Quản lý', 'quote management overflow trigger');
 assertIncludes('Lưu bản sao', 'copy quote still available in management panel');
 
-// B5.3: summary action hierarchy — PDF is the primary action, Excel/Save are secondary.
-assertIncludes('<button className="btn-pdf" onClick={exportPDF}>Xuất PDF</button>', 'primary PDF button');
-assertIncludes('<button className="btn-ghost" disabled={exporting} onClick={exportExcel}>', 'secondary Excel button');
+// B5.3 / Pilot export hierarchy — Excel quote export is primary; PDF/Save are secondary.
+assertIncludes('<button className="btn-export-primary" disabled={exporting} onClick={exportExcel}>', 'primary quote export button');
+assertIncludes('{exporting ? "Đang tạo…" : "Xuất báo giá"}', 'primary quote export label');
+assertIncludes('<button className="btn-ghost" onClick={exportPDF}>Xuất PDF</button>', 'secondary PDF button');
 assertIncludes('onClick={() => saveCurrentQuote()}', 'secondary save action');
-assertNotIncludes('className="btn-primary" disabled={exporting}', 'Excel as primary action');
+assertNotIncludes('<button className="btn-pdf" onClick={exportPDF}>Xuất PDF</button>', 'PDF as primary action');
 assertNotIncludes('Lưu thay đổi', 'verbose primary save label in top action row');
 
 console.log('UX B5 progressive disclosure smoke: PASS');

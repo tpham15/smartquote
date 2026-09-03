@@ -2558,9 +2558,11 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
               <div className="s-row big"><span>Tổng cộng</span><b className="num">{VND(calc.grand)}</b></div>
             </div>
             <div className="s-actions">
-              <button className="btn-pdf" onClick={exportPDF}>Xuất PDF</button>
+              <button className="btn-export-primary" disabled={exporting} onClick={exportExcel}>
+                {exporting ? "Đang tạo…" : "Xuất báo giá"}
+              </button>
               <div className="row2">
-                <button className="btn-ghost" disabled={exporting} onClick={exportExcel}>{exporting ? "Đang tạo…" : "Xuất Excel"}</button>
+                <button className="btn-ghost" onClick={exportPDF}>Xuất PDF</button>
                 {cloud?.enabled && (
                   <button className="btn-ghost" disabled={quoteSaving} onClick={() => saveCurrentQuote()}>
                     {quoteSaving ? "Đang lưu…" : "Lưu"}
@@ -2573,12 +2575,12 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                   <select value={activeExcelTemplate?.id || ""} onChange={(e) => setSelectedExcelTemplateId(e.target.value)}>
                     {excelQuoteTemplates.map((tpl) => <option key={tpl.id} value={tpl.id}>{tpl.name}{tpl.id === company?.defaultExcelQuoteTemplateId ? " · mặc định" : ""}</option>)}
                   </select>
-                  <span className="excel-template-export-hint">Nút “Xuất Excel” sẽ điền dữ liệu báo giá hiện tại trực tiếp vào mẫu này.</span>
+                  <span className="excel-template-export-hint">Nút “Xuất báo giá” mặc định tạo file Excel và điền dữ liệu hiện tại trực tiếp vào mẫu này.</span>
                 </div>
               )}
             </div>
             <p className="side-note">
-              PDF đang dùng mẫu <strong>{getQuoteTemplateLabel(quoteTemplateConfig?.presetId)}</strong>{activeExcelTemplate ? <> · Excel sẽ fill vào <strong>{activeExcelTemplate.name}</strong></> : <> · Excel dùng mẫu SmartQuote mặc định</>}. Máy tính tiền — người duyệt trước khi gửi khách.
+              Mặc định xuất <strong>Excel</strong>{activeExcelTemplate ? <> theo mẫu <strong>{activeExcelTemplate.name}</strong></> : <> theo mẫu SmartQuote mặc định</>}. PDF là lựa chọn phụ và đang dùng mẫu <strong>{getQuoteTemplateLabel(quoteTemplateConfig?.presetId)}</strong>. Máy tính tiền — người duyệt trước khi gửi khách.
             </p>
           </div>
         </div>
@@ -8586,8 +8588,8 @@ const CSS = `
 .btn-primary{background:var(--c-primary);color:#fff;border:none;padding:9px 16px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:700;cursor:pointer;font-family:inherit;width:100%;transition:background .15s;}
 .btn-primary:hover{background:var(--c-primary-dark);}
 .btn-primary:disabled{background:var(--faint);cursor:not-allowed;}
-.btn-pdf{flex:1;background:var(--c-primary);color:#fff;border:none;padding:9px 16px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:800;cursor:pointer;font-family:inherit;}
-.btn-pdf:hover{background:var(--c-primary-dark);}
+.btn-export-primary{width:100%;background:var(--c-primary);color:#fff;border:none;padding:10px 16px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:800;cursor:pointer;font-family:inherit;}
+.btn-export-primary:hover{background:var(--c-primary-dark);}
 .btn-excel{background:var(--surface);color:var(--c-text);border:1px solid var(--line2);padding:9px 14px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .btn-excel:hover{border-color:var(--c-primary);color:var(--c-primary);background:var(--c-primary-soft);}
 .btn-add-room{background:none;color:var(--c-primary);border:1.5px dashed var(--line2);padding:11px;border-radius:var(--r-lg);font-size:var(--fs-sm);font-weight:700;cursor:pointer;width:100%;font-family:inherit;transition:all .15s;}
@@ -8628,7 +8630,7 @@ const CSS = `
 .summary .sum-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;border-bottom:1px solid var(--line);}
 .summary .grand{display:flex;justify-content:space-between;padding:12px 0;font-size:18px;font-weight:700;color:var(--brand);border-top:2px solid var(--brand);margin-top:4px;margin-bottom:10px;}
 .export-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.export-btns .btn-pdf{flex:1;}
+.export-btns .btn-export-primary{flex:1;}
 .export-btns .btn-ghost{min-width:96px;justify-content:center;}
 .quote-manage-card{padding:14px 16px;}
 .quote-manage-bar{border:1px solid var(--c-line);background:var(--card);border-radius:var(--r-lg);padding:10px 12px;margin-bottom:12px;box-shadow:var(--sh-1);}
@@ -9611,7 +9613,7 @@ details summary::-webkit-details-marker{color:var(--brand);}
 
 /* Primary buttons keep white labels, so use the darker primary token in dark mode (5.7:1 vs white). */
 :root[data-theme="dark"] .btn-primary,
-:root[data-theme="dark"] .btn-pdf,
+:root[data-theme="dark"] .btn-export-primary,
 :root[data-theme="dark"] .ci-primary-action.ok,
 :root[data-theme="dark"] .sq-confirm-primary,
 :root[data-theme="dark"] .excel-picker-buttons button.active{background:var(--primary-d);color:#fff;}
