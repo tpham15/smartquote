@@ -1,0 +1,3 @@
+{"schemaVersion":"sq-docbench-ground-truth-v1","documentId":"bom-merged","rows":[
+{"rowId":"b1","kind":"product","source":{"sheet":"Tang 1","row":12},"fields":{"name":"Ổ cắm đôi","sku":"OC-02","unit":"Cái","quantity":8,"unitPrice":185000,"lineTotal":1480000,"section":"Phòng khách"},"acceptance":{"criticalFields":["sku","quantity","unitPrice"]}}
+]}

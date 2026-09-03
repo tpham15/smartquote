@@ -175,6 +175,10 @@ function normalizeSource(source = {}, index = 0) {
     rawText: source.rawText || "",
     page: source.page || null,
     fileName: source.fileName || "",
+    bbox: source.bbox || null,
+    parts: Array.isArray(source.parts) ? source.parts : [],
+    pageWidth: Number(source.pageWidth || 0) || null,
+    pageHeight: Number(source.pageHeight || 0) || null,
   };
 }
 

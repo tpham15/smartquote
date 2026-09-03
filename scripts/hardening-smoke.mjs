@@ -1,9 +1,20 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { parseCsvEnv, isOriginAllowed, resolveCorsOrigin, bodySizeBytes, redact } from '../api/_lib/security.js';
+import { parseCsvEnv, getAllowedOrigins, isOriginAllowed, resolveCorsOrigin, bodySizeBytes, redact } from '../api/_lib/security.js';
 import { getPerMinuteLimit, minuteWindowStartIso, assertMemoryIpRateLimit } from '../api/_lib/rateLimit.js';
 
 assert.deepEqual(parseCsvEnv('https://a.com, https://b.com ,'), ['https://a.com', 'https://b.com']);
+const previousAllowedOrigin = process.env.SMARTQUOTE_ALLOWED_ORIGIN;
+const previousAllowedOrigins = process.env.SMARTQUOTE_ALLOWED_ORIGINS;
+delete process.env.SMARTQUOTE_ALLOWED_ORIGIN;
+delete process.env.SMARTQUOTE_ALLOWED_ORIGINS;
+assert.deepEqual(getAllowedOrigins(), []);
+assert.equal(isOriginAllowed('https://evil.example'), false);
+assert.equal(resolveCorsOrigin({ headers: { origin: 'https://evil.example', host: 'app.smartquote.vn', 'x-forwarded-proto': 'https' } }), '');
+assert.equal(resolveCorsOrigin({ headers: { origin: 'https://app.smartquote.vn', host: 'app.smartquote.vn', 'x-forwarded-proto': 'https' } }), 'https://app.smartquote.vn');
+if (previousAllowedOrigin == null) delete process.env.SMARTQUOTE_ALLOWED_ORIGIN; else process.env.SMARTQUOTE_ALLOWED_ORIGIN = previousAllowedOrigin;
+if (previousAllowedOrigins == null) delete process.env.SMARTQUOTE_ALLOWED_ORIGINS; else process.env.SMARTQUOTE_ALLOWED_ORIGINS = previousAllowedOrigins;
+
 process.env.SMARTQUOTE_ALLOWED_ORIGIN = 'https://app.smartquote.vn,https://admin.smartquote.vn';
 assert.equal(isOriginAllowed('https://app.smartquote.vn'), true);
 assert.equal(isOriginAllowed('https://evil.example'), false);

@@ -70,3 +70,34 @@ set subscription_status = 'active',
     updated_at = now()
 where id = '<DEALER_ID>';
 ```
+
+---
+
+## Phase 12.6 — QR checkout / customer says paid
+
+Before deploying Phase 12.6, run:
+
+```text
+supabase/phase12_6_bank_transfer_checkout.sql
+```
+
+A customer clicking **Tôi đã chuyển khoản** only changes `billing_events.status` from `pending` to `paid`. It does not activate the plan.
+
+Review both statuses in the admin queue:
+
+```sql
+select id, dealer_id, plan, billing_cycle, amount_vnd, status, transfer_content, created_at
+from public.billing_events
+where status in ('pending', 'paid')
+order by created_at desc;
+```
+
+After the incoming transaction is actually visible in the bank account, activate with the existing admin RPC:
+
+```sql
+select public.admin_activate_manual_billing_event(
+  '<BILLING_EVENT_ID>',
+  '<BANK_TRANSACTION_REFERENCE>',
+  'Đã xác nhận chuyển khoản'
+);
+```

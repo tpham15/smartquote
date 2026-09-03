@@ -8,8 +8,8 @@ export function parseCsvEnv(value = '') {
 }
 
 export function getAllowedOrigins() {
-  const configured = parseCsvEnv(process.env.SMARTQUOTE_ALLOWED_ORIGIN || process.env.SMARTQUOTE_ALLOWED_ORIGINS || '*');
-  return configured.length ? configured : ['*'];
+  const configured = parseCsvEnv(process.env.SMARTQUOTE_ALLOWED_ORIGIN || process.env.SMARTQUOTE_ALLOWED_ORIGINS || '');
+  return configured;
 }
 
 function normalizeOrigin(value = '') {

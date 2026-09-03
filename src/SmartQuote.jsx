@@ -13,7 +13,7 @@ import { webScrapeItemsToProducts } from "./import-engine/web/webCatalogImport.j
 import { loadCloudState, saveCloudState } from "./supabase/cloudState.js";
 import { listCloudCatalog, syncCloudCatalogSnapshot, logCloudCatalogImport, serializeProductsForCatalog, deleteCloudCatalogItems, replaceCloudCatalog } from "./supabase/catalogStore.js";
 import { deleteCloudQuote, listCloudQuotes, saveCloudQuote } from "./supabase/quoteStore.js";
-import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd } from "./supabase/billingStore.js";
+import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd, buildVietQrUrl, markManualBillingPaid } from "./supabase/billingStore.js";
 import { smartQuoteFetch } from "./supabase/apiFetch.js";
 import { setTenantStorageScope, tenantStorageGetItem, tenantStorageSetItem, tenantStorageRemoveItem, tenantStorageKeysWithPrefix } from "./storage/tenantStorage.js";
 import { PLAN_LIMITS, PLAN_ORDER, FEATURE_LABELS, normalizeBilling, canUseFeature, canFitProductCount, formatLimit, buildUpgradeMessage } from "./billing/planLimits.js";
@@ -33,6 +33,8 @@ import {
   saveProductLearningBatch,
   listCorrectionLearningStats,
 } from "./import-engine/correctionLearning.js";
+import { applyCommercialValidation } from "./import-engine/businessValidator.js";
+import { recordCorrectionEvent, getCorrectionTelemetryStats } from "./import-engine/correctionTelemetry.js";
 
 // ============================================================
 // SmartQuote — App báo giá smarthome
@@ -1596,12 +1598,18 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
   const [customerNote, setCustomerNote] = useState("");
   const [billingRequests, setBillingRequests] = useState([]);
   const [requestBusy, setRequestBusy] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState(false);
   const [requestStatus, setRequestStatus] = useState("");
+  const [checkoutRequest, setCheckoutRequest] = useState(null);
+  const [qrFailed, setQrFailed] = useState(false);
 
   const supportContact = (import.meta.env.VITE_SQ_SUPPORT_CONTACT || "Zalo / Hotline SmartQuote").trim();
+  const paymentBankId = (import.meta.env.VITE_SQ_PAYMENT_BANK_ID || "").trim();
   const paymentBank = (import.meta.env.VITE_SQ_PAYMENT_BANK || "—").trim();
   const paymentAccount = (import.meta.env.VITE_SQ_PAYMENT_ACCOUNT || "").trim();
   const paymentOwner = (import.meta.env.VITE_SQ_PAYMENT_OWNER || "").trim();
+  const paymentQrTemplate = (import.meta.env.VITE_SQ_PAYMENT_QR_TEMPLATE || "compact2").trim();
+  const paymentConfigured = Boolean(paymentBankId && paymentAccount);
 
   const reloadBillingRequests = async () => {
     if (!cloud?.enabled || !cloud?.dealerId) return;
@@ -1612,6 +1620,56 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
 
   const latestPending = billingRequests.find((r) => ["pending", "paid"].includes(String(r.status || "").toLowerCase()));
 
+  useEffect(() => { setQrFailed(false); }, [checkoutRequest?.id]);
+
+  const checkoutTransferContent = String(checkoutRequest?.transfer_content || "").trim();
+  const qrTransferContent = /^[A-Za-z0-9 ]{1,50}$/.test(checkoutTransferContent) ? checkoutTransferContent : "";
+  const paymentQrUrl = checkoutRequest && paymentConfigured
+    ? buildVietQrUrl({
+        bankId: paymentBankId,
+        accountNo: paymentAccount,
+        amount: checkoutRequest.amount_vnd,
+        addInfo: qrTransferContent,
+        accountName: paymentOwner,
+        template: paymentQrTemplate,
+      })
+    : "";
+  const qrIncludesTransferContent = Boolean(paymentQrUrl && qrTransferContent && qrTransferContent === checkoutTransferContent);
+
+  const copyPaymentValue = async (value, label) => {
+    const text = String(value || "").trim();
+    if (!text) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else throw new Error("Clipboard API unavailable");
+      notify.success(`Đã sao chép ${label}.`);
+    } catch {
+      try {
+        const el = document.createElement("textarea");
+        el.value = text; el.setAttribute("readonly", ""); el.style.position = "fixed"; el.style.opacity = "0";
+        document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
+        notify.success(`Đã sao chép ${label}.`);
+      } catch { notify.warning(`Không sao chép tự động được. ${label}: ${text}`); }
+    }
+  };
+
+  const confirmBankTransfer = async () => {
+    if (!checkoutRequest?.id || !cloud?.dealerId) return;
+    if (String(checkoutRequest.status || "").toLowerCase() === "paid") { setCheckoutRequest(null); return; }
+    setPaymentBusy(true);
+    try {
+      await markManualBillingPaid(cloud.dealerId, checkoutRequest.id);
+      setCheckoutRequest((r) => r ? { ...r, status: "paid" } : r);
+      setRequestStatus("Đã ghi nhận bạn đã chuyển khoản. SmartQuote đang chờ admin đối soát và kích hoạt gói.");
+      await reloadBillingRequests();
+      await cloud?.refreshBilling?.();
+      notify.success("Đã báo chuyển khoản. Gói sẽ được kích hoạt sau khi SmartQuote xác nhận tiền vào tài khoản.");
+    } catch (e) {
+      console.error(e);
+      notify.error(e.message || "Không cập nhật được trạng thái thanh toán.");
+    } finally { setPaymentBusy(false); }
+  };
+
   const submitUpgradeRequest = async (plan) => {
     if (!cloud?.enabled || !cloud?.dealerId) { notify.warning("Cần đăng nhập Cloud trước khi nâng gói."); return; }
     const amount = getPlanPriceVnd(plan, billingCycle);
@@ -1621,8 +1679,9 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
       await reloadBillingRequests();
       await cloud?.refreshBilling?.();
       setModalPlan(null);
-      setRequestStatus(`Đã tạo yêu cầu. Nội dung chuyển khoản: ${request?.transfer_content || "xem lịch sử bên dưới"}.`);
-      notify.success(`Đã tạo yêu cầu nâng gói.\n\nSố tiền: ${formatVnd(request?.amount_vnd || amount)}\nNội dung CK: ${request?.transfer_content || "xem lịch sử"}\n\nGói sẽ được bật ngay khi xác nhận đã nhận tiền.`);
+      setCheckoutRequest({ ...request, amount_vnd: request?.amount_vnd || amount, plan, billing_cycle: request?.billing_cycle || billingCycle });
+      setRequestStatus("Đã tạo yêu cầu thanh toán. Quét QR hoặc chuyển khoản theo đúng số tiền và nội dung bên dưới.");
+      notify.success("Đã tạo yêu cầu. SmartQuote đã chuẩn bị thông tin chuyển khoản riêng cho giao dịch này.");
     } catch (e) {
       console.error(e); setRequestStatus(e.message || "Không tạo được yêu cầu."); notify.error(e.message || "Không tạo được yêu cầu.");
     } finally { setRequestBusy(false); }
@@ -1755,7 +1814,16 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
             {paymentOwner && <div><div className="k">Chủ tài khoản</div>{paymentOwner}</div>}
             <div><div className="k">Hỗ trợ</div>{supportContact}</div>
           </div>
-          {latestPending && <div className="pp-note">Nội dung chuyển khoản của bạn: <b>{latestPending.transfer_content}</b></div>}
+          {latestPending && (
+            <div className="pp-pending-inline">
+              <div>
+                <span>Yêu cầu đang chờ</span>
+                <b>{PLAN_LIMITS[latestPending.plan]?.label || latestPending.plan} · {formatVnd(latestPending.amount_vnd)}</b>
+                <small>{latestPending.transfer_content}</small>
+              </div>
+              <button className="pp-back" onClick={() => setCheckoutRequest(latestPending)}>Mở QR thanh toán</button>
+            </div>
+          )}
           <div className="pp-hist-head">
             <span>Lịch sử nâng gói</span>
             <button className="pp-back" onClick={reloadBillingRequests}>Tải lại</button>
@@ -1781,6 +1849,66 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
         </div>
       </details>
 
+      {/* THANH TOÁN CHUYỂN KHOẢN / VIETQR */}
+      {checkoutRequest && (
+        <div className="pp-modal-bg" onClick={() => !paymentBusy && setCheckoutRequest(null)}>
+          <div className="pp-payment-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pp-payment-head">
+              <div>
+                <div className="pp-lbl">Thanh toán gói</div>
+                <h3>{PLAN_LIMITS[checkoutRequest.plan]?.label || checkoutRequest.plan}</h3>
+                <p>{checkoutRequest.billing_cycle === "annual" ? "Theo năm" : "Theo tháng"}</p>
+              </div>
+              <button className="pp-payment-close" aria-label="Đóng" disabled={paymentBusy} onClick={() => setCheckoutRequest(null)}>×</button>
+            </div>
+
+            <div className="pp-payment-amount">{formatVnd(checkoutRequest.amount_vnd)}</div>
+
+            {paymentQrUrl && !qrFailed ? (
+              <div className="pp-qr-wrap">
+                <img src={paymentQrUrl} alt={`VietQR thanh toán ${formatVnd(checkoutRequest.amount_vnd)}`} onError={() => setQrFailed(true)} />
+                <span>{qrIncludesTransferContent ? "Quét bằng app ngân hàng để tự điền số tiền và nội dung." : "Quét bằng app ngân hàng để tự điền số tiền; hãy sao chép nội dung chuyển khoản bên dưới."}</span>
+              </div>
+            ) : (
+              <div className="pp-qr-fallback">
+                <b>{paymentConfigured ? "Không tải được QR" : "QR chưa được cấu hình"}</b>
+                <span>{paymentConfigured ? "Bạn vẫn có thể chuyển khoản bằng thông tin bên dưới." : "Thông tin QR đang được cập nhật. Bạn vẫn có thể chuyển khoản thủ công hoặc liên hệ SmartQuote để được hỗ trợ."}</span>
+              </div>
+            )}
+
+            <div className="pp-payment-fields">
+              <div className="pp-payment-field">
+                <span>Ngân hàng</span><b>{paymentBank}</b>
+              </div>
+              {paymentAccount && (
+                <div className="pp-payment-field">
+                  <span>Số tài khoản</span><b className="mono">{paymentAccount}</b>
+                  <button onClick={() => copyPaymentValue(paymentAccount, "số tài khoản")}>Sao chép</button>
+                </div>
+              )}
+              {paymentOwner && <div className="pp-payment-field"><span>Chủ tài khoản</span><b>{paymentOwner}</b></div>}
+              <div className="pp-payment-field important">
+                <span>Nội dung chuyển khoản</span><b className="mono">{checkoutRequest.transfer_content}</b>
+                <button onClick={() => copyPaymentValue(checkoutRequest.transfer_content, "nội dung chuyển khoản")}>Sao chép</button>
+              </div>
+            </div>
+
+            {paymentQrUrl && !qrIncludesTransferContent && (
+              <div className="pp-payment-warning">Yêu cầu này dùng mã chuyển khoản cũ nên QR không tự điền nội dung. Hãy bấm <b>Sao chép</b> ở ô nội dung chuyển khoản trước khi xác nhận.</div>
+            )}
+            <div className="pp-payment-warning">Vui lòng giữ nguyên <b>số tiền</b> và <b>nội dung chuyển khoản</b> để SmartQuote đối soát đúng workspace.</div>
+
+            <div className="pp-modal-actions">
+              <button className="pp-cta ghost" disabled={paymentBusy} onClick={() => setCheckoutRequest(null)}>Để sau</button>
+              <button className="pp-cta primary" disabled={paymentBusy || String(checkoutRequest.status || "").toLowerCase() === "paid"} onClick={confirmBankTransfer}>
+                {paymentBusy ? "Đang ghi nhận…" : String(checkoutRequest.status || "").toLowerCase() === "paid" ? "Đã báo chuyển khoản" : "Tôi đã chuyển khoản"}
+              </button>
+            </div>
+            <div className="pp-note">SmartQuote chỉ ghi nhận thông báo của bạn ở bước này. Gói chỉ được kích hoạt sau khi admin xác nhận tiền đã vào tài khoản.</div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL NÂNG CẤP */}
       {modalPlan && (
         <div className="pp-modal-bg" onClick={() => !requestBusy && setModalPlan(null)}>
@@ -1794,7 +1922,7 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
               <button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Theo năm</button>
             </div>
             <input value={customerContact} onChange={(e) => setCustomerContact(e.target.value)} placeholder="Số Zalo / điện thoại liên hệ" />
-            <input value={customerNote} onChange={(e) => setCustomerNote(e.target.value)} placeholder="Ghi chú (ví dụ: đã chuyển khoản lúc 10:30)" />
+            <input value={customerNote} onChange={(e) => setCustomerNote(e.target.value)} placeholder="Ghi chú cho SmartQuote (không bắt buộc)" />
             <div className="pp-modal-actions">
               <button className="pp-cta ghost" disabled={requestBusy} onClick={() => setModalPlan(null)}>Huỷ</button>
               <button className="pp-cta primary" disabled={requestBusy} onClick={() => submitUpgradeRequest(modalPlan)}>
@@ -4537,6 +4665,100 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
 // TAB 2 — Bảng giá thiết bị (catalog)
 // ============================================================
 // ============================================================
+// Phase 14.0 — source grounding viewer. Uses the original local PDF file and
+// additive pdfjs coordinates from /api/pdf-extract; no new document graph.
+// ============================================================
+function pdfEvidencePriceBBox(source = {}, value = 0) {
+  const target = String(Math.round(Number(value || 0))).replace(/\D/g, "");
+  if (!target || !Array.isArray(source.parts)) return source.bbox || null;
+  const part = source.parts.find((p) => {
+    const digits = String(p?.str || "").replace(/\D/g, "");
+    return digits && (digits === target || digits.includes(target) || target.includes(digits));
+  });
+  if (!part) return source.bbox || null;
+  return {
+    x: Number(part.x || source.bbox?.x || 0),
+    y: Number(source.bbox?.y || 0),
+    width: Math.max(1, Number(part.width || source.bbox?.width || 1)),
+    height: Math.max(1, Number(part.height || source.bbox?.height || 10)),
+  };
+}
+
+function PdfGroundingViewer({ file, source, value, onClose }) {
+  const canvasRef = useRef(null);
+  const [renderState, setRenderState] = useState({ loading: true, error: "", width: 0, height: 0, scale: 1, baseHeight: 0 });
+  const pageNum = Number(source?.page || 1) || 1;
+
+  useEffect(() => {
+    let cancelled = false;
+    let doc = null;
+    (async () => {
+      if (!file || !/\.pdf$/i.test(file.name || "")) {
+        setRenderState({ loading: false, error: "Không còn file PDF gốc trong phiên import này.", width: 0, height: 0, scale: 1, baseHeight: 0 });
+        return;
+      }
+      try {
+        setRenderState((s) => ({ ...s, loading: true, error: "" }));
+        const data = new Uint8Array(await file.arrayBuffer());
+        const pdfjsPilot = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        const task = pdfjsPilot.getDocument({ data, disableWorker: true, isEvalSupported: false, useSystemFonts: true });
+        doc = await task.promise;
+        const page = await doc.getPage(Math.min(Math.max(1, pageNum), doc.numPages));
+        const base = page.getViewport({ scale: 1 });
+        const scale = 1.15;
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current;
+        if (!canvas || cancelled) return;
+        const ctx = canvas.getContext("2d", { alpha: false });
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        canvas.style.width = `${Math.ceil(viewport.width)}px`;
+        canvas.style.height = `${Math.ceil(viewport.height)}px`;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        if (!cancelled) setRenderState({ loading: false, error: "", width: viewport.width, height: viewport.height, scale, baseHeight: base.height });
+        page.cleanup?.();
+      } catch (error) {
+        if (!cancelled) setRenderState({ loading: false, error: error?.message || "Không render được trang PDF", width: 0, height: 0, scale: 1, baseHeight: 0 });
+      }
+    })();
+    return () => { cancelled = true; try { doc?.destroy?.(); } catch {} };
+  }, [file, pageNum]);
+
+  const bbox = pdfEvidencePriceBBox(source, value);
+  const pageWidth = Number(source?.pageWidth || 0) || (renderState.width ? renderState.width / renderState.scale : 0);
+  const pageHeight = Number(source?.pageHeight || 0) || renderState.baseHeight;
+  const sx = pageWidth > 0 ? renderState.width / pageWidth : renderState.scale;
+  const sy = pageHeight > 0 ? renderState.height / pageHeight : renderState.scale;
+  const overlay = bbox && renderState.width > 0 && pageHeight > 0 ? {
+    left: Math.max(0, Number(bbox.x || 0) * sx),
+    top: Math.max(0, (pageHeight - Number(bbox.y || 0) - Number(bbox.height || 0)) * sy),
+    width: Math.max(8, Number(bbox.width || 1) * sx),
+    height: Math.max(12, Number(bbox.height || 10) * sy),
+  } : null;
+
+  return (
+    <div className="ci-grounding-panel">
+      <div className="ci-grounding-head">
+        <div>
+          <strong>Nguồn kiểm chứng · PDF trang {pageNum}</strong>
+          <span>{bbox ? "Đã định vị đúng vùng dữ liệu" : "Chỉ có grounding theo trang — chưa có bbox"}</span>
+        </div>
+        <button type="button" onClick={onClose}>Đóng</button>
+      </div>
+      <div className="ci-grounding-snippet">{source?.rawText || "Không có raw text"}</div>
+      <div className="ci-grounding-scroll">
+        <div className="ci-grounding-canvas" style={{ width: renderState.width || undefined, height: renderState.height || undefined }}>
+          <canvas ref={canvasRef} />
+          {overlay && <div className="ci-grounding-highlight" style={overlay}><span>{VND(value)}</span></div>}
+        </div>
+      </div>
+      {renderState.loading && <div className="ci-grounding-state">Đang mở trang PDF…</div>}
+      {renderState.error && <div className="ci-grounding-state error">{renderState.error}</div>}
+    </div>
+  );
+}
+
+// ============================================================
 // CATALOG IMPORTER — Drag & drop Excel/PDF, AI nhận diện cột
 // ============================================================
 function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpgrade,
@@ -4570,6 +4792,10 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const [learningStats, setLearningStats] = useState(() => {
     try { return listCorrectionLearningStats(); } catch { return { skuRules: 0, rawRules: 0, supplierProfiles: 0 }; }
   });
+  const [correctionStats, setCorrectionStats] = useState(() => {
+    try { return getCorrectionTelemetryStats(); } catch { return { total: 0, edited: 0, approved: 0, deleted: 0 }; }
+  });
+  const [groundingIndex, setGroundingIndex] = useState(null);
   const [webUrl, setWebUrl] = useState("");
   const [webSupplier, setWebSupplier] = useState("");
   const [webImporting, setWebImporting] = useState(false);
@@ -4581,9 +4807,10 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   useEffect(() => { products_ref.current = products; }, [products]);
 
   // ── LỚP 3: CACHE — không gọi AI lại cho file giống nhau ──
+  const PDF_CACHE_SCHEMA = "v14_grounding";
   const getCached = (hash) => {
     try {
-      const c = tenantStorageGetItem("sq_pdf_cache_" + hash);
+      const c = tenantStorageGetItem(`sq_pdf_cache_${PDF_CACHE_SCHEMA}_${hash}`);
       return c ? JSON.parse(c) : null;
     } catch { return null; }
   };
@@ -4591,7 +4818,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     try {
       const keys = tenantStorageKeysWithPrefix("sq_pdf_cache_");
       if (keys.length > 30) tenantStorageRemoveItem(keys[0]);
-      tenantStorageSetItem("sq_pdf_cache_" + hash, JSON.stringify(items));
+      tenantStorageSetItem(`sq_pdf_cache_${PDF_CACHE_SCHEMA}_${hash}`, JSON.stringify(items));
     } catch {}
   };
 
@@ -4651,6 +4878,20 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
   const refreshLearningStats = () => {
     try { setLearningStats(listCorrectionLearningStats()); } catch {}
+    try { setCorrectionStats(getCorrectionTelemetryStats()); } catch {}
+  };
+
+  const recordPilotCorrection = (action, before, after, reason = "", issues = []) => {
+    try {
+      recordCorrectionEvent({
+        action, before, after, reason, issues,
+        fileName: file?.name || importResult?.fileName || "",
+        importId: importResult?.importId || after?._meta?.importId || before?._meta?.importId || "",
+        lineId: after?._meta?.lineId || before?._meta?.lineId || "",
+        detectedIndustry: importResult?.detectedIndustry || "catalog",
+      });
+      setCorrectionStats(getCorrectionTelemetryStats());
+    } catch {}
   };
 
   const saveCurrentMappingTemplate = () => {
@@ -4738,12 +4979,13 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   };
   const sanitizeImportedProducts = (items, opts = {}) => {
     const sourceName = opts.sourceFileName || opts.fileName || file?.name || "";
-    return sanitizeCatalogProducts(items, {
+    const sanitized = sanitizeCatalogProducts(items, {
       ...opts,
       sourceFileName: sourceName,
       importSourceKind,
       oldQuoteMode: isOldQuoteImportForFile(sourceName),
     });
+    return applyCommercialValidation(sanitized, { existingProducts: products_ref.current || [] }).products;
   };
 
   // Đọc file và detect headers
@@ -5315,6 +5557,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       } : p);
       if (next[index]) {
         if (hasCapabilityQuiet("correction_learning")) saveProductLearning(next[index], { fileName: file?.name || "", detectedIndustry: importResult?.detectedIndustry || "catalog", userApproved: true });
+        recordPilotCorrection("approve", current, next[index], "user_approved_review_row", getPreviewIssues(current, index));
         refreshLearningStats();
       }
       rebuildImportResultFromParsed(next, "user-approved-preview");
@@ -5371,6 +5614,9 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
           }
         };
       });
+      prev.forEach((p, i) => {
+        if (next[i] !== p) recordPilotCorrection("approve", p, next[i], "user_bulk_approved_review_row", getPreviewIssues(p, i));
+      });
       learnFromProducts(rowsToLearn, { userApprovedAll: true });
       rebuildImportResultFromParsed(next, "user-approved-light-warnings");
       return next;
@@ -5410,6 +5656,8 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   };
 
   const removePreviewRow = (index) => {
+    const removed = parsed[index];
+    if (removed) recordPilotCorrection("delete", removed, null, "user_deleted_import_row", getPreviewIssues(removed, index));
     setParsed(prev => {
       const next = prev.filter((_, i) => i !== index);
       rebuildImportResultFromParsed(next, "user-edited-preview");
@@ -5461,8 +5709,12 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       return;
     }
     setParsed(prev => {
-      const next = prev.map((p, i) => i === editingIndex ? edited : p);
-      if (hasCapabilityQuiet("correction_learning")) saveProductLearning(edited, { fileName: file?.name || "", detectedIndustry: importResult?.detectedIndustry || "catalog", userEdited: true });
+      const before = prev[editingIndex];
+      const rawNext = prev.map((p, i) => i === editingIndex ? edited : p);
+      const next = applyCommercialValidation(rawNext, { existingProducts: products_ref.current || [] }).products;
+      const finalEdited = next[editingIndex];
+      if (hasCapabilityQuiet("correction_learning")) saveProductLearning(finalEdited, { fileName: file?.name || "", detectedIndustry: importResult?.detectedIndustry || "catalog", userEdited: true });
+      recordPilotCorrection("edit", before, finalEdited, "user_edited_import_row", getPreviewIssues(before, editingIndex));
       refreshLearningStats();
       setLearningNotice("✓ Đã học từ dòng bạn vừa sửa");
       rebuildImportResultFromParsed(next, "user-edited-preview");
@@ -5874,6 +6126,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <div><span>Confidence</span><strong>{Math.round((importResult?.overallConfidence || 0) * 100)}%</strong></div>
                 <div><span>Template</span><strong>{importResult?.templateKnown ? "đã nhớ" : (importResult?.detectedTemplateId ? "mới" : "—")}</strong></div>
                 <div><span>Đã học</span><strong>{learningStats ? `${learningStats.skuRules} SKU · ${learningStats.rawRules} raw · ${learningStats.supplierProfiles} nhà cung cấp` : "—"}</strong></div>
+                <div><span>Correction evidence</span><strong>{correctionStats ? `${correctionStats.total} sự kiện · ${correctionStats.edited} sửa · ${correctionStats.approved} duyệt · ${correctionStats.deleted} xóa` : "—"}</strong></div>
                 <div><span>Nguồn</span><strong>{file?.name || "import"}</strong></div>
               </div>
               {learningNotice && <div className="ci-learning-note compact">{learningNotice}</div>}
@@ -5920,6 +6173,21 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
               </div>
             )}
 
+            {groundingIndex != null && parsed[groundingIndex] && (() => {
+              const groundingProduct = parsed[groundingIndex];
+              const groundingLine = getLineForProductIndex(groundingIndex, groundingProduct);
+              const groundingSource = groundingLine?.source || groundingProduct?._meta?.source || {};
+              if (groundingSource?.page) {
+                return <PdfGroundingViewer file={file} source={groundingSource} value={groundingProduct.costPrice} onClose={() => setGroundingIndex(null)} />;
+              }
+              return (
+                <div className="ci-grounding-panel text-only">
+                  <div className="ci-grounding-head"><div><strong>Nguồn kiểm chứng</strong><span>{groundingSource?.sheet ? `${groundingSource.sheet} · dòng ${groundingSource.row || "?"}` : "Không có locator"}</span></div><button type="button" onClick={() => setGroundingIndex(null)}>Đóng</button></div>
+                  <div className="ci-grounding-snippet">{groundingSource?.rawText || "Không có raw text"}</div>
+                </div>
+              );
+            })()}
+
             <div className="ci-preview-scroll compact">
               <table className="ci-preview-table ci-preview-table-clean">
                 <thead><tr><th style={{width:54}}>TT</th><th style={{width:72}}>Ảnh</th><th>Sản phẩm</th><th style={{width:140}}>Mã</th><th style={{width:160}}>Giá</th><th>Vấn đề</th><th style={{width:130}}>Thao tác</th></tr></thead>
@@ -5948,7 +6216,10 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                       </td>
                       <td className="ci-sku-cell">{p.sku || "—"}</td>
                       <td className="ci-price-cell">
-                        <div>{p.costPrice > 0 ? p.costPrice.toLocaleString("vi-VN")+"đ" : "—"}</div>
+                        {p.costPrice > 0 ? (line?.source?.page || line?.source?.sheet || p?._meta?.source?.page || p?._meta?.source?.sheet)
+                          ? <button type="button" className="ci-ground-price" title="Mở đúng vị trí trong file nguồn" onClick={() => { setGroundingIndex(i); setHighlightedPreviewIndex(i); }}>{p.costPrice.toLocaleString("vi-VN")}đ <span>↗ nguồn</span></button>
+                          : <div>{p.costPrice.toLocaleString("vi-VN")}đ</div>
+                          : <div>—</div>}
                         {p.listPrice > 0 && <small>Công bố: {p.listPrice.toLocaleString("vi-VN")}đ</small>}
                       </td>
                       <td className="ci-issues clean">
@@ -8820,6 +9091,24 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .ci-sku-cell{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;}
 .ci-price-cell{text-align:right;white-space:nowrap;font-weight:900;color:var(--ink);}
 .ci-price-cell small{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-top:2px;}
+.ci-ground-price{border:0;background:transparent;padding:0;color:var(--ink);font:inherit;font-weight:900;cursor:pointer;text-align:right;white-space:nowrap;}
+.ci-ground-price:hover{color:var(--brand);text-decoration:underline;text-underline-offset:2px;}
+.ci-ground-price span{font-size:10px;font-weight:800;color:var(--brand);margin-left:3px;}
+.ci-grounding-panel{margin:12px 0 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:0 8px 30px rgba(15,23,42,.08);}
+.ci-grounding-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface-soft,var(--bg));}
+.ci-grounding-head>div{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.ci-grounding-head strong{font-size:13px;color:var(--ink);}
+.ci-grounding-head span{font-size:11px;color:var(--muted);}
+.ci-grounding-head button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 9px;font-weight:800;color:var(--muted);cursor:pointer;}
+.ci-grounding-snippet{padding:9px 14px;font-size:11.5px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ci-grounding-scroll{max-height:420px;overflow:auto;background:#e5e7eb;padding:12px;}
+.ci-grounding-canvas{position:relative;margin:0 auto;background:var(--card);box-shadow:0 2px 14px rgba(15,23,42,.18);}
+.ci-grounding-canvas canvas{display:block;}
+.ci-grounding-highlight{position:absolute;border:3px solid #f59e0b;background:rgba(245,158,11,.22);border-radius:4px;pointer-events:none;box-shadow:0 0 0 2px rgba(255,255,255,.75) inset;}
+.ci-grounding-highlight span{position:absolute;left:0;top:-25px;background:#111827;color:white;border-radius:5px;padding:3px 6px;font-size:10px;font-weight:900;white-space:nowrap;}
+.ci-grounding-state{padding:10px 14px;font-size:12px;color:var(--muted);}
+.ci-grounding-state.error{color:var(--neg);}
+.ci-grounding-panel.text-only .ci-grounding-snippet{border-bottom:0;white-space:normal;}
 .ci-issues.clean{font-size:12px;line-height:1.45;color:var(--muted);min-width:170px;max-width:320px;}
 .ci-row-actions.clean{min-width:104px;gap:5px;}
 .ci-row-actions.clean button{padding:5px 8px;border-radius:8px;font-size:11.5px;background:var(--card);}
@@ -9154,6 +9443,46 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .pp-modal input{width:100%;border:1px solid var(--c-line);border-radius:10px;padding:10px 12px;font-size:var(--fs-sm);margin-top:8px;font-family:inherit;}
 .pp-modal-actions{display:flex;gap:10px;margin-top:14px;}
 
+/* Phase 12.6 — embedded bank-transfer checkout */
+.pp-pending-inline{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;margin:12px 0;background:var(--c-primary-soft);border:1px solid var(--primary-ring);border-radius:12px;}
+.pp-pending-inline>div{min-width:0;display:flex;flex-direction:column;gap:2px;}
+.pp-pending-inline span{font-size:11px;color:var(--c-muted);font-weight:650;}
+.pp-pending-inline b{font-size:var(--fs-sm);color:var(--ink);}
+.pp-pending-inline small{font-size:12px;color:var(--brand);font-weight:700;letter-spacing:.02em;overflow-wrap:anywhere;}
+
+.pp-payment-modal{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;width:100%;max-width:620px;max-height:calc(100vh - 40px);overflow:auto;box-shadow:var(--sh-2);}
+.pp-payment-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
+.pp-payment-head h3{margin:2px 0 0;font-size:22px;line-height:1.2;}
+.pp-payment-head p{margin:4px 0 0;color:var(--muted);font-size:var(--fs-sm);}
+.pp-payment-close{width:34px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink-2);font-size:22px;line-height:1;cursor:pointer;font-family:inherit;flex:0 0 auto;}
+.pp-payment-close:hover{border-color:var(--brand);color:var(--brand);}
+.pp-payment-close:disabled{opacity:.5;cursor:default;}
+.pp-payment-amount{font-size:30px;font-weight:800;letter-spacing:-.025em;margin:14px 0 16px;color:var(--ink);font-variant-numeric:tabular-nums;}
+.pp-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;}
+.pp-qr-wrap img{display:block;width:min(280px,100%);height:auto;border-radius:10px;}
+.pp-qr-wrap span{font-size:12px;color:var(--muted);text-align:center;}
+.pp-qr-fallback{display:flex;flex-direction:column;gap:4px;padding:14px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:12px;margin-bottom:16px;color:var(--amber);}
+.pp-qr-fallback b{font-size:var(--fs-sm);}
+.pp-qr-fallback span{font-size:12px;line-height:1.45;}
+.pp-payment-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pp-payment-field{position:relative;display:flex;flex-direction:column;gap:3px;padding:11px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:11px;min-width:0;}
+.pp-payment-field>span{font-size:11px;color:var(--muted);font-weight:650;}
+.pp-payment-field>b{font-size:var(--fs-sm);color:var(--ink);overflow-wrap:anywhere;padding-right:68px;}
+.pp-payment-field .mono{font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.pp-payment-field>button{position:absolute;right:8px;bottom:8px;border:1px solid var(--line);background:var(--card);color:var(--brand);font-size:11px;font-weight:700;border-radius:8px;padding:5px 7px;cursor:pointer;font-family:inherit;}
+.pp-payment-field>button:hover{border-color:var(--brand);background:var(--primary-soft);}
+.pp-payment-field.important{grid-column:1/-1;border-color:var(--primary-ring);background:var(--primary-soft);}
+.pp-payment-field.important>b{color:var(--brand);font-size:15px;}
+.pp-payment-warning{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber);font-size:12px;line-height:1.5;}
+@media(max-width:560px){
+  .pp-payment-modal{padding:18px;border-radius:14px;}
+  .pp-payment-fields{grid-template-columns:1fr;}
+  .pp-payment-field.important{grid-column:auto;}
+  .pp-pending-inline{align-items:flex-start;flex-direction:column;}
+  .pp-pending-inline .pp-back{width:100%;}
+  .pp-qr-wrap img{width:min(240px,100%);}
+}
+
 /* === SmartQuote SaaS Design System refresh — source: smartquote_saas_redesign.html === */
 :root{
   /* màu — có chức năng, không trang trí */
@@ -9267,6 +9596,7 @@ details summary::-webkit-details-marker{color:var(--brand);}
 :root[data-theme="dark"] .cat-table th{color:var(--muted);}
 :root[data-theme="dark"] .bom-preview-table th{background:var(--green-bg);color:var(--green);}
 :root[data-theme="dark"] .plan-pill{color:var(--ink);border-color:var(--primary-ring);}
+:root[data-theme="dark"] .pp-status{color:var(--primary);}
 
 /* Step 6 QA: primary-d is intentionally reserved for dark button fills.
    Text that previously used primary-d is promoted to the AA-safe primary token. */
@@ -9691,3 +10021,4 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 
 `;
+

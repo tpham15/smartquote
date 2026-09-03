@@ -16,8 +16,8 @@ PLAN_RATE_LIMITS = {
 
 
 def _allowed_origins():
-    raw = os.getenv("SMARTQUOTE_ALLOWED_ORIGIN") or os.getenv("SMARTQUOTE_ALLOWED_ORIGINS") or "*"
-    return [x.strip() for x in raw.split(",") if x.strip()] or ["*"]
+    raw = os.getenv("SMARTQUOTE_ALLOWED_ORIGIN") or os.getenv("SMARTQUOTE_ALLOWED_ORIGINS") or ""
+    return [x.strip() for x in raw.split(",") if x.strip()]
 
 
 def _normalized_origin(value):

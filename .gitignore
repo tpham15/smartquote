@@ -3,3 +3,8 @@ dist/
 .env
 .env.local
 .DS_Store
+
+# Phase 13.0 private benchmark corpus & generated reports
+benchmarks/vietnam-docbench/private/**
+!benchmarks/vietnam-docbench/private/.gitkeep
+benchmarks/vietnam-docbench/reports/**

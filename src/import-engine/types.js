@@ -29,6 +29,10 @@
  * @property {Object|Array=} source.cells
  * @property {string=} source.rawText
  * @property {number=} source.page
+ * @property {{x:number,y:number,width:number,height:number}=} source.bbox
+ * @property {Array=} source.parts
+ * @property {number=} source.pageWidth
+ * @property {number=} source.pageHeight
  * @property {string} rowType
  * @property {Object} raw
  * @property {Object} parsed

@@ -16,6 +16,35 @@ export function getPlanPriceVnd(plan, billingCycle = 'monthly') {
   return PLAN_PRICE_VND[String(plan || '').toLowerCase()]?.[billingCycle] || 0;
 }
 
+const VIETQR_TEMPLATES = new Set(['compact2', 'compact', 'qr_only', 'print']);
+
+export function buildVietQrUrl({ bankId = '', accountNo = '', amount = 0, addInfo = '', accountName = '', template = 'compact2' } = {}) {
+  const safeBankId = String(bankId || '').trim();
+  const safeAccountNo = String(accountNo || '').trim();
+  if (!/^[a-zA-Z0-9]+$/.test(safeBankId)) return '';
+  if (!/^[a-zA-Z0-9]{6,19}$/.test(safeAccountNo)) return '';
+
+  const safeTemplate = VIETQR_TEMPLATES.has(String(template || '').trim()) ? String(template).trim() : 'compact2';
+  const params = new URLSearchParams();
+  const numericAmount = Math.max(0, Math.round(Number(amount) || 0));
+  if (numericAmount > 0) params.set('amount', String(numericAmount));
+  if (String(addInfo || '').trim()) params.set('addInfo', String(addInfo).trim().slice(0, 50));
+  if (String(accountName || '').trim()) params.set('accountName', String(accountName).trim().slice(0, 50));
+
+  const query = params.toString();
+  return `https://img.vietqr.io/image/${safeBankId}-${safeAccountNo}-${safeTemplate}.png${query ? `?${query}` : ''}`;
+}
+
+export async function markManualBillingPaid(dealerId, billingEventId) {
+  if (!supabase || !dealerId || !billingEventId) throw new Error('Thiếu workspace hoặc yêu cầu thanh toán.');
+  const { data, error } = await supabase.rpc('mark_manual_billing_event_paid', {
+    target_dealer_id: dealerId,
+    target_billing_event_id: billingEventId,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function requestManualUpgrade(dealerId, { plan, billingCycle = 'monthly', customerNote = '', customerContact = '' } = {}) {
   if (!supabase || !dealerId) throw new Error('Supabase chưa được cấu hình hoặc thiếu workspace.');
   const { data, error } = await supabase.rpc('create_manual_billing_request', {

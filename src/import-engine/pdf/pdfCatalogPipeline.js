@@ -12,8 +12,11 @@
 // ============================================================
 import { callClaudeText, extractCatalogPdfWithClaude } from "../legacy/legacyClaudeMapper.js";
 import { sanitizeCatalogProduct, sanitizeCatalogProducts } from "../productSanitizer.js";
+import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
+import { assessPdfPositiveEvidence, findPdfRowEvidence } from "./pdfEvidence.js";
 
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
+
 const DEFAULT_MAX_CHARS_PER_CHUNK = 850;
 const DEFAULT_MAX_LINES_PER_CHUNK = 8;
 const DEFAULT_MAX_PAGES_PER_CHUNK = 1;
@@ -183,25 +186,7 @@ function hasSuspiciousPdfName(value) {
 }
 
 function isHighConfidencePdfHeuristicProduct(item, engine) {
-  if (!String(engine || item?._meta?.engine || "").includes("heuristic")) return false;
-  const name = normalizeText(item.name);
-  const sku = normalizeText(item.sku);
-  const specs = normalizeText(item.specs);
-  const raw = normalizeText(item.rawText || item._meta?.source?.rawText || "");
-  const category = normalizeText(item.category);
-  const costPrice = Number(item.costPrice || item.price || 0) || 0;
-  const listPrice = Number(item.listPrice || item.publicPrice || 0) || 0;
-  if (!costPrice || costPrice < 1000 || costPrice > 1000000000) return false;
-  if (listPrice > 0 && listPrice < costPrice) return false;
-  if (!name || name.length < 6 || name.length > 120 || hasSuspiciousPdfName(name)) return false;
-  if (isGenericOrFragmentName(name)) return false;
-  if (category && /^(bbg|bang gia|bảng giá)$/i.test(category)) return false;
-  const context = [name, sku, specs, raw, category].join(" ");
-  const clearSku = hasClearSku(sku);
-  const clearProductText = hasProductKeyword(context) && tokenCount([name, specs, raw].join(" ")) >= 6;
-  // Auto-approve only when the PDF fallback row is materially complete. Rows without SKU
-  // can still pass if the name/specs look like a real product and price is clear.
-  return clearSku ? (hasProductKeyword(context) || tokenCount(name) >= 3) : clearProductText;
+  return assessPdfPositiveEvidence(item, engine).autoApprove;
 }
 
 function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
@@ -209,8 +194,10 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
   const issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
   const isHeuristic = String(engine || meta.engine || "").includes("heuristic");
   const isPdf = meta.source?.type === "pdf" || String(engine || meta.engine || "").startsWith("pdf");
+  const evidence = assessPdfPositiveEvidence({ ...item, _meta: meta }, engine || meta.engine);
 
   item.supplier = cleanPdfSupplierName(item.supplier, supplierGuess);
+  meta.productEvidence = { ...(meta.productEvidence || {}), ...evidence };
 
   if (isPdf && isOcrBrokenProduct({ ...item, _meta: meta }, engine || meta.engine)) {
     item._skipReason = "pdf_ocr_low_quality";
@@ -225,17 +212,28 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
       "name",
       "Dòng này là mảnh OCR/fallback text, không phải sản phẩm đủ chắc"
     ));
-  } else if (isHeuristic && isHighConfidencePdfHeuristicProduct(item, engine || meta.engine)) {
-    // Text/OCR fallback is not automatically bad. If the row has clear product name,
-    // price and SKU/product context, keep it auto-approved to avoid forcing users to
-    // manually approve dozens of valid PDF rows.
+  } else if (isHeuristic && !evidence.positive) {
+    // Phase 14.0: positive evidence is required. A price alone is no longer enough
+    // to make a PDF row a product candidate. This specifically attacks false-product.
+    item._skipReason = "pdf_insufficient_product_evidence";
+    meta.canonicalStatus = "skipped";
+    meta.status = "skipped";
+    meta.confidence = Math.min(Number(meta.confidence || 0.5), 0.34);
+    issues.push(simpleIssue(
+      "pdf_insufficient_product_evidence",
+      "info",
+      "Bỏ qua vì dòng PDF chưa có đủ bằng chứng dương để coi là sản phẩm",
+      "name",
+      "Cần giá hợp lệ và thêm bằng chứng như SKU, tên sản phẩm rõ, section hoặc vị trí dòng trong bảng"
+    ));
+  } else if (isHeuristic && evidence.autoApprove) {
     meta.canonicalStatus = "auto_approved";
     meta.status = "new";
-    meta.confidence = Math.max(Number(meta.confidence || 0), hasClearSku(item.sku) ? 0.82 : 0.76);
+    meta.confidence = Math.max(Number(meta.confidence || 0), hasClearSku(item.sku) ? 0.84 : 0.78);
     issues.push(simpleIssue(
-      "pdf_ocr_auto_checked",
+      "pdf_positive_evidence_checked",
       "info",
-      "PDF/OCR đọc được dòng sản phẩm đủ rõ, đã tự duyệt",
+      `Đủ bằng chứng sản phẩm (${evidence.reasons.join(", ")})`,
       "name"
     ));
   } else if (isHeuristic) {
@@ -245,9 +243,9 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
     issues.push(simpleIssue(
       "pdf_ocr_uncertain",
       "warning",
-      OCR_UNCERTAIN_MESSAGE,
+      `${OCR_UNCERTAIN_MESSAGE} · evidence ${evidence.score}`,
       "name",
-      "Bấm Sửa nếu tên/giá chưa đúng; bấm Xóa nếu đây chỉ là dòng rác OCR"
+      "Bấm nguồn để đối chiếu; Sửa nếu tên/giá chưa đúng; Xóa nếu đây là dòng rác"
     ));
   }
 
@@ -289,6 +287,8 @@ async function extractPdfTextPages(file) {
       page: Number(p.page || i + 1),
       text: String(p.text || "").trim(),
       rows: Array.isArray(p.rows) ? p.rows : [],
+      pageWidth: Number(p.pageWidth || 0) || null,
+      pageHeight: Number(p.pageHeight || 0) || null,
     }));
   const usable = normalizedPages.filter((p) => p.text.length > 20);
   const pageCount = data.pageCount || normalizedPages.length || usable.length;
@@ -297,12 +297,22 @@ async function extractPdfTextPages(file) {
   // Important for scanned/image PDFs: pdfjs can open the PDF and count pages,
   // but text extraction returns 0 chars. Do NOT throw here, because the caller
   // can still use Claude document/vision fallback page-by-page.
+  const probe = data.probe?.schemaVersion === "sq-pdf-probe-v1"
+    ? data.probe
+    : buildPdfProbe({
+      pageCount,
+      textChars,
+      pages: normalizedPages.map((p) => ({ page: p.page, textChars: p.text.length })),
+    });
   return {
     pageCount,
     textChars,
     pages: usable,
     rawPages: normalizedPages,
-    scanned: !usable.length,
+    probe,
+    // Backward-compatible flag. Route planning is authoritative from Phase 13.1,
+    // but old callers can still read `scanned`.
+    scanned: !usable.length || textChars < 80,
   };
 }
 
@@ -718,7 +728,12 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
             page: Number(it.sourcePage || it.page || 0) || null,
             row: sourceRow,
             rawText: rawText.slice(0, 300),
+            bbox: it.sourceBBox || it.bbox || null,
+            parts: Array.isArray(it.sourceParts) ? it.sourceParts.slice(0, 80) : [],
+            pageWidth: Number(it.sourcePageWidth || it.pageWidth || 0) || null,
+            pageHeight: Number(it.sourcePageHeight || it.pageHeight || 0) || null,
           },
+          productEvidence: it.evidence || {},
           status: "new",
           confidence: engine.includes("heuristic") ? 0.62 : 0.74,
           issues: [],
@@ -810,7 +825,9 @@ function mergePdfRowVariants(oldItem, item) {
     image: oldItem.image || item.image || "",
     _meta: {
       ...(oldItem._meta || {}),
-      source: { ...(oldItem._meta?.source || {}), row: oldItem._meta?.source?.row || item._meta?.source?.row || null },
+      source: oldItem._meta?.source?.bbox
+        ? { ...(oldItem._meta?.source || {}), row: oldItem._meta?.source?.row || item._meta?.source?.row || null }
+        : { ...(item._meta?.source || oldItem._meta?.source || {}), row: item._meta?.source?.row || oldItem._meta?.source?.row || null },
       issues: issues.slice(0, 8),
       confidence: Math.max(Number(oldItem._meta?.confidence || 0), Number(item._meta?.confidence || 0), 0.78),
     },
@@ -850,6 +867,8 @@ function dedupeProducts(items, opts = {}) {
         _meta: {
           ...(old._meta || {}),
           ...(item._meta || {}),
+          source: item._meta?.source?.bbox ? item._meta.source : (old._meta?.source?.bbox ? old._meta.source : (item._meta?.source || old._meta?.source || {})),
+          productEvidence: item._meta?.source?.bbox ? item._meta?.productEvidence : (old._meta?.source?.bbox ? old._meta?.productEvidence : (item._meta?.productEvidence || old._meta?.productEvidence || {})),
           issues: [...(old._meta?.issues || []), ...(item._meta?.issues || [])].slice(0, 6),
         },
       };
@@ -952,9 +971,11 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
   let currentCategory = "Chung";
 
   for (const page of pages || []) {
-    const lines = splitLinesSmart(page.text);
-    for (const line of lines) {
-      const clean = normalizeText(line);
+    const sourceRows = Array.isArray(page.rows) && page.rows.length
+      ? page.rows.map((row, index) => ({ line: row.text || "", evidence: { row: index + 1, rawText: row.text || "", bbox: row.bbox || null, parts: row.parts || [], pageWidth: page.pageWidth || null, pageHeight: page.pageHeight || null, matchScore: 1 } }))
+      : splitLinesSmart(page.text).map((line) => ({ line, evidence: null }));
+    for (const entry of sourceRows) {
+      const clean = normalizeText(entry.line);
       if (!clean) continue;
       if (isLikelySectionLine(clean)) {
         currentCategory = clean.replace(/^bảng giá\s*/i, "").slice(0, 90) || currentCategory;
@@ -971,6 +992,8 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
       let name = cleanHeuristicName(clean, sku);
       if ((!name || name.length < 3) && sku) name = `${currentCategory} ${sku}`;
       if (!name || name.length < 3) continue;
+      const explicitUnit = /\b(bộ|bo|set|cái|cai|chiếc|chiec|m|mét|met|cuộn|cuon|hộp|hop)\b/i.test(clean);
+      const evidence = entry.evidence || findPdfRowEvidence(page, clean);
 
       out.push({
         name,
@@ -984,6 +1007,19 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
         specs: buildSpecsFromLine(clean, prices),
         rawText: clean.slice(0, 160),
         sourcePage: page.page,
+        sourceRow: evidence?.row || null,
+        sourceBBox: evidence?.bbox || null,
+        sourceParts: evidence?.parts || [],
+        sourcePageWidth: evidence?.pageWidth || page.pageWidth || null,
+        sourcePageHeight: evidence?.pageHeight || page.pageHeight || null,
+        evidence: {
+          hasPrice: true,
+          hasSku: !!sku,
+          hasProductKeyword: hasProductKeyword([name, clean, currentCategory].join(" ")),
+          hasExplicitUnit: explicitUnit,
+          hasGrounding: !!evidence?.bbox,
+          category: currentCategory || "Chung",
+        },
       });
     }
   }
@@ -1023,12 +1059,26 @@ export async function parsePdfCatalogWithPipeline(params) {
     }
   }
 
-  if (extracted.scanned || !extracted.pages.length || extracted.textChars < 80) {
+  const route = planDocumentRoute({
+    fileName: file.name,
+    mimeType: file.type || "application/pdf",
+    explicitType: params.documentType || "",
+    sampleText: extracted.pages.slice(0, 2).map((p) => p.text).join("\n").slice(0, 4000),
+    pdfProbe: extracted.probe,
+  });
+  onProgress?.({
+    stage: "route",
+    message: `Document Router: ${route.inputKind} → ${route.primaryEngine}`,
+    route,
+  });
+
+  if (route.inputKind === "scan_pdf" || !extracted.pages.length) {
     onProgress?.({
       stage: "vision_fallback",
       message: `PDF có ${extracted.pageCount || "?"} trang nhưng gần như không có text selectable. Chuyển sang AI đọc từng trang ảnh...`,
       pageCount: extracted.pageCount,
       textChars: extracted.textChars,
+      route,
     });
     try {
       return await extractCatalogPdfWithClaudeDocumentPages({
@@ -1120,6 +1170,7 @@ export async function parsePdfCatalogWithPipeline(params) {
       message: `PDF đọc được ${finalItems.length} sản phẩm${heuristicMsg}${aiMsg}${warn.length ? ` (${warn.join("; ")})` : ""}`,
       warningChunks: failedChunks,
       skippedAi,
+      route,
     });
     return finalItems;
   }
@@ -1154,4 +1205,6 @@ export {
   isLumiSmarthomeContext,
   getExpectedLumiPdfRows,
   buildDocumentPagePrompt,
+  assessPdfPositiveEvidence,
+  findPdfRowEvidence,
 };

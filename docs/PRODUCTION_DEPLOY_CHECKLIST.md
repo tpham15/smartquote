@@ -11,6 +11,7 @@ supabase/phase4_quotes.sql
 supabase/phase5_catalog_items.sql
 supabase/phase6_billing_events.sql
 supabase/phase7_hardening.sql
+supabase/phase12_6_bank_transfer_checkout.sql
 ```
 
 Nếu tạo project mới, chạy một lần:
@@ -56,13 +57,15 @@ SERPER_API_KEY=YOUR_SERPER_API_KEY # Phase 8 product enrichment
 SMARTQUOTE_ALLOWED_ORIGIN=https://app.smartquote.vn
 ```
 
-Manual payment copy:
+Bank-transfer checkout / VietQR:
 
 ```bash
 VITE_SQ_SUPPORT_CONTACT=Zalo/Hotline: ...
-VITE_SQ_PAYMENT_BANK=Ngân hàng: ...
+VITE_SQ_PAYMENT_BANK_ID=YOUR_VIETQR_BANK_CODE_OR_BIN
+VITE_SQ_PAYMENT_BANK=Ngân hàng ...
 VITE_SQ_PAYMENT_ACCOUNT=...
 VITE_SQ_PAYMENT_OWNER=...
+VITE_SQ_PAYMENT_QR_TEMPLATE=compact2
 ```
 
 Không set trên production:
