@@ -57,8 +57,7 @@
     "smoke:phase12.5.5": "python3 scripts/phase1255-orphan-drawing-cleanup-smoke.py",
     "smoke:phase12.5.6": "node scripts/phase1256-ui-spacing-alignment-smoke.mjs",
     "smoke:dark-mode-step2": "node scripts/dark-mode-step2-smoke.mjs",
-    "smoke:dark-mode-step6": "node scripts/dark-mode-step6-qa-smoke.mjs",
-    "smoke:phase12.6": "node scripts/phase126-bank-transfer-checkout-smoke.mjs"
+    "smoke:dark-mode-step6": "node scripts/dark-mode-step6-qa-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

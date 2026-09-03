@@ -13,7 +13,7 @@ import { webScrapeItemsToProducts } from "./import-engine/web/webCatalogImport.j
 import { loadCloudState, saveCloudState } from "./supabase/cloudState.js";
 import { listCloudCatalog, syncCloudCatalogSnapshot, logCloudCatalogImport, serializeProductsForCatalog, deleteCloudCatalogItems, replaceCloudCatalog } from "./supabase/catalogStore.js";
 import { deleteCloudQuote, listCloudQuotes, saveCloudQuote } from "./supabase/quoteStore.js";
-import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd, buildVietQrUrl, markManualBillingPaid } from "./supabase/billingStore.js";
+import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd } from "./supabase/billingStore.js";
 import { smartQuoteFetch } from "./supabase/apiFetch.js";
 import { setTenantStorageScope, tenantStorageGetItem, tenantStorageSetItem, tenantStorageRemoveItem, tenantStorageKeysWithPrefix } from "./storage/tenantStorage.js";
 import { PLAN_LIMITS, PLAN_ORDER, FEATURE_LABELS, normalizeBilling, canUseFeature, canFitProductCount, formatLimit, buildUpgradeMessage } from "./billing/planLimits.js";
@@ -1596,18 +1596,12 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
   const [customerNote, setCustomerNote] = useState("");
   const [billingRequests, setBillingRequests] = useState([]);
   const [requestBusy, setRequestBusy] = useState(false);
-  const [paymentBusy, setPaymentBusy] = useState(false);
   const [requestStatus, setRequestStatus] = useState("");
-  const [checkoutRequest, setCheckoutRequest] = useState(null);
-  const [qrFailed, setQrFailed] = useState(false);
 
   const supportContact = (import.meta.env.VITE_SQ_SUPPORT_CONTACT || "Zalo / Hotline SmartQuote").trim();
-  const paymentBankId = (import.meta.env.VITE_SQ_PAYMENT_BANK_ID || "").trim();
   const paymentBank = (import.meta.env.VITE_SQ_PAYMENT_BANK || "—").trim();
   const paymentAccount = (import.meta.env.VITE_SQ_PAYMENT_ACCOUNT || "").trim();
   const paymentOwner = (import.meta.env.VITE_SQ_PAYMENT_OWNER || "").trim();
-  const paymentQrTemplate = (import.meta.env.VITE_SQ_PAYMENT_QR_TEMPLATE || "compact2").trim();
-  const paymentConfigured = Boolean(paymentBankId && paymentAccount);
 
   const reloadBillingRequests = async () => {
     if (!cloud?.enabled || !cloud?.dealerId) return;
@@ -1618,56 +1612,6 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
 
   const latestPending = billingRequests.find((r) => ["pending", "paid"].includes(String(r.status || "").toLowerCase()));
 
-  useEffect(() => { setQrFailed(false); }, [checkoutRequest?.id]);
-
-  const checkoutTransferContent = String(checkoutRequest?.transfer_content || "").trim();
-  const qrTransferContent = /^[A-Za-z0-9 ]{1,50}$/.test(checkoutTransferContent) ? checkoutTransferContent : "";
-  const paymentQrUrl = checkoutRequest && paymentConfigured
-    ? buildVietQrUrl({
-        bankId: paymentBankId,
-        accountNo: paymentAccount,
-        amount: checkoutRequest.amount_vnd,
-        addInfo: qrTransferContent,
-        accountName: paymentOwner,
-        template: paymentQrTemplate,
-      })
-    : "";
-  const qrIncludesTransferContent = Boolean(paymentQrUrl && qrTransferContent && qrTransferContent === checkoutTransferContent);
-
-  const copyPaymentValue = async (value, label) => {
-    const text = String(value || "").trim();
-    if (!text) return;
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
-      else throw new Error("Clipboard API unavailable");
-      notify.success(`Đã sao chép ${label}.`);
-    } catch {
-      try {
-        const el = document.createElement("textarea");
-        el.value = text; el.setAttribute("readonly", ""); el.style.position = "fixed"; el.style.opacity = "0";
-        document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
-        notify.success(`Đã sao chép ${label}.`);
-      } catch { notify.warning(`Không sao chép tự động được. ${label}: ${text}`); }
-    }
-  };
-
-  const confirmBankTransfer = async () => {
-    if (!checkoutRequest?.id || !cloud?.dealerId) return;
-    if (String(checkoutRequest.status || "").toLowerCase() === "paid") { setCheckoutRequest(null); return; }
-    setPaymentBusy(true);
-    try {
-      await markManualBillingPaid(cloud.dealerId, checkoutRequest.id);
-      setCheckoutRequest((r) => r ? { ...r, status: "paid" } : r);
-      setRequestStatus("Đã ghi nhận bạn đã chuyển khoản. SmartQuote đang chờ admin đối soát và kích hoạt gói.");
-      await reloadBillingRequests();
-      await cloud?.refreshBilling?.();
-      notify.success("Đã báo chuyển khoản. Gói sẽ được kích hoạt sau khi SmartQuote xác nhận tiền vào tài khoản.");
-    } catch (e) {
-      console.error(e);
-      notify.error(e.message || "Không cập nhật được trạng thái thanh toán.");
-    } finally { setPaymentBusy(false); }
-  };
-
   const submitUpgradeRequest = async (plan) => {
     if (!cloud?.enabled || !cloud?.dealerId) { notify.warning("Cần đăng nhập Cloud trước khi nâng gói."); return; }
     const amount = getPlanPriceVnd(plan, billingCycle);
@@ -1677,9 +1621,8 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
       await reloadBillingRequests();
       await cloud?.refreshBilling?.();
       setModalPlan(null);
-      setCheckoutRequest({ ...request, amount_vnd: request?.amount_vnd || amount, plan, billing_cycle: request?.billing_cycle || billingCycle });
-      setRequestStatus("Đã tạo yêu cầu thanh toán. Quét QR hoặc chuyển khoản theo đúng số tiền và nội dung bên dưới.");
-      notify.success("Đã tạo yêu cầu. SmartQuote đã chuẩn bị thông tin chuyển khoản riêng cho giao dịch này.");
+      setRequestStatus(`Đã tạo yêu cầu. Nội dung chuyển khoản: ${request?.transfer_content || "xem lịch sử bên dưới"}.`);
+      notify.success(`Đã tạo yêu cầu nâng gói.\n\nSố tiền: ${formatVnd(request?.amount_vnd || amount)}\nNội dung CK: ${request?.transfer_content || "xem lịch sử"}\n\nGói sẽ được bật ngay khi xác nhận đã nhận tiền.`);
     } catch (e) {
       console.error(e); setRequestStatus(e.message || "Không tạo được yêu cầu."); notify.error(e.message || "Không tạo được yêu cầu.");
     } finally { setRequestBusy(false); }
@@ -1812,16 +1755,7 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
             {paymentOwner && <div><div className="k">Chủ tài khoản</div>{paymentOwner}</div>}
             <div><div className="k">Hỗ trợ</div>{supportContact}</div>
           </div>
-          {latestPending && (
-            <div className="pp-pending-inline">
-              <div>
-                <span>Yêu cầu đang chờ</span>
-                <b>{PLAN_LIMITS[latestPending.plan]?.label || latestPending.plan} · {formatVnd(latestPending.amount_vnd)}</b>
-                <small>{latestPending.transfer_content}</small>
-              </div>
-              <button className="pp-back" onClick={() => setCheckoutRequest(latestPending)}>Mở QR thanh toán</button>
-            </div>
-          )}
+          {latestPending && <div className="pp-note">Nội dung chuyển khoản của bạn: <b>{latestPending.transfer_content}</b></div>}
           <div className="pp-hist-head">
             <span>Lịch sử nâng gói</span>
             <button className="pp-back" onClick={reloadBillingRequests}>Tải lại</button>
@@ -1847,66 +1781,6 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
         </div>
       </details>
 
-      {/* THANH TOÁN CHUYỂN KHOẢN / VIETQR */}
-      {checkoutRequest && (
-        <div className="pp-modal-bg" onClick={() => !paymentBusy && setCheckoutRequest(null)}>
-          <div className="pp-payment-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="pp-payment-head">
-              <div>
-                <div className="pp-lbl">Thanh toán gói</div>
-                <h3>{PLAN_LIMITS[checkoutRequest.plan]?.label || checkoutRequest.plan}</h3>
-                <p>{checkoutRequest.billing_cycle === "annual" ? "Theo năm" : "Theo tháng"}</p>
-              </div>
-              <button className="pp-payment-close" aria-label="Đóng" disabled={paymentBusy} onClick={() => setCheckoutRequest(null)}>×</button>
-            </div>
-
-            <div className="pp-payment-amount">{formatVnd(checkoutRequest.amount_vnd)}</div>
-
-            {paymentQrUrl && !qrFailed ? (
-              <div className="pp-qr-wrap">
-                <img src={paymentQrUrl} alt={`VietQR thanh toán ${formatVnd(checkoutRequest.amount_vnd)}`} onError={() => setQrFailed(true)} />
-                <span>{qrIncludesTransferContent ? "Quét bằng app ngân hàng để tự điền số tiền và nội dung." : "Quét bằng app ngân hàng để tự điền số tiền; hãy sao chép nội dung chuyển khoản bên dưới."}</span>
-              </div>
-            ) : (
-              <div className="pp-qr-fallback">
-                <b>{paymentConfigured ? "Không tải được QR" : "QR chưa được cấu hình"}</b>
-                <span>{paymentConfigured ? "Bạn vẫn có thể chuyển khoản bằng thông tin bên dưới." : "Thông tin QR đang được cập nhật. Bạn vẫn có thể chuyển khoản thủ công hoặc liên hệ SmartQuote để được hỗ trợ."}</span>
-              </div>
-            )}
-
-            <div className="pp-payment-fields">
-              <div className="pp-payment-field">
-                <span>Ngân hàng</span><b>{paymentBank}</b>
-              </div>
-              {paymentAccount && (
-                <div className="pp-payment-field">
-                  <span>Số tài khoản</span><b className="mono">{paymentAccount}</b>
-                  <button onClick={() => copyPaymentValue(paymentAccount, "số tài khoản")}>Sao chép</button>
-                </div>
-              )}
-              {paymentOwner && <div className="pp-payment-field"><span>Chủ tài khoản</span><b>{paymentOwner}</b></div>}
-              <div className="pp-payment-field important">
-                <span>Nội dung chuyển khoản</span><b className="mono">{checkoutRequest.transfer_content}</b>
-                <button onClick={() => copyPaymentValue(checkoutRequest.transfer_content, "nội dung chuyển khoản")}>Sao chép</button>
-              </div>
-            </div>
-
-            {paymentQrUrl && !qrIncludesTransferContent && (
-              <div className="pp-payment-warning">Yêu cầu này dùng mã chuyển khoản cũ nên QR không tự điền nội dung. Hãy bấm <b>Sao chép</b> ở ô nội dung chuyển khoản trước khi xác nhận.</div>
-            )}
-            <div className="pp-payment-warning">Vui lòng giữ nguyên <b>số tiền</b> và <b>nội dung chuyển khoản</b> để SmartQuote đối soát đúng workspace.</div>
-
-            <div className="pp-modal-actions">
-              <button className="pp-cta ghost" disabled={paymentBusy} onClick={() => setCheckoutRequest(null)}>Để sau</button>
-              <button className="pp-cta primary" disabled={paymentBusy || String(checkoutRequest.status || "").toLowerCase() === "paid"} onClick={confirmBankTransfer}>
-                {paymentBusy ? "Đang ghi nhận…" : String(checkoutRequest.status || "").toLowerCase() === "paid" ? "Đã báo chuyển khoản" : "Tôi đã chuyển khoản"}
-              </button>
-            </div>
-            <div className="pp-note">SmartQuote chỉ ghi nhận thông báo của bạn ở bước này. Gói chỉ được kích hoạt sau khi admin xác nhận tiền đã vào tài khoản.</div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL NÂNG CẤP */}
       {modalPlan && (
         <div className="pp-modal-bg" onClick={() => !requestBusy && setModalPlan(null)}>
@@ -1920,7 +1794,7 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
               <button className={billingCycle === "annual" ? "active" : ""} onClick={() => setBillingCycle("annual")}>Theo năm</button>
             </div>
             <input value={customerContact} onChange={(e) => setCustomerContact(e.target.value)} placeholder="Số Zalo / điện thoại liên hệ" />
-            <input value={customerNote} onChange={(e) => setCustomerNote(e.target.value)} placeholder="Ghi chú cho SmartQuote (không bắt buộc)" />
+            <input value={customerNote} onChange={(e) => setCustomerNote(e.target.value)} placeholder="Ghi chú (ví dụ: đã chuyển khoản lúc 10:30)" />
             <div className="pp-modal-actions">
               <button className="pp-cta ghost" disabled={requestBusy} onClick={() => setModalPlan(null)}>Huỷ</button>
               <button className="pp-cta primary" disabled={requestBusy} onClick={() => submitUpgradeRequest(modalPlan)}>
@@ -9280,46 +9154,6 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .pp-modal input{width:100%;border:1px solid var(--c-line);border-radius:10px;padding:10px 12px;font-size:var(--fs-sm);margin-top:8px;font-family:inherit;}
 .pp-modal-actions{display:flex;gap:10px;margin-top:14px;}
 
-/* Phase 12.6 — embedded bank-transfer checkout */
-.pp-pending-inline{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;margin:12px 0;background:var(--c-primary-soft);border:1px solid var(--primary-ring);border-radius:12px;}
-.pp-pending-inline>div{min-width:0;display:flex;flex-direction:column;gap:2px;}
-.pp-pending-inline span{font-size:11px;color:var(--c-muted);font-weight:650;}
-.pp-pending-inline b{font-size:var(--fs-sm);color:var(--ink);}
-.pp-pending-inline small{font-size:12px;color:var(--brand);font-weight:700;letter-spacing:.02em;overflow-wrap:anywhere;}
-
-.pp-payment-modal{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;width:100%;max-width:620px;max-height:calc(100vh - 40px);overflow:auto;box-shadow:var(--sh-2);}
-.pp-payment-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
-.pp-payment-head h3{margin:2px 0 0;font-size:22px;line-height:1.2;}
-.pp-payment-head p{margin:4px 0 0;color:var(--muted);font-size:var(--fs-sm);}
-.pp-payment-close{width:34px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink-2);font-size:22px;line-height:1;cursor:pointer;font-family:inherit;flex:0 0 auto;}
-.pp-payment-close:hover{border-color:var(--brand);color:var(--brand);}
-.pp-payment-close:disabled{opacity:.5;cursor:default;}
-.pp-payment-amount{font-size:30px;font-weight:800;letter-spacing:-.025em;margin:14px 0 16px;color:var(--ink);font-variant-numeric:tabular-nums;}
-.pp-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;background:var(--surface2);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;}
-.pp-qr-wrap img{display:block;width:min(280px,100%);height:auto;border-radius:10px;}
-.pp-qr-wrap span{font-size:12px;color:var(--muted);text-align:center;}
-.pp-qr-fallback{display:flex;flex-direction:column;gap:4px;padding:14px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:12px;margin-bottom:16px;color:var(--amber);}
-.pp-qr-fallback b{font-size:var(--fs-sm);}
-.pp-qr-fallback span{font-size:12px;line-height:1.45;}
-.pp-payment-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.pp-payment-field{position:relative;display:flex;flex-direction:column;gap:3px;padding:11px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:11px;min-width:0;}
-.pp-payment-field>span{font-size:11px;color:var(--muted);font-weight:650;}
-.pp-payment-field>b{font-size:var(--fs-sm);color:var(--ink);overflow-wrap:anywhere;padding-right:68px;}
-.pp-payment-field .mono{font-variant-numeric:tabular-nums;letter-spacing:.02em;}
-.pp-payment-field>button{position:absolute;right:8px;bottom:8px;border:1px solid var(--line);background:var(--card);color:var(--brand);font-size:11px;font-weight:700;border-radius:8px;padding:5px 7px;cursor:pointer;font-family:inherit;}
-.pp-payment-field>button:hover{border-color:var(--brand);background:var(--primary-soft);}
-.pp-payment-field.important{grid-column:1/-1;border-color:var(--primary-ring);background:var(--primary-soft);}
-.pp-payment-field.important>b{color:var(--brand);font-size:15px;}
-.pp-payment-warning{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber);font-size:12px;line-height:1.5;}
-@media(max-width:560px){
-  .pp-payment-modal{padding:18px;border-radius:14px;}
-  .pp-payment-fields{grid-template-columns:1fr;}
-  .pp-payment-field.important{grid-column:auto;}
-  .pp-pending-inline{align-items:flex-start;flex-direction:column;}
-  .pp-pending-inline .pp-back{width:100%;}
-  .pp-qr-wrap img{width:min(240px,100%);}
-}
-
 /* === SmartQuote SaaS Design System refresh — source: smartquote_saas_redesign.html === */
 :root{
   /* màu — có chức năng, không trang trí */
@@ -9433,7 +9267,6 @@ details summary::-webkit-details-marker{color:var(--brand);}
 :root[data-theme="dark"] .cat-table th{color:var(--muted);}
 :root[data-theme="dark"] .bom-preview-table th{background:var(--green-bg);color:var(--green);}
 :root[data-theme="dark"] .plan-pill{color:var(--ink);border-color:var(--primary-ring);}
-:root[data-theme="dark"] .pp-status{color:var(--primary);}
 
 /* Step 6 QA: primary-d is intentionally reserved for dark button fills.
    Text that previously used primary-d is promoted to the AA-safe primary token. */
