@@ -19,9 +19,11 @@ Small deterministic fixpack discovered during the final controlled-pilot rehears
    - The deterministic PDF path now infers table column geometry from the header and reconstructs wrapped product/SKU cells from following visual rows in the same columns.
    - Letter-only segmented model codes such as `LM-PCB` and `TU-DAUGHI` are accepted when their shape is model-like.
 
-4. **A stale/weak AI duplicate could make a correct deterministic row look broken.**
-   - Deduplication now prefers a grounded arithmetic-confirmed deterministic row over a lower-quality duplicate.
-   - Resolved stale price/OCR warnings are removed after the stronger row wins.
+4. **AI candidates could inflate a clean quote-table catalog.**
+   - A selectable-text PDF with a recognized quotation table header now treats deterministic table rows as the catalog identity source of truth.
+   - AI may enrich only a compatible deterministic product; it cannot append a new identity merely because its text looks plausible.
+   - AI-only PDF rows are always `need_review` unless they are reconciled into a grounded deterministic anchor or explicitly reviewed by the user.
+   - Resolved stale price/OCR/AI warnings are removed after the stronger deterministic row wins.
 
 5. **Blocking rows were visually too aggressive in dark mode.**
    - Full-row dark red was replaced by a subtle semantic row surface plus a red left indicator.
@@ -38,13 +40,16 @@ Observed deterministic reconstruction after the fix:
 
 - 28 line items reconstructed from the four quote sections.
 - 17 unique catalog identities after SKU/name deduplication.
+- all 17 deterministic identities were clean/auto-approved in the local geometry replay.
+- the previously problematic sensor model was reconstructed with its SKU and unit price intact.
+- simulated AI-only/truncated duplicates did not increase the 17-product catalog.
 - company header/contact metadata: 0 catalog rows.
 - section subtotals: 0 catalog rows.
 - labor/quote summary: 0 catalog rows.
 - line totals: not stored as retail/list prices.
 - wrapped SKUs and previously missing model fields reconstructed from table geometry.
 
-Because the build container cannot install the full `pdfjs-dist`/`xlsx` dependency set from the network, exact `/api/pdf-extract` production execution must still be rechecked once on Vercel. The same row/part geometry contract used by `/api/pdf-extract` was exercised locally with equivalent extracted coordinates.
+The real quotation's extracted page/row geometry was replayed locally through the deterministic parser (private evidence only; not packaged). The resulting check was `28 line-items → 17 unique products → 17 clean`, with no header/subtotal/labor rows admitted. Exact deployed `/api/pdf-extract` + hosted AI execution must still be rechecked once on Vercel because the build container cannot install the full dependency set from the network.
 
 ## Regression evidence
 

@@ -21,8 +21,9 @@ assert.match(ui, /\.ci-row-price-warn td\{background:transparent!important;\}/);
 // Strong arithmetic-grounded quote tables are deterministic identity anchors;
 // AI can enrich a matching product, not append ungrounded catalog identities.
 assert.match(pdf, /function mergeQuoteTableCandidates/);
-assert.match(pdf, /if \(!isStrongQuoteTableBaseline\(heuristicItems\)\)/);
+assert.match(pdf, /structuredDeterministicBaseline/);
 assert.match(pdf, /if \(idx < 0\) continue;/);
+assert.match(pdf, /pdf_ai_needs_review/);
 assert.match(pdf, /function skuIdentityCompatible/);
 assert.match(pdf, /function repairVietnameseGlyphSpacing/);
 

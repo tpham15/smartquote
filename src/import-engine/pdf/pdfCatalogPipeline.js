@@ -279,6 +279,21 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
       "name",
       "Bấm nguồn để đối chiếu; Sửa nếu tên/giá chưa đúng; Xóa nếu đây là dòng rác"
     ));
+  } else if (isPdf) {
+    // AI-only PDF identities are never silently clean. They become clean only
+    // after they are merged into a deterministic/grounded anchor or the user
+    // explicitly reviews them. This prevents plausible Claude rows from
+    // inflating a catalog with ungrounded identities.
+    meta.canonicalStatus = "need_review";
+    meta.status = "review";
+    meta.confidence = Math.min(Number(meta.confidence || 0.74), 0.74);
+    issues.push(simpleIssue(
+      "pdf_ai_needs_review",
+      "warning",
+      "Dòng do AI đọc thêm — cần đối chiếu với file gốc trước khi nhập",
+      "name",
+      "Nếu file có bảng rõ, ưu tiên dòng có nguồn và phép tính SL × đơn giá = thành tiền"
+    ));
   }
 
   item._meta = { ...meta, issues };
@@ -912,6 +927,7 @@ function resolvedMergedIssues(issues = [], merged = {}) {
     const code = issueCodeValue(it);
     if (validPrice && ["price_unreasonable", "price_parse_failed", "price_recovered"].includes(code)) continue;
     if (strong && code === "pdf_ocr_uncertain") continue;
+    if (strong && code === "pdf_ai_needs_review") continue;
     if (strong && code === "pdf_insufficient_product_evidence") continue;
     if (strong && hasSku && code === "non_product_row") continue;
     if (merged.name && code === "missing_product_name") continue;
@@ -1053,7 +1069,11 @@ function enrichDeterministicQuoteAnchor(anchor = {}, ai = {}) {
 
 function mergeQuoteTableCandidates(heuristicItems = [], aiItems = [], opts = {}) {
   const base = dedupeProducts(heuristicItems, opts);
-  if (!isStrongQuoteTableBaseline(heuristicItems)) {
+  const grounded = heuristicItems.filter((x) => !!x?._meta?.source?.bbox).length;
+  const structuredDeterministicBaseline = !!opts.structuredQuoteTable
+    && base.length >= 3
+    && grounded >= Math.min(3, heuristicItems.length);
+  if (!isStrongQuoteTableBaseline(heuristicItems) && !structuredDeterministicBaseline) {
     return dedupeProducts([...heuristicItems, ...aiItems], opts);
   }
   // When a selectable-text quotation has arithmetic-verified, grounded rows,
@@ -1358,6 +1378,7 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
           hasExplicitUnit: explicitUnit,
           hasGrounding: !!evidence?.bbox,
           quoteArithmeticMatched: quoteEconomics.matched,
+          tableLayoutDetected: !!tableLayout,
           category: currentCategory || "Chung",
         },
       });
@@ -1497,7 +1518,8 @@ export async function parsePdfCatalogWithPipeline(params) {
   }
 
   const aiItems = normalizePdfItems(aiRaw, supplierGuess, "pdf-v3-ai-jsonl");
-  const finalItems = mergeQuoteTableCandidates(heuristicItems, aiItems, { fileName: file.name, supplierGuess });
+  const structuredQuoteTable = !!inferPdfTableColumnLayout(extracted.pages);
+  const finalItems = mergeQuoteTableCandidates(heuristicItems, aiItems, { fileName: file.name, supplierGuess, structuredQuoteTable });
 
   if (finalItems.length) {
     const warn = [];
