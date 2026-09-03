@@ -9,9 +9,9 @@ import { inferCategoryForProduct } from "./categoryInference.js";
 const MAX_NORMAL_PRICE = 1_000_000_000; // thiết bị/két an toàn cao cấp có thể >300tr; >1 tỷ vẫn coi là lỗi parse
 const MIN_NORMAL_PRICE = 1_000;
 
-const WEIRD_TEXT_RE = /[�□■█▯▮▰◆◇▶◀↔↕]/;
+const WEIRD_TEXT_RE = /[�□■█▯▮▰◆◇▶◀↔↕\uFFFE\uFFFF]/;
 // Mojibake phổ biến khi text tiếng Việt bị decode sai encoding từ PDF/Excel
-const MOJIBAKE_RE = /(Ã|Â|á»|áº|Ä|Æ|ð|Ð|å|Å|Ã|Â)/i;
+const MOJIBAKE_RE = /(Ã|Â|á»|áº|Ä|Æ|ð|Ð|å|Å)/;
 const SPEC_KEYWORD_RE = /\b(Chất liệu|Nguồn cấp|Nguồn điện|Dòng điện|Công suất|Công suất hoạt động|Nhiệt độ|Độ ẩm|Kích thước|Tích hợp|Loại thẻ|Tốc độ|Khoảng cách|Mã khóa|Mã khóa sử dụng|Màu sắc|Điện áp|Tần số|Chuẩn kết nối|Bảo hành|Xuất xứ|Thông số|Model|Đặc điểm|Tính năng|Tải trọng|Kích cỡ|Kết nối|Ứng dụng|Nguồn máy tính)\b/i;
 const CATEGORY_JUNK_RE = /tổng|tong|hợp|hop|báo giá|bao gia|khóa|khoa|tài khoản|tai khoan|ngân hàng|ngan hang|hotline|điều khoản|dieu khoan|ghi chú|ghi chu|bảo hành|bao hanh/i;
 const UNIT_ALLOW_RE = /^(cái|cai|chiếc|chiec|bộ|bo|bộ\.|cặp|cap|m|mét|met|md|cuộn|cuon|thùng|thung|hộp|hop|kg|g|lít|lit|bịch|bich|tấm|tam|bộ đôi|set|pcs|piece|unit)$/i;
@@ -33,13 +33,13 @@ function asciiFold(v) {
 }
 
 function stripWeird(v) {
-  return text(v).replace(/[�□■█▯▮▰◆◇▶◀↔↕]/g, "").replace(/\s+/g, " ").trim();
+  return text(v).replace(/[�□■█▯▮▰◆◇▶◀↔↕\uFFFE\uFFFF]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function weirdRatio(v) {
   const s = text(v);
   if (!s) return 0;
-  const weird = (s.match(/[�□■█▯▮▰◆◇▶◀↔↕]/g) || []).length;
+  const weird = (s.match(/[�□■█▯▮▰◆◇▶◀↔↕\uFFFE\uFFFF]/g) || []).length;
   return weird / s.length;
 }
 
@@ -267,7 +267,12 @@ function isBadSkuCandidate(cand) {
   if (/^(VAT|TEL|HOTLINE|EMAIL|WWW|HTTP|HTTPS|MODEL|CODE|SKU)$/.test(cand)) return true;
   if (/^20\d{2}$/.test(cand)) return true;
   if (cand.length < 4 || cand.length > 40) return true;
-  if (!/[A-Z]/.test(cand) || !/\d/.test(cand)) return true;
+  if (!/[A-Z]/.test(cand)) return true;
+  const hasDigit = /\d/.test(cand);
+  // Some real Vietnamese supplier models are letter-only but structurally code-like
+  // (LM-PCB, TU-DAUGHI). Accept only compact uppercase segmented tokens.
+  const letterOnlyModel = /^[A-Z0-9]{1,6}(?:[-_/][A-Z0-9]{2,12}){1,3}$/.test(cand);
+  if (!hasDigit && !letterOnlyModel) return true;
   return false;
 }
 
@@ -278,7 +283,7 @@ function skuScore(cand) {
   if (/^[A-Z]{2,}\d/.test(cand)) score += 2;
   if (cand.length >= 6 && cand.length <= 22) score += 2;
   if (cand.length > 28) score -= 3;
-  if (/^(OSN|DDL|SBX|K\d|R\d|LM|LS|SNT|KBT|NVR|DVR|DS|IPC|HAC|HD|MS|AQA|LUMI)/i.test(cand)) score += 2;
+  if (/^(OSN|DDL|SBX|K\d|R\d|LM|LS|SNT|KBT|NVR|DVR|DS|IPC|HAC|HD|MS|AQA|LUMI|TU|RG)/i.test(cand)) score += 2;
   return score;
 }
 

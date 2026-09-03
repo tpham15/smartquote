@@ -4838,7 +4838,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   useEffect(() => { products_ref.current = products; }, [products]);
 
   // ── LỚP 3: CACHE — không gọi AI lại cho file giống nhau ──
-  const PDF_CACHE_SCHEMA = "v14_grounding";
+  const PDF_CACHE_SCHEMA = "v14_pdf_table_semantics";
   const getCached = (hash) => {
     try {
       const c = tenantStorageGetItem(`sq_pdf_cache_${PDF_CACHE_SCHEMA}_${hash}`);
@@ -8976,7 +8976,8 @@ const CSS = `
 .ci-error-nav{display:flex;gap:6px;margin-left:auto;}
 .ci-error-nav button{border:1px solid var(--line);background:var(--red-bg);color:var(--red);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;}
 .ci-error-nav button:disabled{opacity:.45;cursor:not-allowed;background:var(--surface2);color:var(--muted);border-color:var(--line);}
-.ci-row-blocking td{background:var(--red-bg);}
+.ci-row-blocking td{background:var(--red-row-bg);}
+.ci-row-blocking td:first-child{box-shadow:inset 3px 0 0 var(--red);}
 .ci-row-review td{background:var(--amber-bg);}
 .ci-row-focus td{box-shadow:inset 0 2px 0 var(--red), inset 0 -2px 0 var(--red);}
 .ci-row-focus td:first-child{box-shadow:inset 3px 0 0 var(--red), inset 0 2px 0 var(--red), inset 0 -2px 0 var(--red);}
@@ -9166,18 +9167,18 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .ci-ground-price{border:0;background:transparent;padding:0;color:var(--ink);font:inherit;font-weight:900;cursor:pointer;text-align:right;white-space:nowrap;}
 .ci-ground-price:hover{color:var(--brand);text-decoration:underline;text-underline-offset:2px;}
 .ci-ground-price span{font-size:10px;font-weight:800;color:var(--brand);margin-left:3px;}
-.ci-grounding-panel{margin:12px 0 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:0 8px 30px rgba(15,23,42,.08);}
+.ci-grounding-panel{margin:12px 0 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;box-shadow:var(--sh-2);}
 .ci-grounding-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface-soft,var(--bg));}
 .ci-grounding-head>div{display:flex;flex-direction:column;gap:2px;min-width:0;}
 .ci-grounding-head strong{font-size:13px;color:var(--ink);}
 .ci-grounding-head span{font-size:11px;color:var(--muted);}
 .ci-grounding-head button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 9px;font-weight:800;color:var(--muted);cursor:pointer;}
 .ci-grounding-snippet{padding:9px 14px;font-size:11.5px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ci-grounding-scroll{max-height:420px;overflow:auto;background:#e5e7eb;padding:12px;}
-.ci-grounding-canvas{position:relative;margin:0 auto;background:var(--card);box-shadow:0 2px 14px rgba(15,23,42,.18);}
+.ci-grounding-scroll{max-height:420px;overflow:auto;background:var(--surface2);padding:12px;}
+.ci-grounding-canvas{position:relative;margin:0 auto;background:var(--card);box-shadow:var(--sh-1);}
 .ci-grounding-canvas canvas{display:block;}
-.ci-grounding-highlight{position:absolute;border:3px solid #f59e0b;background:rgba(245,158,11,.22);border-radius:4px;pointer-events:none;box-shadow:0 0 0 2px rgba(255,255,255,.75) inset;}
-.ci-grounding-highlight span{position:absolute;left:0;top:-25px;background:#111827;color:white;border-radius:5px;padding:3px 6px;font-size:10px;font-weight:900;white-space:nowrap;}
+.ci-grounding-highlight{position:absolute;border:3px solid var(--amber);background:var(--amber-bg);border-radius:4px;pointer-events:none;box-shadow:0 0 0 2px var(--card) inset;}
+.ci-grounding-highlight span{position:absolute;left:0;top:-25px;background:var(--ink);color:var(--card);border-radius:5px;padding:3px 6px;font-size:10px;font-weight:900;white-space:nowrap;}
 .ci-grounding-state{padding:10px 14px;font-size:12px;color:var(--muted);}
 .ci-grounding-state.error{color:var(--neg);}
 .ci-grounding-panel.text-only .ci-grounding-snippet{border-bottom:0;white-space:normal;}
@@ -9563,7 +9564,7 @@ details summary::-webkit-details-marker{color:var(--brand);}
   --primary:#2947E0;--primary-d:#1E37B8;--primary-soft:#EDF0FE;--primary-ring:rgba(41,71,224,.18);
   --amber:#B7791F;--amber-bg:#FDF6E7;--amber-line:#F2D999;
   --green:#0F9D63;--green-bg:#E9F7F0;
-  --red:#D64545;--red-bg:#FEF2F2;
+  --red:#D64545;--red-bg:#FEF2F2;--red-row-bg:#FFF9F9;
 
   /* font + type scale */
   --f:"Be Vietnam Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -9625,6 +9626,7 @@ details summary::-webkit-details-marker{color:var(--brand);}
   --amber-line:#4A3D18;
   --red:#F87171;
   --red-bg:#2C1618;
+  --red-row-bg:#1B1416;
   --pos:#34D399;
   --pos-bg:#0E2A20;
   --neg:#F87171;

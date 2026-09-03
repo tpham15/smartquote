@@ -28,6 +28,88 @@ function nonProductText(v) {
   return /\b(tong cong|tong tien|thanh tien|vat|thue gtgt|chiet khau|ghi chu|luu y|dieu khoan|thanh toan|chuyen khoan|bao hanh|giao hang|van chuyen|hotline|tai khoan ngan hang)\b/.test(k);
 }
 
+
+
+function moneyOccurrences(v) {
+  const raw = String(v || "");
+  const re = /(?:\d{1,3}(?:[.,]\d{3}){1,3}|\d{5,10})(?:\s?đ)?/gi;
+  const out = [];
+  for (const m of raw.matchAll(re)) {
+    const digits = String(m[0]).replace(/[^\d]/g, "");
+    if (digits.length < 5 || digits.length > 10) continue;
+    const value = Number(digits);
+    if (!Number.isFinite(value) || value < 1000 || value > 1_000_000_000) continue;
+    out.push({ value, index: m.index || 0, raw: m[0] });
+  }
+  return out;
+}
+
+function quantityBeforeMoney(raw, firstMoneyIndex) {
+  const prefix = String(raw || "").slice(0, Math.max(0, firstMoneyIndex));
+  // Quote tables usually place ĐVT + SL directly before Đơn giá. Prefer that
+  // structural signal so STT/spec numbers (4MP, 220V, 24V...) are never used.
+  const unitQty = /(?:^|\s)(?:cái|cai|chiếc|chiec|bộ|bo|set|tủ|tu|m|mét|met|cuộn|cuon|hộp|hop|kg|g|lít|lit|pcs?|piece|unit)\s+(\d{1,4})\s*$/i.exec(prefix);
+  if (unitQty) {
+    const q = Number(unitQty[1]);
+    if (q > 0) return q;
+  }
+  return 0;
+}
+
+export function inferPdfQuoteRowEconomics(rawLine = "") {
+  const raw = text(rawLine);
+  const money = moneyOccurrences(raw);
+  if (money.length < 2) return { matched: false, quantity: 0, unitPrice: 0, lineTotal: 0 };
+
+  // In a quotation row, the final two money cells are normally Đơn giá + Thành tiền.
+  // Only accept this interpretation when the arithmetic proves it.
+  for (let i = money.length - 2; i >= 0; i--) {
+    const unit = money[i];
+    const total = money[i + 1];
+    const quantity = quantityBeforeMoney(raw, unit.index);
+    if (!quantity || unit.value <= 0 || total.value <= 0) continue;
+    const expected = quantity * unit.value;
+    const tolerance = Math.max(1, Math.round(total.value * 0.0001));
+    if (Math.abs(expected - total.value) <= tolerance) {
+      return {
+        matched: true,
+        quantity,
+        unitPrice: unit.value,
+        lineTotal: total.value,
+        unitPriceRaw: unit.raw,
+        lineTotalRaw: total.raw,
+      };
+    }
+  }
+  return { matched: false, quantity: 0, unitPrice: 0, lineTotal: 0 };
+}
+
+export function classifyPdfStructuralRow(rawLine = "") {
+  const raw = text(rawLine);
+  const k = key(raw);
+  if (!raw) return { kind: "empty", catalogEligible: false };
+
+  // Company/contact/bank headers are metadata, never catalog products. This is
+  // structural rather than an ever-growing business-text denylist.
+  const contact = /\b(mst|ma so thue|dien thoai|dt|tel|telephone|hotline|dia chi|email|website|so tk|stk|tai khoan ngan hang|tai khoan)\b/.test(k);
+  if (contact && !productKeyword(raw)) return { kind: "header_contact", catalogEligible: false };
+
+  // Old quotation section headers often include their subtotal on the same line,
+  // e.g. "II. Tầng 2 86.004.000đ". Keep the section as context, not a product.
+  const section = /^\s*(?:[ivxlcdm]+|\d+)\s*[.)]\s*(.+?)\s+(?:\d{1,3}(?:[.,]\d{3}){1,3}|\d{5,10})(?:\s?đ)?\s*$/i.exec(raw);
+  if (section) {
+    const category = text(section[1]).replace(/\s+/g, " ").trim();
+    if (category) return { kind: "section_subtotal", catalogEligible: false, category };
+  }
+
+  // Summary/service charges belong to a quotation, not the product catalog.
+  if (/^(tong gia tri|tong tien|tong cong|gia tri hop dong|gia tri tren hop dong|nhan cong|lap dat|lap trinh|thi cong|vat|thue|chiet khau|tam tinh)\b/.test(k)) {
+    return { kind: "quote_summary_or_service", catalogEligible: false };
+  }
+
+  return { kind: "candidate", catalogEligible: true };
+}
+
 export function findPdfRowEvidence(page = {}, line = "") {
   const rows = Array.isArray(page.rows) ? page.rows : [];
   if (!rows.length || !line) return null;
@@ -77,6 +159,7 @@ export function assessPdfPositiveEvidence(item = {}, engine = "") {
   const hasProductKeyword = supplied.hasProductKeyword ?? productKeyword([name, raw, category].join(" "));
   const hasGrounding = supplied.hasGrounding ?? !!source.bbox;
   const hasExplicitUnit = !!supplied.hasExplicitUnit;
+  const quoteArithmeticMatched = !!supplied.quoteArithmeticMatched;
   const usefulCategory = !!category && !/^(chung|bbg|bang gia|bảng giá)$/i.test(category);
   const goodName = !!name && name.length >= 6 && name.length <= 120 && !suspiciousName(name);
   const validPrice = costPrice >= 1000 && costPrice <= 1000000000 && !(listPrice > 0 && listPrice < costPrice);
@@ -87,6 +170,7 @@ export function assessPdfPositiveEvidence(item = {}, engine = "") {
   if (hasProductKeyword) { score += 1; reasons.push("product_keyword"); }
   if (hasGrounding) { score += 1; reasons.push("source_grounding"); }
   if (hasExplicitUnit) { score += 0.5; reasons.push("explicit_unit"); }
+  if (quoteArithmeticMatched) { score += 2; reasons.push("quote_row_arithmetic"); }
   if (usefulCategory) { score += 0.5; reasons.push("section_context"); }
   if (goodName) { score += 1; reasons.push("credible_name"); }
   if (genericFragment(name)) { score -= 1.5; reasons.push("generic_or_fragment_name"); }
@@ -95,8 +179,8 @@ export function assessPdfPositiveEvidence(item = {}, engine = "") {
   return {
     score: Math.round(score * 100) / 100,
     positive: score >= 3,
-    autoApprove: String(engine || meta.engine || "").includes("heuristic") && score >= 6 && validPrice && goodName,
+    autoApprove: String(engine || meta.engine || "").includes("heuristic") && score >= 6 && validPrice && goodName && (hasSku || hasProductKeyword || (quoteArithmeticMatched && hasExplicitUnit && hasGrounding)),
     reasons,
-    signals: { validPrice, clearSku: hasSku, productKeyword: hasProductKeyword, grounding: hasGrounding, explicitUnit: hasExplicitUnit, usefulCategory, goodName },
+    signals: { validPrice, clearSku: hasSku, productKeyword: hasProductKeyword, grounding: hasGrounding, explicitUnit: hasExplicitUnit, quoteArithmeticMatched, usefulCategory, goodName },
   };
 }

@@ -3,10 +3,13 @@ import { readFileSync } from 'node:fs';
 import { PLAN_PRICE_VND as UI_PRICES, getPlanPriceVnd as uiPrice, formatVnd as uiVnd } from '../src/billing/planLimits.js';
 import { PLAN_PRICE_VND as STORE_PRICES, getPlanPriceVnd as storePrice, formatVnd as storeVnd } from '../src/supabase/billingStore.js';
 
-const sourceSql = readFileSync(new URL('../supabase/phase8_1_plan_limits_source.sql', import.meta.url), 'utf8');
+const sourceSql = [
+  '../supabase/phase8_1_plan_limits_source.sql',
+  '../supabase/phase10_plan_capabilities.sql',
+].map((rel) => readFileSync(new URL(rel, import.meta.url), 'utf8')).join('\n\n');
 function parsePrices(sql) {
   return Object.fromEntries([...sql.matchAll(/\('([^']+)',\s*'[^']+',\s*(\d+),\s*(\d+),\s*\d+\)/g)]
-    .filter((m) => ['starter', 'pro', 'business'].includes(m[1]))
+    .filter((m) => ['free', 'starter', 'pro', 'business'].includes(m[1]))
     .map((m) => [m[1], { monthly: Number(m[2]), annual: Number(m[3]) }]));
 }
 const expected = parsePrices(sourceSql);

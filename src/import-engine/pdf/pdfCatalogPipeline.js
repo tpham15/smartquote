@@ -13,7 +13,7 @@
 import { callClaudeText, extractCatalogPdfWithClaude } from "../legacy/legacyClaudeMapper.js";
 import { sanitizeCatalogProduct, sanitizeCatalogProducts } from "../productSanitizer.js";
 import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
-import { assessPdfPositiveEvidence, findPdfRowEvidence } from "./pdfEvidence.js";
+import { assessPdfPositiveEvidence, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
 
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
 
@@ -115,7 +115,7 @@ function supplierFallbackName(supplierGuess = "") {
   const brand = canonicalPdfBrand(raw);
   if (brand) return brand;
   const key = normalizeVietnameseKey(raw);
-  if (/bang gia|bbg|gia dai ly|gia npp|gia si|don gia|thanh ray|phu kien|dong san pham/.test(key)) return "PDF Catalog";
+  if (/bang gia|bao gia|quotation|quote|bbg|gia dai ly|gia npp|gia si|don gia|thanh ray|phu kien|dong san pham/.test(key)) return "PDF Catalog";
   if (raw.length > 40) return "PDF Catalog";
   return raw;
 }
@@ -199,7 +199,7 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
   item.supplier = cleanPdfSupplierName(item.supplier, supplierGuess);
   meta.productEvidence = { ...(meta.productEvidence || {}), ...evidence };
 
-  if (isPdf && isOcrBrokenProduct({ ...item, _meta: meta }, engine || meta.engine)) {
+  if (isPdf && isOcrBrokenProduct({ ...item, _meta: meta }, engine || meta.engine) && !evidence.signals?.quoteArithmeticMatched) {
     item._skipReason = "pdf_ocr_low_quality";
     item._pdfOcrLowQuality = true;
     meta.canonicalStatus = "skipped";
@@ -402,8 +402,9 @@ Schema ngắn:
 {"name":"tên ngắn","sku":"mã/model","category":"nhóm","supplier":"${supplierGuess}","unit":"Cái","costPrice":123456,"listPrice":0,"minRetailPrice":0,"specs":"<=80 ký tự","rawText":"<=90 ký tự","sourcePage":${chunk.fromPage || 0}}
 
 Quy tắc giá:
-- costPrice = giá đại lý/NPP/nhập hoặc giá thấp nhất hợp lý trong dòng.
-- listPrice = giá công bố/niêm yết/giá bán nếu có và cao hơn costPrice.
+- costPrice = giá đại lý/NPP/nhập hoặc ĐƠN GIÁ của sản phẩm.
+- Nếu dòng báo giá có SL + Đơn giá + Thành tiền và SL × Đơn giá = Thành tiền: costPrice = Đơn giá, KHÔNG dùng Thành tiền làm listPrice.
+- listPrice chỉ là giá công bố/niêm yết/giá bán lẻ khi bảng có cột đó rõ ràng; nếu không thì listPrice=0.
 - Nếu giá bị dính quá dài, để costPrice=0.
 - Nếu không có sản phẩm trong chunk, trả về rỗng. Không giải thích.`;
 }
@@ -528,9 +529,10 @@ Quy tắc chung cho PDF scan dạng bảng:
 - Không bỏ qua một hàng nếu có tên sản phẩm + giá tiền. Nếu SKU mờ, để sku="" và vẫn xuất dòng.
 - Tên sản phẩm lấy từ cột THIẾT BỊ/TÊN SẢN PHẨM, không lấy specs làm tên.
 - SKU/model lấy từ cột MÃ SẢN PHẨM nếu đọc được.
-- costPrice = giá ở cột giá ngoài cùng bên phải tương ứng với đúng hàng đó.
+- Nếu bảng có cột SL + Đơn giá + Thành tiền: costPrice = ĐƠN GIÁ, không phải Thành tiền. Hãy kiểm tra SL × Đơn giá = Thành tiền để xác nhận.
+- Chỉ dùng cột giá ngoài cùng bên phải làm costPrice khi đó thực sự là cột Đơn giá/Giá NPP, không phải Thành tiền.
 - Không được dùng số trong thông số kỹ thuật làm giá: tuổi thọ 50,000h/25,000h, CRI, IP, CCT, 220V, 24V, 48V, kích thước, góc chiếu. Nếu không chắc giá, để costPrice=0.
-- listPrice = 0 nếu bảng không có giá niêm yết riêng.
+- listPrice = 0 nếu bảng không có giá niêm yết/giá bán lẻ riêng.
 - Category lấy từ dòng section gần nhất.
 - Bỏ qua header, logo, footer, con dấu, điều khoản, dòng không phải sản phẩm.
 - Giá phải là số nguyên VND, bỏ dấu chấm/phẩy: "650,000" -> 650000.
@@ -701,9 +703,12 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
   return (items || [])
     .map((it) => {
       const rawText = normalizeText(it.rawText || it.name);
+      const structural = classifyPdfStructuralRow([it.name, rawText].filter(Boolean).join(" "));
+      if (!structural.catalogEligible) return null;
       const sourceRow = Number(it.sourceRow || it.stt || it.row || extractSourceRowNumber(rawText) || 0) || null;
       const specs = normalizeText(it.specs);
-      let costPrice = normalizePrice(it.costPrice ?? it.price);
+      const quoteEconomics = inferPdfQuoteRowEconomics(rawText);
+      let costPrice = quoteEconomics.matched ? quoteEconomics.unitPrice : normalizePrice(it.costPrice ?? it.price);
       const contextKey = normalizeVietnameseKey([rawText, specs, it.name].join(" "));
       // Guard for scanned lighting PDFs: OCR often mistakes "Tuổi thọ: 50,000h"
       // or "25,000h" as the price when the real price column is unclear.
@@ -718,8 +723,9 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
         supplier: normalizeText(it.supplier) || supplierGuess,
         unit: normalizeText(it.unit) || "Cái",
         costPrice,
-        listPrice: normalizePrice(it.listPrice ?? it.publicPrice ?? it.salePrice),
-        minRetailPrice: normalizePrice(it.minRetailPrice),
+        // A quotation row's second money cell is Thành tiền, not retail/list price.
+        listPrice: quoteEconomics.matched ? 0 : normalizePrice(it.listPrice ?? it.publicPrice ?? it.salePrice),
+        minRetailPrice: quoteEconomics.matched ? 0 : normalizePrice(it.minRetailPrice),
         specs,
         image: "",
         _meta: {
@@ -733,7 +739,8 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
             pageWidth: Number(it.sourcePageWidth || it.pageWidth || 0) || null,
             pageHeight: Number(it.sourcePageHeight || it.pageHeight || 0) || null,
           },
-          productEvidence: it.evidence || {},
+          productEvidence: { ...(it.evidence || {}), quoteArithmeticMatched: quoteEconomics.matched },
+          quoteEconomics: quoteEconomics.matched ? quoteEconomics : null,
           status: "new",
           confidence: engine.includes("heuristic") ? 0.62 : 0.74,
           issues: [],
@@ -753,6 +760,7 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
       }
       return sanitized;
     })
+    .filter(Boolean)
     .map((it) => applyPdfOcrQualityGuard(it, engine, supplierGuess))
     .filter((it) => it.name.length > 1);
 }
@@ -834,47 +842,158 @@ function mergePdfRowVariants(oldItem, item) {
   };
 }
 
-function dedupeProducts(items, opts = {}) {
-  const map = new Map();
+function issueCodeValue(issue) {
+  return String(typeof issue === "string" ? issue : (issue?.code || "")).toLowerCase();
+}
+
+function productMergeQuality(item = {}) {
+  const evidence = item?._meta?.productEvidence || {};
+  const issues = item?._meta?.issues || [];
+  let score = 0;
+  if (Number(item.costPrice || 0) > 0) score += 2;
+  if (hasClearSku(item.sku)) score += 2;
+  if (item?._meta?.source?.bbox) score += 1;
+  if (evidence.quoteArithmeticMatched) score += 4;
+  if (item?._meta?.canonicalStatus === "auto_approved") score += 1;
+  score -= issues.filter((it) => String(it?.level || "") === "error").length * 3;
+  score -= issues.filter((it) => String(it?.level || "") === "warning").length;
+  return score;
+}
+
+function chooseBetterSku(a = "", b = "") {
+  const values = [normalizeText(a), normalizeText(b)].filter(Boolean);
+  if (!values.length) return "";
+  return values.sort((x, y) => {
+    const cx = hasClearSku(x) ? 1 : 0;
+    const cy = hasClearSku(y) ? 1 : 0;
+    return cy - cx || y.replace(/[^A-Z0-9]/gi, "").length - x.replace(/[^A-Z0-9]/gi, "").length;
+  })[0];
+}
+
+function resolvedMergedIssues(issues = [], merged = {}) {
+  const validPrice = Number(merged.costPrice || 0) >= 1000 && Number(merged.costPrice || 0) <= 1_000_000_000;
+  const strong = !!merged?._meta?.productEvidence?.quoteArithmeticMatched || isHighConfidencePdfHeuristicProduct(merged, merged?._meta?.engine || "pdf-v3-text-heuristic");
+  const hasSku = hasClearSku(merged.sku);
   const out = [];
+  const seen = new Set();
+  for (const it of issues || []) {
+    const code = issueCodeValue(it);
+    if (validPrice && ["price_unreasonable", "price_parse_failed", "price_recovered"].includes(code)) continue;
+    if (strong && code === "pdf_ocr_uncertain") continue;
+    if (strong && code === "pdf_insufficient_product_evidence") continue;
+    if (strong && hasSku && code === "non_product_row") continue;
+    if (merged.name && code === "missing_product_name") continue;
+    const sig = `${code}:${typeof it === "string" ? it : (it?.message || "")}`;
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    out.push(it);
+  }
+  return out.slice(0, 8);
+}
+
+function mergePdfDuplicates(oldItem, item) {
+  const oldQ = productMergeQuality(oldItem);
+  const newQ = productMergeQuality(item);
+  const winner = newQ > oldQ ? item : oldItem;
+  const other = winner === item ? oldItem : item;
+  const winnerArithmetic = !!winner?._meta?.productEvidence?.quoteArithmeticMatched;
+  const otherArithmetic = !!other?._meta?.productEvidence?.quoteArithmeticMatched;
+  const source = winner?._meta?.source?.bbox ? winner._meta.source
+    : (other?._meta?.source?.bbox ? other._meta.source : (winner?._meta?.source || other?._meta?.source || {}));
+  const productEvidence = {
+    ...(other?._meta?.productEvidence || {}),
+    ...(winner?._meta?.productEvidence || {}),
+    quoteArithmeticMatched: winnerArithmetic || otherArithmetic,
+  };
+  const costPrice = Number(winner.costPrice || 0) || Number(other.costPrice || 0) || 0;
+  // When arithmetic proves Đơn giá × SL = Thành tiền, never preserve Thành tiền as list price.
+  const listPrice = productEvidence.quoteArithmeticMatched
+    ? 0
+    : (Number(winner.listPrice || 0) || Number(other.listPrice || 0) || 0);
+  const merged = {
+    ...other,
+    ...winner,
+    name: normalizeText(winner.name || other.name),
+    sku: chooseBetterSku(winner.sku, other.sku),
+    category: normalizeText(winner.category || other.category) || "Chung",
+    supplier: normalizeText(winner.supplier || other.supplier),
+    unit: normalizeText(winner.unit || other.unit) || "Cái",
+    costPrice,
+    listPrice,
+    publicPrice: listPrice,
+    minRetailPrice: productEvidence.quoteArithmeticMatched ? 0 : (Number(winner.minRetailPrice || 0) || Number(other.minRetailPrice || 0) || 0),
+    specs: [...new Set([oldItem.specs, item.specs].filter(Boolean))].join(" | ").slice(0, 1000),
+    image: oldItem.image || item.image || "",
+    _meta: {
+      ...(other?._meta || {}),
+      ...(winner?._meta || {}),
+      source,
+      productEvidence,
+      quoteEconomics: winner?._meta?.quoteEconomics || other?._meta?.quoteEconomics || null,
+    },
+  };
+  const issues = resolvedMergedIssues([...(oldItem._meta?.issues || []), ...(item._meta?.issues || [])], merged);
+  const hasError = issues.some((it) => String(it?.level || "") === "error");
+  const hasWarn = issues.some((it) => String(it?.level || "") === "warning");
+  merged._meta.issues = issues;
+  merged._meta.canonicalStatus = hasError || hasWarn ? "need_review" : "auto_approved";
+  merged._meta.status = hasError || hasWarn ? "review" : "new";
+  merged._meta.confidence = hasError ? 0.42 : hasWarn ? Math.min(Number(merged._meta.confidence || 0.72), 0.64) : Math.max(Number(merged._meta.confidence || 0.78), productEvidence.quoteArithmeticMatched ? 0.9 : 0.78);
+  return merged;
+}
+
+function dedupeProducts(items, opts = {}) {
+  const aliasMap = new Map();
+  const out = [];
+
+  function keysFor(item) {
+    const sku = normalizeText(item?.sku).toLowerCase().replace(/[\s\-\/\._()]/g, "");
+    const name = normalizeVietnameseKey(stripLightingVariantFromName(item?.name));
+    return { sku: sku ? `sku:${sku}` : "", name: name ? `name:${name}` : "" };
+  }
+  function bindAliases(item, index) {
+    const keys = keysFor(item);
+    if (keys.sku) aliasMap.set(keys.sku, index);
+    if (keys.name) aliasMap.set(keys.name, index);
+  }
+
   for (const item of items || []) {
+    if (!item || item?._meta?.canonicalStatus === "skipped" || item?._meta?.status === "skipped" || item?._skipReason) continue;
     const row = item?._meta?.source?.row || extractSourceRowNumber(item?._meta?.source?.rawText);
     const page = item?._meta?.source?.page || 0;
     const baseName = normalizeVietnameseKey(stripLightingVariantFromName(item.name));
     const lumiVariantKey = isLumiLightingContext({ fileName: opts.fileName, supplierGuess: opts.supplierGuess, category: item.category, name: item.name, rawText: item._meta?.source?.rawText })
       ? `lumi:${page || "p"}:${row || baseName}`
       : "";
-    const key = lumiVariantKey || (item.sku || item.name || "").toLowerCase().replace(/[\s\-\/\._]/g, "");
-    if (!key) continue;
-    if (map.has(key)) {
-      const idx = map.get(key);
+    if (lumiVariantKey && aliasMap.has(lumiVariantKey)) {
+      const idx = aliasMap.get(lumiVariantKey);
+      out[idx] = mergePdfRowVariants(out[idx], item);
+      bindAliases(out[idx], idx);
+      continue;
+    }
+
+    const keys = keysFor(item);
+    let idx = keys.sku && aliasMap.has(keys.sku) ? aliasMap.get(keys.sku) : null;
+    if (idx == null && keys.name && aliasMap.has(keys.name)) {
+      const candidateIdx = aliasMap.get(keys.name);
+      const existing = out[candidateIdx];
+      const a = normalizeText(existing?.sku);
+      const b = normalizeText(item?.sku);
+      // Name aliases are only safe when one side lacks SKU or both agree.
+      if (!a || !b || keysFor(existing).sku === keys.sku) idx = candidateIdx;
+    }
+
+    if (idx != null) {
       const old = out[idx];
-      if (isVariantPriceRowMerge(old, item, opts) || lumiVariantKey) {
-        out[idx] = mergePdfRowVariants(old, item);
-        continue;
-      }
-      const costPrice = item.costPrice || old.costPrice || 0;
-      const listPrice = item.listPrice || old.listPrice || 0;
-      const minRetailPrice = item.minRetailPrice || old.minRetailPrice || 0;
-      out[idx] = {
-        ...old,
-        ...item,
-        costPrice,
-        listPrice,
-        minRetailPrice,
-        specs: [old.specs, item.specs].filter(Boolean).join(" | ").slice(0, 1000),
-        image: old.image || item.image || "",
-        _meta: {
-          ...(old._meta || {}),
-          ...(item._meta || {}),
-          source: item._meta?.source?.bbox ? item._meta.source : (old._meta?.source?.bbox ? old._meta.source : (item._meta?.source || old._meta?.source || {})),
-          productEvidence: item._meta?.source?.bbox ? item._meta?.productEvidence : (old._meta?.source?.bbox ? old._meta?.productEvidence : (item._meta?.productEvidence || old._meta?.productEvidence || {})),
-          issues: [...(old._meta?.issues || []), ...(item._meta?.issues || [])].slice(0, 6),
-        },
-      };
+      if (isVariantPriceRowMerge(old, item, opts)) out[idx] = mergePdfRowVariants(old, item);
+      else out[idx] = mergePdfDuplicates(old, item);
+      bindAliases(out[idx], idx);
+      if (lumiVariantKey) aliasMap.set(lumiVariantKey, idx);
     } else {
-      map.set(key, out.length);
+      const newIdx = out.length;
       out.push(item);
+      bindAliases(item, newIdx);
+      if (lumiVariantKey) aliasMap.set(lumiVariantKey, newIdx);
     }
   }
   return out;
@@ -912,6 +1031,8 @@ function pickPriceFields(prices) {
 function isLikelySkipPdfLine(line) {
   const t = normalizeText(line).toLowerCase();
   if (!t || t.length < 5) return true;
+  const structural = classifyPdfStructuralRow(t);
+  if (structural.kind === "header_contact" || structural.kind === "quote_summary_or_service") return true;
   return /^(stt|no\.|mã|ma sp|model|sku|tên|ten|đơn giá|don gia|giá|gia|ghi chú|ghi chu)(\s|$)/i.test(t)
     || /vat|thanh toán|thanh toan|bảo hành|bao hanh|hotline|ngân hàng|ngan hang|chuyển khoản|chuyen khoan|địa chỉ|dia chi|website|email|tổng cộng|tong cong/.test(t);
 }
@@ -919,15 +1040,19 @@ function isLikelySkipPdfLine(line) {
 function isLikelySectionLine(line) {
   const t = normalizeText(line);
   if (!t || t.length < 4 || extractMoneyValues(t).length) return false;
-  const upperish = t.toUpperCase() === t || /^(dòng|dong|nhóm|nhom|series|bảng giá|bang gia|công tắc|cong tac|đèn|den|thiết bị|thiet bi|camera|khóa|khoa|két|ket|động sản phẩm|dong san pham)/i.test(t);
-  return upperish && t.length <= 130;
+  // Product descriptions such as "Công tắc cơ Lumes..." are not sections.
+  // Accept only visually uppercase headings or explicit group/series prefixes.
+  const explicitPrefix = /^(dòng sản phẩm|dong san pham|dòng|dong|nhóm|nhom|series|bảng giá|bang gia)\b/i.test(t);
+  const upperish = t.toUpperCase() === t && tokenCount(t) >= 2;
+  return (upperish || explicitPrefix) && t.length <= 130;
 }
 
 function extractSkuFromPdfLine(line) {
   const text = String(line || "");
   const patterns = [
-    /\b[A-Z]{1,6}(?:-[A-Z0-9]{1,10}){1,8}(?:\/[A-Z0-9]{1,6})?\b/g,
-    /\b[A-Z]{2,}[0-9][A-Z0-9\-\/]{2,}\b/g,
+    /\b[A-Z]{1,6}(?:-[A-Z0-9]{1,12}){1,8}(?:\/[A-Z0-9]{1,8})?(?:\([A-Z0-9]{1,6}\))?/g,
+    /\b[A-Z]{1,6}(?:-[A-Z]{2,12}){1,3}\b/g, // e.g. LM-PCB, TU-DAUGHI
+    /\b[A-Z]{2,}[0-9][A-Z0-9\-\/]{2,}(?:\([A-Z0-9]{1,6}\))?\b/g,
     /\b[0-9]{2}[A-Z][A-Z0-9\-\/]{3,}\b/g,
     /\b[A-Z]+\d+[A-Z0-9\-\/]*\b/g,
   ];
@@ -966,17 +1091,96 @@ function buildSpecsFromLine(line, prices) {
   return specs.length > 160 ? specs.slice(0, 160).trim() : specs;
 }
 
+
+function inferPdfTableColumnLayout(pages = []) {
+  for (const page of pages || []) {
+    for (const row of page.rows || []) {
+      const k = normalizeVietnameseKey(row.text || "");
+      if (!/\bstt\b/.test(k) || !/(don gia|gia)/.test(k) || !/(thanh tien|tong)/.test(k)) continue;
+      const parts = Array.isArray(row.parts) ? row.parts : [];
+      const findX = (re) => {
+        const part = parts.find((p) => re.test(normalizeVietnameseKey(p.str || "")));
+        return part ? Number(part.x || 0) : 0;
+      };
+      const nameX = findX(/^(ten|ten hang|hang hoa|san pham|thiet bi)$/) || findX(/^ten$/);
+      const skuX = findX(/^(ma|sku|model)$/);
+      const supplierX = findX(/^xuat$/) || findX(/^ncc$/) || findX(/^hang$/);
+      const unitX = findX(/^(dvt|don vi)$/);
+      const qtyX = findX(/^(sl|so luong)$/);
+      const unitPriceX = findX(/^don$/) || findX(/^gia$/);
+      const totalX = findX(/^thanh$/) || findX(/^tong$/);
+      if (skuX && supplierX && unitX && qtyX && unitPriceX && totalX) {
+        return { nameX, skuX, supplierX, unitX, qtyX, unitPriceX, totalX };
+      }
+    }
+  }
+  return null;
+}
+
+function columnParts(row = {}, minX = -Infinity, maxX = Infinity) {
+  return (Array.isArray(row.parts) ? row.parts : [])
+    .filter((p) => Number(p.x || 0) >= minX && Number(p.x || 0) < maxX)
+    .sort((a, b) => Number(a.x || 0) - Number(b.x || 0));
+}
+
+function compactSkuFragments(parts = []) {
+  const raw = parts.map((p) => normalizeText(p.str)).filter(Boolean).join("");
+  return raw.replace(/\s+/g, "").replace(/-{2,}/g, "-").replace(/^[-/]+|[-/]+$/g, "");
+}
+
+function reconstructPdfTableRow(page = {}, rowIndex = 0, layout = null) {
+  if (!layout || !Array.isArray(page.rows) || !page.rows[rowIndex]) return null;
+  const rows = page.rows;
+  const row = rows[rowIndex];
+  const nameMin = layout.nameX || 0;
+  const nameMax = layout.skuX;
+  const skuMin = layout.skuX;
+  const skuMax = layout.supplierX;
+  const supplierMin = (layout.skuX + layout.supplierX) / 2;
+  const supplierMax = (layout.supplierX + layout.unitX) / 2;
+  const unitMin = supplierMax;
+  const unitMax = (layout.unitX + layout.qtyX) / 2;
+
+  const nameParts = [...columnParts(row, nameMin, nameMax)];
+  const skuParts = [...columnParts(row, skuMin, skuMax)];
+  // Wrapped table cells continue on following visual lines at the same x column.
+  // Only append the name fragment when that continuation line also carries SKU text;
+  // otherwise it is usually the long description/specs cell.
+  for (let j = rowIndex + 1; j < Math.min(rows.length, rowIndex + 4); j++) {
+    const next = rows[j];
+    const nextMoney = extractMoneyValues(next.text || "");
+    if (nextMoney.length >= 1) break; // next product/subtotal row
+    const nextSku = columnParts(next, skuMin, skuMax);
+    if (!nextSku.length) break;
+    skuParts.push(...nextSku);
+    nameParts.push(...columnParts(next, nameMin, nameMax));
+  }
+
+  const name = normalizeText(nameParts.map((p) => p.str).join(" ")).replace(/^\d+[.)\-\s]+/, "");
+  const sku = compactSkuFragments(skuParts);
+  const supplier = normalizeText(columnParts(row, supplierMin, supplierMax).map((p) => p.str).join(" "));
+  const unit = normalizeText(columnParts(row, unitMin, unitMax).map((p) => p.str).join(" "));
+  return { name, sku, supplier, unit };
+}
+
 function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
   const out = [];
   let currentCategory = "Chung";
+  const tableLayout = inferPdfTableColumnLayout(pages);
 
   for (const page of pages || []) {
     const sourceRows = Array.isArray(page.rows) && page.rows.length
-      ? page.rows.map((row, index) => ({ line: row.text || "", evidence: { row: index + 1, rawText: row.text || "", bbox: row.bbox || null, parts: row.parts || [], pageWidth: page.pageWidth || null, pageHeight: page.pageHeight || null, matchScore: 1 } }))
-      : splitLinesSmart(page.text).map((line) => ({ line, evidence: null }));
+      ? page.rows.map((row, index) => ({ line: row.text || "", rowIndex: index, evidence: { row: index + 1, rawText: row.text || "", bbox: row.bbox || null, parts: row.parts || [], pageWidth: page.pageWidth || null, pageHeight: page.pageHeight || null, matchScore: 1 } }))
+      : splitLinesSmart(page.text).map((line, index) => ({ line, rowIndex: index, evidence: null }));
     for (const entry of sourceRows) {
       const clean = normalizeText(entry.line);
       if (!clean) continue;
+      const structural = classifyPdfStructuralRow(clean);
+      if (structural.kind === "section_subtotal") {
+        currentCategory = structural.category.slice(0, 90) || currentCategory;
+        continue;
+      }
+      if (!structural.catalogEligible) continue;
       if (isLikelySectionLine(clean)) {
         currentCategory = clean.replace(/^bảng giá\s*/i, "").slice(0, 90) || currentCategory;
         continue;
@@ -985,22 +1189,27 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
 
       const prices = extractMoneyValues(clean);
       if (!prices.length) continue;
-      const { costPrice, listPrice, minRetailPrice } = pickPriceFields(prices);
+      const quoteEconomics = inferPdfQuoteRowEconomics(clean);
+      const { costPrice, listPrice, minRetailPrice } = quoteEconomics.matched
+        ? { costPrice: quoteEconomics.unitPrice, listPrice: 0, minRetailPrice: 0 }
+        : pickPriceFields(prices);
       if (!costPrice) continue;
 
-      const sku = extractSkuFromPdfLine(clean);
-      let name = cleanHeuristicName(clean, sku);
+      const reconstructed = reconstructPdfTableRow(page, entry.rowIndex, tableLayout);
+      const sku = normalizeText(reconstructed?.sku) || extractSkuFromPdfLine(clean);
+      let name = normalizeText(reconstructed?.name) || cleanHeuristicName(clean, sku);
       if ((!name || name.length < 3) && sku) name = `${currentCategory} ${sku}`;
       if (!name || name.length < 3) continue;
-      const explicitUnit = /\b(bộ|bo|set|cái|cai|chiếc|chiec|m|mét|met|cuộn|cuon|hộp|hop)\b/i.test(clean);
+      const unitText = normalizeText(reconstructed?.unit);
+      const explicitUnit = !!unitText || /\b(bộ|bo|set|cái|cai|chiếc|chiec|m|mét|met|cuộn|cuon|hộp|hop|tủ|tu)\b/i.test(clean);
       const evidence = entry.evidence || findPdfRowEvidence(page, clean);
 
       out.push({
         name,
         sku,
         category: currentCategory || "Chung",
-        supplier: supplierGuess,
-        unit: /\b(bộ|bo|set)\b/i.test(clean) ? "Bộ" : "Cái",
+        supplier: normalizeText(reconstructed?.supplier) || supplierGuess,
+        unit: unitText || (/\b(bộ|bo|set)\b/i.test(clean) ? "Bộ" : "Cái"),
         costPrice,
         listPrice,
         minRetailPrice,
@@ -1012,12 +1221,15 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
         sourceParts: evidence?.parts || [],
         sourcePageWidth: evidence?.pageWidth || page.pageWidth || null,
         sourcePageHeight: evidence?.pageHeight || page.pageHeight || null,
+        quoteQuantity: quoteEconomics.matched ? quoteEconomics.quantity : 0,
+        quoteLineTotal: quoteEconomics.matched ? quoteEconomics.lineTotal : 0,
         evidence: {
           hasPrice: true,
           hasSku: !!sku,
           hasProductKeyword: hasProductKeyword([name, clean, currentCategory].join(" ")),
           hasExplicitUnit: explicitUnit,
           hasGrounding: !!evidence?.bbox,
+          quoteArithmeticMatched: quoteEconomics.matched,
           category: currentCategory || "Chung",
         },
       });
@@ -1207,4 +1419,8 @@ export {
   buildDocumentPagePrompt,
   assessPdfPositiveEvidence,
   findPdfRowEvidence,
+  inferPdfQuoteRowEconomics,
+  classifyPdfStructuralRow,
+  inferPdfTableColumnLayout,
+  reconstructPdfTableRow,
 };
