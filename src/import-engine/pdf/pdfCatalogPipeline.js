@@ -817,6 +817,100 @@ async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPag
   return { raw, failedPages };
 }
 
+
+// Phase 14.0D — document-level confidence calibration for page-image PDF extraction.
+// Claude is allowed to READ rows, but SmartQuote decides whether a row is safe to
+// auto-approve using deterministic evidence and document structure.
+function calibratePdfVisionConfidence(items = [], { expectedRows = 0 } = {}) {
+  const rows = (items || [])
+    .map((it) => Number(it?._meta?.source?.row || 0))
+    .filter((n) => Number.isInteger(n) && n > 0);
+
+  const uniqueRows = new Set(rows);
+  const exactExpectedCoverage = Number(expectedRows || 0) > 0
+    && items.length === Number(expectedRows)
+    && rows.length === items.length
+    && uniqueRows.size === Number(expectedRows)
+    && Array.from({ length: Number(expectedRows) }, (_, i) => i + 1).every((n) => uniqueRows.has(n));
+
+  // Generic row-indexed tables can also be trusted when STT is a complete 1..N
+  // sequence. We deliberately require >= 3 rows to avoid over-trusting tiny docs.
+  const genericContiguousCoverage = !expectedRows
+    && items.length >= 3
+    && rows.length === items.length
+    && uniqueRows.size === items.length
+    && Math.min(...rows) === 1
+    && Math.max(...rows) === items.length
+    && Array.from({ length: items.length }, (_, i) => i + 1).every((n) => uniqueRows.has(n));
+
+  const documentStructureVerified = exactExpectedCoverage || genericContiguousCoverage;
+
+  return (items || []).map((item) => {
+    const meta = { ...(item?._meta || {}) };
+    const source = { ...(meta.source || {}) };
+    const evidence = assessPdfPositiveEvidence({ ...item, _meta: meta }, meta.engine || "pdf-v5-page-image-jsonl");
+    const issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
+
+    const strongIdentity =
+      !!evidence.signals?.validPrice &&
+      !!evidence.signals?.goodName &&
+      !!evidence.signals?.clearSku &&
+      Number(evidence.score || 0) >= 6;
+
+    const hasRowProvenance =
+      Number.isInteger(Number(source.page)) &&
+      Number(source.page) > 0 &&
+      Number.isInteger(Number(source.row)) &&
+      Number(source.row) > 0;
+
+    const blockingCodes = new Set([
+      "pdf_price_looks_like_life_hours",
+      "pdf_scan_low_recall",
+      "missing_product_name",
+      "price_parse_failed",
+      "price_unreasonable",
+      "pdf_ocr_low_quality",
+      "pdf_insufficient_product_evidence",
+    ]);
+
+    const hasBlockingIssue = issues.some((issue) => {
+      const code = String(typeof issue === "string" ? issue : (issue?.code || "")).toLowerCase();
+      const level = String(typeof issue === "string" ? "" : (issue?.level || "")).toLowerCase();
+      return blockingCodes.has(code) || level === "error";
+    });
+
+    if (documentStructureVerified && strongIdentity && hasRowProvenance && !hasBlockingIssue) {
+      const filteredIssues = issues.filter((issue) => {
+        const code = String(typeof issue === "string" ? issue : (issue?.code || "")).toLowerCase();
+        return code !== "pdf_ai_needs_review" && code !== "pdf_ocr_uncertain";
+      });
+
+      meta.issues = filteredIssues;
+      meta.productEvidence = {
+        ...(meta.productEvidence || {}),
+        ...evidence,
+        documentStructureVerified: true,
+        exactExpectedCoverage,
+        genericContiguousCoverage,
+      };
+      meta.canonicalStatus = "auto_approved";
+      meta.status = "new";
+      meta.confidence = Math.max(Number(meta.confidence || 0), exactExpectedCoverage ? 0.95 : 0.92);
+
+      return { ...item, _meta: meta };
+    }
+
+    meta.productEvidence = {
+      ...(meta.productEvidence || {}),
+      ...evidence,
+      documentStructureVerified,
+      exactExpectedCoverage,
+      genericContiguousCoverage,
+    };
+    return { ...item, _meta: meta };
+  });
+}
+
 async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, pageCount, onProgress }) {
   const renderer = await createPdfVisionRenderer(file);
   const totalPages = Math.max(1, Math.min(Number(pageCount || renderer.pageCount || 1), 30));
@@ -867,6 +961,8 @@ async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, p
         it._meta.pdfCoverageRatio = coverageRatio;
       }
     }
+    finalItems = calibratePdfVisionConfidence(finalItems, { expectedRows });
+
     onProgress?.({
       stage: "done",
       message: `PDF scan/ảnh đọc được ${finalItems.length} sản phẩm bằng AI theo ảnh từng trang${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
