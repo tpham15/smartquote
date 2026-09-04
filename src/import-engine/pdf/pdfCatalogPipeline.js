@@ -807,7 +807,8 @@ Output chỉ theo JSON Schema.`;
 async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
   const raw = [];
   const pageIrs = [];
-  let failedPages = 0;
+  const failedPageNumbers = new Set();
+  const pageErrors = [];
   let targetedRecoveries = 0;
   let previousSectionTitle = "";
 
@@ -875,15 +876,23 @@ async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPag
         pageItems = bandItems;
       }
 
-      if (!pageItems.length) failedPages += 1;
+      // A valid non-catalog page may legitimately contain zero product rows.
+      // Only treat an empty catalog/mixed/unknown page as a recoverable extraction miss.
+      const pageType = String(pageIr?.pageType || "unknown");
+      if (!pageItems.length && pageType !== "non_catalog") {
+        failedPageNumbers.add(pageNum);
+        pageErrors.push(`Trang ${pageNum}: Document IR không có product row (pageType=${pageType}).`);
+      }
       raw.push(...pageItems.map((it) => ({ ...it, sourcePage: Number(it.sourcePage || pageNum) || pageNum })));
     } catch (err) {
-      failedPages += 1;
-      console.warn("PDF page layout extraction failed", { pageNum, recoveryMode, error: err?.message || err });
+      failedPageNumbers.add(pageNum);
+      const message = String(err?.message || err || "Lỗi không xác định");
+      pageErrors.push(`Trang ${pageNum}: ${message}`);
+      console.warn("PDF page layout extraction failed", { pageNum, recoveryMode, error: message });
     }
     if (pageNum < totalPages) await new Promise((r) => setTimeout(r, recoveryMode ? 220 : 160));
   }
-  return { raw, failedPages, pageIrs, targetedRecoveries };
+  return { raw, failedPages: failedPageNumbers.size, failedPageNumbers: [...failedPageNumbers], pageErrors, pageIrs, targetedRecoveries };
 }
 
 async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, pageCount, onProgress }) {
@@ -895,6 +904,8 @@ async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, p
     const first = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: false });
     let raw = first.raw;
     let failedPages = first.failedPages;
+    let pageErrors = [...(first.pageErrors || [])];
+    let successfulPages = new Set(raw.map((it) => Number(it?.sourcePage || 0)).filter((n) => n > 0));
     let items = normalizePdfItems(raw, supplierGuess, "pdf-v7-layout-ir");
     let finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
 
@@ -911,13 +922,24 @@ async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, p
         expectedRows: expectedRows || null,
       });
       const second = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: true });
-      failedPages += second.failedPages;
+      pageErrors = [...pageErrors, ...(second.pageErrors || [])];
       raw = [...raw, ...second.raw];
+      for (const it of second.raw || []) {
+        const p = Number(it?.sourcePage || 0);
+        if (p > 0) successfulPages.add(p);
+      }
+      // Do not add first-pass + retry failures (which produced impossible 6/3).
+      // After recovery, a page is failed only when neither pass produced products.
+      failedPages = Math.max(0, totalPages - successfulPages.size);
       items = normalizePdfItems(raw, supplierGuess, "pdf-v7-layout-ir");
       finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
     }
 
-    if (!finalItems.length) throw new Error(`Claude page vision không tìm được sản phẩm (${failedPages}/${totalPages} trang lỗi).`);
+    if (!finalItems.length) {
+      const uniqueErrors = [...new Set(pageErrors.map((e) => String(e || '').trim()).filter(Boolean))];
+      const diagnostic = uniqueErrors.length ? ` Chi tiết: ${uniqueErrors.slice(0, 2).join(' | ')}` : '';
+      throw new Error(`Claude page vision không tìm được sản phẩm (${Math.min(failedPages, totalPages)}/${totalPages} trang lỗi).${diagnostic}`);
+    }
 
     const finalized = finalizePdfTrust(finalItems, { expectedRows, failedPages, engine: "pdf-v7-layout-ir" });
     const warning = expectedRows && finalized.items.length < expectedRows

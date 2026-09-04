@@ -128,14 +128,26 @@ export async function callClaudeText(payload) {
 
 /** Guaranteed schema-conformant JSON via Claude Structured Outputs. */
 export async function callClaudeStructured(payload) {
-  const raw = await callClaudeText(payload);
   try {
-    return JSON.parse(raw.text);
+    const raw = await callClaudeText(payload);
+    try {
+      return JSON.parse(raw.text);
+    } catch (err) {
+      const error = new Error(`Structured Output không parse được JSON: ${err.message}`);
+      error.rawText = raw.text;
+      error.response = raw.raw;
+      throw error;
+    }
   } catch (err) {
-    const error = new Error(`Structured Output không parse được JSON: ${err.message}`);
-    error.rawText = raw.text;
-    error.response = raw.raw;
-    throw error;
+    const msg = String(err?.message || err || '');
+    const schemaFailure = /(?:schema|structured|output_config|json_schema|grammar|compilation)/i.test(msg)
+      && /(?:400|invalid|unsupported|complex|compile|schema)/i.test(msg);
+    if (!schemaFailure || !payload?.output_config) throw err;
+
+    console.warn('Claude Structured Output unavailable; retrying once as plain JSON', { error: msg });
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.output_config;
+    return callClaudeJSON(fallbackPayload);
   }
 }
 

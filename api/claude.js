@@ -81,6 +81,35 @@ function sanitizeClaudeMessages(messages = []) {
   });
 }
 
+function sanitizeStructuredOutputSchema(schema) {
+  // Raw Claude JSON-output schemas support a useful subset of JSON Schema.
+  // SDK helpers strip validation-only constraints before sending. SmartQuote
+  // does not use an Anthropic SDK here, so perform the same safety transform.
+  const unsupported = new Set([
+    'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf',
+    'minLength', 'maxLength', 'minItems', 'maxItems', 'uniqueItems',
+    'minProperties', 'maxProperties', 'contains', 'minContains', 'maxContains',
+    'dependentRequired', 'dependentSchemas', 'propertyNames',
+    'unevaluatedProperties', 'unevaluatedItems', 'if', 'then', 'else', 'not'
+  ]);
+
+  function walk(value) {
+    if (Array.isArray(value)) return value.map(walk);
+    if (!value || typeof value !== 'object') return value;
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (unsupported.has(k)) continue;
+      out[k] = walk(v);
+    }
+    if (out.type === 'object' && out.properties && out.additionalProperties === undefined) {
+      out.additionalProperties = false;
+    }
+    return out;
+  }
+
+  return walk(schema);
+}
+
 function sanitizeOutputConfig(config) {
   if (!config || typeof config !== 'object') return null;
   const out = {};
@@ -89,13 +118,14 @@ function sanitizeOutputConfig(config) {
 
   const format = config.format;
   if (format?.type === 'json_schema' && format.schema && typeof format.schema === 'object' && !Array.isArray(format.schema)) {
-    const schemaText = JSON.stringify(format.schema);
+    const safeSchema = sanitizeStructuredOutputSchema(format.schema);
+    const schemaText = JSON.stringify(safeSchema);
     if (schemaText.length > 30000) {
-      const err = new Error('Structured-output schema quá lớn.');
+      const err = new Error('Structured-output schema quá lớn sau khi chuẩn hoá.');
       err.statusCode = 400;
       throw err;
     }
-    out.format = { type: 'json_schema', schema: format.schema };
+    out.format = { type: 'json_schema', schema: safeSchema };
   }
   return Object.keys(out).length ? out : null;
 }

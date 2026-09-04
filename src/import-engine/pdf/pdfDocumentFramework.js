@@ -47,15 +47,13 @@ export const PDF_DOCUMENT_IR_SCHEMA_VERSION = 'sq-pdf-document-ir-v1';
 
 const BBOX_SCHEMA = {
   type: 'array',
-  items: { type: 'integer', minimum: 0, maximum: 1000 },
-  minItems: 4,
-  maxItems: 4,
+  items: { type: 'integer' },
 };
 const FIELD_SCHEMA = {
   type: 'object', additionalProperties: false,
   properties: {
     text: { type: 'string' },
-    confidence: { type: 'integer', minimum: 0, maximum: 100 },
+    confidence: { type: 'integer' },
     bbox: BBOX_SCHEMA,
   },
   required: ['text', 'confidence', 'bbox'],
@@ -68,7 +66,7 @@ const PRICE_SCHEMA = {
     variantKey: { type: 'string' },
     text: { type: 'string' },
     value: { type: 'integer' },
-    confidence: { type: 'integer', minimum: 0, maximum: 100 },
+    confidence: { type: 'integer' },
     bbox: BBOX_SCHEMA,
   },
   required: ['label', 'role', 'variantKey', 'text', 'value', 'confidence', 'bbox'],
@@ -81,7 +79,7 @@ const VARIANT_SCHEMA = {
     variantKey: { type: 'string' },
     priceRole: { type: 'string', enum: ['variant_price', 'commercial_price', 'quote_value', 'unknown'] },
     price: { type: 'integer' },
-    confidence: { type: 'integer', minimum: 0, maximum: 100 },
+    confidence: { type: 'integer' },
     bbox: BBOX_SCHEMA,
   },
   required: ['sku', 'label', 'variantKey', 'priceRole', 'price', 'confidence', 'bbox'],
