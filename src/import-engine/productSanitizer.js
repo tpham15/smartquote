@@ -363,18 +363,38 @@ export function recoverQuoteSectionSchemaIdentity({ name = "", sku = "", specs =
   const rawName = text(name);
   const rawSku = text(sku);
   const detectedSku = extractSkuFromText(rawName);
-  const sameIdentity = detectedSku && asciiFold(detectedSku).replace(/[^a-z0-9]+/g, "") === asciiFold(rawName).replace(/[^a-z0-9]+/g, "");
-  const promotedSku = sameIdentity ? rawName.replace(/\s*[-–—]\s*/g, "-").trim() : detectedSku;
-  if (!isWarrantyPseudoSku(rawSku) || !promotedSku) {
+  const identityKey = (value) => asciiFold(value).replace(/[^a-z0-9]+/g, "");
+  const nameIsOnlySku = detectedSku && identityKey(detectedSku) === identityKey(rawName);
+  const promotedSku = nameIsOnlySku ? rawName.replace(/\s*[-–—]\s*/g, "-").trim() : detectedSku;
+  const warrantyInSkuColumn = isWarrantyPseudoSku(rawSku);
+  const duplicatedSkuAcrossNameAndSku = !!(
+    nameIsOnlySku &&
+    promotedSku &&
+    rawSku &&
+    !warrantyInSkuColumn &&
+    identityKey(rawSku) === identityKey(promotedSku)
+  );
+
+  // Hai schema drift phổ biến trong báo giá:
+  // 1) Tên hàng hoá = SKU, Mã thiết bị = "BH 36 tháng".
+  // 2) Tên hàng hoá = SKU và Mã thiết bị cũng = SKU; tên thương mại thật nằm ở Specs.
+  if (!promotedSku || (!warrantyInSkuColumn && !duplicatedSkuAcrossNameAndSku)) {
     return { name: rawName, sku: rawSku, specs: text(specs), recovered: false, warranty: "" };
   }
+
   const descriptive = descriptiveNameFromSpecs(specs);
+  // Với case SKU lặp ở hai cột, chỉ rewrite tên khi Specs thực sự có tên mô tả.
+  // Không đoán tên generic nếu file không cung cấp bằng chứng.
+  if (duplicatedSkuAcrossNameAndSku && !descriptive) {
+    return { name: rawName, sku: rawSku, specs: text(specs), recovered: false, warranty: "" };
+  }
+
   return {
     name: descriptive || `Sản phẩm ${promotedSku}`,
     sku: promotedSku,
     specs: text(specs),
     recovered: true,
-    warranty: rawSku,
+    warranty: warrantyInSkuColumn ? rawSku : "",
   };
 }
 

@@ -35,6 +35,7 @@ function sanitizeClaudeMessages(messages = []) {
   const maxMessages = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_MESSAGES, 1, 24, 12);
   const maxTextChars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_TEXT_CHARS, 1000, 250000, 120000);
   const maxDocumentBase64Chars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_DOCUMENT_BASE64_CHARS, 0, 2000000, 950000);
+  const maxImageBase64Chars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_IMAGE_BASE64_CHARS, 0, 1200000, 850000);
   let textBudget = maxTextChars;
 
   return messages.slice(0, maxMessages).map((msg) => {
@@ -63,6 +64,16 @@ function sanitizeClaudeMessages(messages = []) {
           throw err;
         }
         blocks.push({ type: 'document', source: { type: 'base64', media_type: mediaType, data } });
+      } else if (block.type === 'image' && block.source?.type === 'base64') {
+        const mediaType = String(block.source.media_type || '').toLowerCase();
+        const data = String(block.source.data || '');
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(mediaType)) continue;
+        if (data.length > maxImageBase64Chars) {
+          const err = new Error('Ảnh trang PDF gửi AI quá lớn. SmartQuote cần nén/render trang nhỏ hơn trước khi gọi Claude.');
+          err.statusCode = 413;
+          throw err;
+        }
+        blocks.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data } });
       }
       if (textBudget <= 0) break;
     }

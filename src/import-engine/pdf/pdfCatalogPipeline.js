@@ -24,6 +24,14 @@ const MIN_SPLITTABLE_CHARS = 160;
 const MAX_RECURSIVE_SPLIT_DEPTH = 6;
 const AI_CHUNK_DELAY_MS = 120;
 
+// Phase 14.0A — real page-image vision for scanned PDFs.
+// /api/claude rejects requests above 1.2MB by default, so keep the encoded
+// page image comfortably below that ceiling after JSON/prompt overhead.
+const PDF_VISION_MAX_BASE64_CHARS = 760000;
+const PDF_VISION_TARGET_LONG_SIDE = 2200;
+const PDF_VISION_RECOVERY_LONG_SIDE = 2400;
+const PDF_VISION_MIN_LONG_SIDE = 1350;
+
 function uid(p = "imp") {
   return `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -76,11 +84,21 @@ function normalizePdfSku(value) {
     .trim();
 }
 
+function knownLumiReleaseKind(ctx = {}) {
+  const key = normalizeVietnameseKey([ctx.fileName, ctx.supplierGuess, ctx.category, ctx.name, ctx.rawText]
+    .map((x) => String(x || ""))
+    .join(" "));
+  if (/\bbang gia smarthome 2026 0?6 0?1\b/.test(key)) return "smarthome";
+  if (/\bbang gia lighting 2026 0?6 0?1\b/.test(key)) return "lighting";
+  return "";
+}
+
 function isLumiLightingContext(ctx = {}) {
   const haystack = [ctx.fileName, ctx.supplierGuess, ctx.category, ctx.name, ctx.rawText]
     .map((x) => String(x || ""))
     .join(" ")
     .toLowerCase();
+  if (knownLumiReleaseKind(ctx) === "lighting") return true;
   return /lumi/.test(haystack) && /(lighting|đèn|den|spotlight|downlight|led|ray nam châm|ray nam cham|mira|lyra|hera|vega)/i.test(haystack);
 }
 
@@ -89,10 +107,15 @@ function isLumiSmarthomeContext(ctx = {}) {
     .map((x) => String(x || ""))
     .join(" ")
     .toLowerCase();
+  if (knownLumiReleaseKind(ctx) === "smarthome") return true;
   return /lumi/.test(haystack) && /(smarthome|smart home|công tắc|cong tac|luto|lumes|cảm biến|cam bien|module|wallpad|khóa thông minh|khoa thong minh|ai camera hub|âm thanh|am thanh|works with lumi|bộ điều khiển trung tâm|bo dieu khien trung tam)/i.test(haystack);
 }
 
 function getExpectedLumiPdfRows(ctx = {}) {
+  const releaseKind = knownLumiReleaseKind(ctx);
+  if (releaseKind === "smarthome") return 49;
+  if (releaseKind === "lighting") return 48;
+
   const haystack = [ctx.fileName, ctx.supplierGuess, ctx.category, ctx.name, ctx.rawText]
     .map((x) => String(x || ""))
     .join(" ")
@@ -148,6 +171,7 @@ function canonicalPdfBrand(value) {
 function supplierFallbackName(supplierGuess = "") {
   const raw = normalizeText(supplierGuess);
   if (!raw) return "PDF Catalog";
+  if (knownLumiReleaseKind({ fileName: raw, supplierGuess: raw })) return "Lumi";
   const brand = canonicalPdfBrand(raw);
   if (brand) return brand;
   const key = normalizeVietnameseKey(raw);
@@ -534,7 +558,7 @@ function parseClaudeProductObjects(raw) {
     .filter((obj) => obj && (obj.name || obj.sku || obj.costPrice || obj.price));
 }
 
-function buildDocumentPagePrompt({ fileName, supplierGuess, pageNum, pageCount, recoveryMode = false }) {
+function buildDocumentPagePrompt({ fileName, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "" }) {
   const lumiSmartHomeMode = isLumiSmarthomeContext({ fileName, supplierGuess, rawText: fileName });
   const expectedRows = getExpectedLumiPdfRows({ fileName, supplierGuess, rawText: fileName });
   const recoveryRules = recoveryMode ? `
@@ -543,6 +567,13 @@ CHẾ ĐỘ RECOVERY / BẮT DÒNG BỊ THIẾU:
 - Ưu tiên recall: nếu một hàng có tên + giá nhưng SKU mờ, vẫn xuất object.
 - Không tự bỏ qua row vì thiếu SKU, thiếu specs, hoặc cột bị dấu mộc che một phần.
 - Nếu không chắc giá nhưng tên là sản phẩm rõ, vẫn xuất costPrice=0 để user kiểm tra trong preview.
+` : "";
+
+  const bandRules = bandLabel ? `
+ẢNH ĐÍNH KÈM CHỈ LÀ ${bandLabel} CỦA TRANG ${pageNum}:
+- Chỉ xuất các hàng sản phẩm nhìn thấy trong vùng ảnh này.
+- Nếu thấy STT vật lý của bảng, sourceRow phải giữ đúng STT đó; không đánh lại từ 1.
+- Không suy đoán hoặc lặp lại hàng nằm ngoài vùng ảnh.
 ` : "";
 
   const smarthomeRules = lumiSmartHomeMode ? `
@@ -563,9 +594,9 @@ QUY TẮC RIÊNG CHO BẢNG LUMI SMARTHOME SCAN:
 
 FILE: ${fileName}
 NCC dự đoán: ${supplierGuess || "Chung"}
-NHIỆM VỤ: Chỉ đọc TRANG ${pageNum}/${pageCount || "?"} của PDF đính kèm. Bỏ qua mọi trang khác.
+NHIỆM VỤ: Đọc ẢNH TRANG ${pageNum}/${pageCount || "?"} đính kèm.${bandLabel ? ` Đây là ${bandLabel} của trang.` : ""}
 
-Trang này có thể là PDF scan/ảnh, không có text selectable. Hãy đọc bằng thị giác.
+Ảnh đã được SmartQuote render trực tiếp từ đúng trang PDF và đã áp dụng rotation của PDF. Hãy đọc bằng thị giác.
 
 Trả về JSONL: mỗi dòng là 1 object JSON, KHÔNG dùng mảng lớn, KHÔNG markdown.
 Schema ngắn:
@@ -583,7 +614,7 @@ Quy tắc chung cho PDF scan dạng bảng:
 - Category lấy từ dòng section gần nhất.
 - Bỏ qua header, logo, footer, con dấu, điều khoản, dòng không phải sản phẩm.
 - Giá phải là số nguyên VND, bỏ dấu chấm/phẩy: "650,000" -> 650000.
-${smarthomeRules}${recoveryRules}
+${smarthomeRules}${recoveryRules}${bandRules}
 Quy tắc rất quan trọng cho bảng Lumi Lighting / PDF scan dạng STT:
 - Mỗi STT vật lý trong bảng = 1 sản phẩm. KHÔNG tách 1 STT thành nhiều sản phẩm.
 - Nếu một STT có nhiều SKU trong cột MÃ SẢN PHẨM (vd On/off, Smart dimmable, Smart Tunable), vẫn chỉ trả 1 object. Gộp SKU bằng dấu " / " và ghi biến thể vào specs.
@@ -598,26 +629,141 @@ Ví dụ JSONL hợp lệ cho Lumi Lighting 1 STT có 3 SKU:
 
 Chỉ trả JSONL thuần.`;
 }
-async function parseDocumentPageWithClaude({ file, base64, supplierGuess, pageNum, pageCount, recoveryMode = false }) {
+
+function dataUrlBase64(dataUrl = "") {
+  const comma = String(dataUrl || "").indexOf(",");
+  return comma >= 0 ? String(dataUrl).slice(comma + 1) : "";
+}
+
+function jpegFromCanvasWithinBudget(canvas, maxBase64Chars = PDF_VISION_MAX_BASE64_CHARS) {
+  for (const quality of [0.88, 0.8, 0.72, 0.64, 0.56]) {
+    const base64 = dataUrlBase64(canvas.toDataURL("image/jpeg", quality));
+    if (base64 && base64.length <= maxBase64Chars) {
+      return { base64, mediaType: "image/jpeg", quality };
+    }
+  }
+  return null;
+}
+
+async function createPdfVisionRenderer(file) {
+  if (typeof document === "undefined") {
+    throw new Error("PDF scan vision cần chạy trong trình duyệt để render từng trang.");
+  }
+  const data = new Uint8Array(await file.arrayBuffer());
+  const pdfjsVision = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const task = pdfjsVision.getDocument({
+    data,
+    disableWorker: true,
+    isEvalSupported: false,
+    useSystemFonts: true,
+  });
+  const pdf = await task.promise;
+
+  async function renderPageCanvas(pageNum, targetLongSide) {
+    const page = await pdf.getPage(pageNum);
+    try {
+      // getViewport() defaults to page.rotate, so PDFs whose raw embedded scan is
+      // sideways are normalized to the exact orientation users see in a PDF viewer.
+      const baseViewport = page.getViewport({ scale: 1 });
+      const longSide = Math.max(baseViewport.width, baseViewport.height) || 1;
+      const scale = Math.max(0.35, targetLongSide / longSide);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.ceil(viewport.width));
+      canvas.height = Math.max(1, Math.ceil(viewport.height));
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) throw new Error("Trình duyệt không tạo được canvas để đọc PDF scan.");
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      return {
+        canvas,
+        width: canvas.width,
+        height: canvas.height,
+        rotation: Number(page.rotate || 0),
+      };
+    } finally {
+      page.cleanup?.();
+    }
+  }
+
+  async function renderPage(pageNum, { recoveryMode = false } = {}) {
+    const firstTarget = recoveryMode ? PDF_VISION_RECOVERY_LONG_SIDE : PDF_VISION_TARGET_LONG_SIDE;
+    const targets = [firstTarget, 2000, 1750, 1550, PDF_VISION_MIN_LONG_SIDE]
+      .filter((v, i, arr) => v >= PDF_VISION_MIN_LONG_SIDE && arr.indexOf(v) === i);
+    for (const target of targets) {
+      const rendered = await renderPageCanvas(pageNum, target);
+      const encoded = jpegFromCanvasWithinBudget(rendered.canvas);
+      if (encoded) {
+        return {
+          ...encoded,
+          width: rendered.width,
+          height: rendered.height,
+          rotation: rendered.rotation,
+          targetLongSide: target,
+        };
+      }
+    }
+    throw new Error(`Ảnh trang ${pageNum} vẫn quá lớn sau khi nén; không gửi request vượt giới hạn Claude.`);
+  }
+
+  async function renderBands(pageNum) {
+    const rendered = await renderPageCanvas(pageNum, 2100);
+    const { canvas } = rendered;
+    const bandCount = 3;
+    const overlap = Math.max(24, Math.round(canvas.height * 0.035));
+    const nominal = Math.ceil(canvas.height / bandCount);
+    const out = [];
+    for (let i = 0; i < bandCount; i++) {
+      const y0 = Math.max(0, i * nominal - (i ? overlap : 0));
+      const y1 = Math.min(canvas.height, (i + 1) * nominal + (i < bandCount - 1 ? overlap : 0));
+      const h = Math.max(1, y1 - y0);
+      const crop = document.createElement("canvas");
+      crop.width = canvas.width;
+      crop.height = h;
+      const ctx = crop.getContext("2d", { alpha: false });
+      if (!ctx) continue;
+      ctx.drawImage(canvas, 0, y0, canvas.width, h, 0, 0, canvas.width, h);
+      const encoded = jpegFromCanvasWithinBudget(crop);
+      if (!encoded) continue;
+      out.push({
+        ...encoded,
+        width: crop.width,
+        height: crop.height,
+        rotation: rendered.rotation,
+        bandLabel: `vùng ngang ${i + 1}/${bandCount}`,
+      });
+    }
+    return out;
+  }
+
+  return {
+    pageCount: pdf.numPages,
+    renderPage,
+    renderBands,
+    async destroy() { try { await pdf.destroy?.(); } catch (_) {} },
+  };
+}
+
+async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "" }) {
   const { text, stopReason } = await callClaudeText({
     max_tokens: recoveryMode ? 3600 : 2600,
     messages: [{
       role: "user",
       content: [
-        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
-        { type: "text", text: buildDocumentPagePrompt({ fileName: file.name, supplierGuess, pageNum, pageCount, recoveryMode }) },
+        { type: "image", source: { type: "base64", media_type: image.mediaType || "image/jpeg", data: image.base64 } },
+        { type: "text", text: buildDocumentPagePrompt({ fileName: file.name, supplierGuess, pageNum, pageCount, recoveryMode, bandLabel }) },
       ],
     }],
   });
   const items = parseClaudeProductObjects(text);
   if (items.length || stopReason !== "max_tokens") return items;
-  // Even when max_tokens happens, parseClaudeProductObjects already salvages
-  // completed JSONL lines. Return whatever can be recovered instead of failing.
   return items;
 }
 
-
-async function collectDocumentPageRows({ file, base64, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
+async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
   const raw = [];
   let failedPages = 0;
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
@@ -625,16 +771,41 @@ async function collectDocumentPageRows({ file, base64, supplierGuess, totalPages
       stage: recoveryMode ? "vision_recovery_page" : "vision_page",
       message: recoveryMode
         ? `PDF scan/ảnh: AI đang dò lại dòng bị thiếu trang ${pageNum}/${totalPages}...`
-        : `PDF scan/ảnh: AI đang đọc trang ${pageNum}/${totalPages}...`,
+        : `PDF scan/ảnh: AI đang đọc ảnh trang ${pageNum}/${totalPages}...`,
       current: pageNum,
       total: totalPages,
     });
     try {
-      const pageItems = await parseDocumentPageWithClaude({ file, base64, supplierGuess, pageNum, pageCount: totalPages, recoveryMode });
+      const image = await renderer.renderPage(pageNum, { recoveryMode });
+      let pageItems = await parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum, pageCount: totalPages, recoveryMode });
+
+      // If a dense scan page still returns zero rows, split it into three overlapping
+      // horizontal bands. This increases effective text size without sending a huge image.
+      if (!pageItems.length && recoveryMode) {
+        const bands = await renderer.renderBands(pageNum);
+        const bandItems = [];
+        for (let i = 0; i < bands.length; i++) {
+          const band = bands[i];
+          const rows = await parseDocumentPageWithClaude({
+            file,
+            image: band,
+            supplierGuess,
+            pageNum,
+            pageCount: totalPages,
+            recoveryMode: true,
+            bandLabel: band.bandLabel,
+          });
+          bandItems.push(...rows);
+          if (i < bands.length - 1) await new Promise((r) => setTimeout(r, 100));
+        }
+        pageItems = bandItems;
+      }
+
+      if (!pageItems.length) failedPages += 1;
       raw.push(...pageItems.map((it) => ({ ...it, sourcePage: Number(it.sourcePage || pageNum) || pageNum })));
     } catch (err) {
       failedPages += 1;
-      console.warn("PDF document page OCR failed", { pageNum, recoveryMode, error: err?.message || err });
+      console.warn("PDF page-image OCR failed", { pageNum, recoveryMode, error: err?.message || err });
     }
     if (pageNum < totalPages) await new Promise((r) => setTimeout(r, recoveryMode ? 220 : 160));
   }
@@ -642,64 +813,68 @@ async function collectDocumentPageRows({ file, base64, supplierGuess, totalPages
 }
 
 async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, pageCount, onProgress }) {
-  const base64 = await fileToBase64(file);
-  const totalPages = Math.max(1, Math.min(Number(pageCount || 1), 30));
+  const renderer = await createPdfVisionRenderer(file);
+  const totalPages = Math.max(1, Math.min(Number(pageCount || renderer.pageCount || 1), 30));
   const expectedRows = getExpectedLumiPdfRows({ fileName: file.name, supplierGuess });
 
-  const first = await collectDocumentPageRows({ file, base64, supplierGuess, totalPages, onProgress, recoveryMode: false });
-  let raw = first.raw;
-  let failedPages = first.failedPages;
+  try {
+    const first = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: false });
+    let raw = first.raw;
+    let failedPages = first.failedPages;
 
-  let items = normalizePdfItems(raw, supplierGuess, "pdf-v4-document-page-jsonl");
-  let finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
+    let items = normalizePdfItems(raw, supplierGuess, "pdf-v5-page-image-jsonl");
+    let finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
 
-  // Targeted second pass for scanned Lumi Smarthome/Lighting catalogs. These files are
-  // row-indexed price tables. If the first vision pass under-recovers rows, run a stricter
-  // per-page prompt that favors recall and preserves rows with name+price even when SKU is blurry.
-  if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.9)) {
-    onProgress?.({
-      stage: "vision_recovery",
-      message: `PDF scan có thể đọc thiếu dòng (${finalItems.length}/${expectedRows}). SmartQuote đang dò lại theo từng hàng bảng...`,
-      current: finalItems.length,
-      total: expectedRows,
-      expectedRows,
-    });
-    const second = await collectDocumentPageRows({ file, base64, supplierGuess, totalPages, onProgress, recoveryMode: true });
-    failedPages += second.failedPages;
-    raw = [...raw, ...second.raw];
-    items = normalizePdfItems(raw, supplierGuess, "pdf-v4-document-page-jsonl");
-    finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
-  }
-
-  if (!finalItems.length) {
-    throw new Error(`Claude document page fallback không tìm được sản phẩm (${failedPages}/${totalPages} trang lỗi).`);
-  }
-
-  const coverageRatio = expectedRows ? finalItems.length / expectedRows : 1;
-  if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.9)) {
-    for (const it of finalItems) {
-      it._meta = it._meta || {};
-      it._meta.issues = [...(it._meta.issues || []), simpleIssue(
-        "pdf_scan_low_recall",
-        "warning",
-        `PDF scan có thể đọc thiếu dòng: tìm thấy ${finalItems.length}/${expectedRows} sản phẩm dự kiến`,
-        "file",
-        "Kiểm tra lại file PDF hoặc chạy lại sau khi cải thiện OCR/vision"
-      )];
-      it._meta.pdfExpectedRows = expectedRows;
-      it._meta.pdfCoverageRatio = coverageRatio;
+    // Targeted second pass for scanned Lumi Smarthome/Lighting catalogs. These files are
+    // row-indexed price tables. If the first vision pass under-recovers rows, use a slightly
+    // larger page render and band fallback on pages that return zero rows.
+    if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.9)) {
+      onProgress?.({
+        stage: "vision_recovery",
+        message: `PDF scan có thể đọc thiếu dòng (${finalItems.length}/${expectedRows}). SmartQuote đang dò lại theo từng hàng bảng...`,
+        current: finalItems.length,
+        total: expectedRows,
+        expectedRows,
+      });
+      const second = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: true });
+      failedPages += second.failedPages;
+      raw = [...raw, ...second.raw];
+      items = normalizePdfItems(raw, supplierGuess, "pdf-v5-page-image-jsonl");
+      finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
     }
+
+    if (!finalItems.length) {
+      throw new Error(`Claude page-image vision không tìm được sản phẩm (${failedPages}/${totalPages} trang lỗi).`);
+    }
+
+    const coverageRatio = expectedRows ? finalItems.length / expectedRows : 1;
+    if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.9)) {
+      for (const it of finalItems) {
+        it._meta = it._meta || {};
+        it._meta.issues = [...(it._meta.issues || []), simpleIssue(
+          "pdf_scan_low_recall",
+          "warning",
+          `PDF scan có thể đọc thiếu dòng: tìm thấy ${finalItems.length}/${expectedRows} sản phẩm dự kiến`,
+          "file",
+          "Kiểm tra lại file PDF hoặc chạy lại sau khi cải thiện OCR/vision"
+        )];
+        it._meta.pdfExpectedRows = expectedRows;
+        it._meta.pdfCoverageRatio = coverageRatio;
+      }
+    }
+    onProgress?.({
+      stage: "done",
+      message: `PDF scan/ảnh đọc được ${finalItems.length} sản phẩm bằng AI theo ảnh từng trang${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
+      current: totalPages,
+      total: totalPages,
+      warningPages: failedPages,
+      expectedRows,
+      coverageRatio,
+    });
+    return finalItems;
+  } finally {
+    await renderer.destroy();
   }
-  onProgress?.({
-    stage: "done",
-    message: `PDF scan/ảnh đọc được ${finalItems.length} sản phẩm bằng AI theo từng trang${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
-    current: totalPages,
-    total: totalPages,
-    warningPages: failedPages,
-    expectedRows,
-    coverageRatio,
-  });
-  return finalItems;
 }
 
 async function parseTextChunkWithClaude(params, depth = 0) {
@@ -1407,16 +1582,18 @@ export async function parsePdfCatalogWithPipeline(params) {
 
   if (!extracted) {
     onProgress?.({
-      stage: "fallback",
-      message: `PDF không tách text được (${textPipelineError?.message || "unknown"}). Thử Claude đọc document trực tiếp...`,
+      stage: "vision_fallback",
+      message: `PDF không tách text được (${textPipelineError?.message || "unknown"}). Chuyển sang render ảnh từng trang...`,
     });
     try {
-      const legacyItems = await extractCatalogPdfWithClaude({ file, supplierGuess });
-      const finalItems = sanitizeCatalogProducts(normalizePdfItems(legacyItems, supplierGuess, "pdf-legacy-document-fallback"), { defaultSupplier: supplierGuess });
-      if (!finalItems.length) throw new Error("legacy không tìm được sản phẩm");
-      return dedupeProducts(finalItems, { fileName: file.name, supplierGuess });
-    } catch (legacyErr) {
-      throw new Error(`PDF không đọc được. Text extraction lỗi: ${textPipelineError?.message || "unknown"}. Claude document lỗi: ${legacyErr?.message || legacyErr}`);
+      return await extractCatalogPdfWithClaudeDocumentPages({
+        file,
+        supplierGuess,
+        pageCount: null,
+        onProgress,
+      });
+    } catch (visionErr) {
+      throw new Error(`PDF không đọc được. Text extraction lỗi: ${textPipelineError?.message || "unknown"}. Page-image vision lỗi: ${visionErr?.message || visionErr}`);
     }
   }
 
@@ -1449,20 +1626,9 @@ export async function parsePdfCatalogWithPipeline(params) {
         onProgress,
       });
     } catch (pageErr) {
-      // Last resort: old whole-document mode. It may hit max_tokens, but can still
-      // work for short PDFs; keep it only after page-by-page JSONL fails.
-      onProgress?.({
-        stage: "fallback",
-        message: `AI đọc từng trang lỗi (${pageErr?.message || pageErr}). Thử Claude đọc toàn bộ document...`,
-      });
-      try {
-        const legacyItems = await extractCatalogPdfWithClaude({ file, supplierGuess });
-        const finalItems = sanitizeCatalogProducts(normalizePdfItems(legacyItems, supplierGuess, "pdf-legacy-document-fallback"), { defaultSupplier: supplierGuess });
-        if (!finalItems.length) throw new Error("legacy không tìm được sản phẩm");
-        return dedupeProducts(finalItems, { fileName: file.name, supplierGuess });
-      } catch (legacyErr) {
-        throw new Error(`PDF scan/ảnh không đọc được. Page-by-page lỗi: ${pageErr?.message || pageErr}. Claude document lỗi: ${legacyErr?.message || legacyErr}`);
-      }
+      // Scan PDFs must never fall back to re-sending the whole PDF to Claude.
+      // That path multiplies payload size and is exactly what caused 413 on pilot files.
+      throw new Error(`PDF scan/ảnh không đọc được bằng page-image vision: ${pageErr?.message || pageErr}`);
     }
   }
 
