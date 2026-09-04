@@ -713,6 +713,8 @@ async function createPdfVisionRenderer(file) {
         height: crop.height,
         rotation: rendered.rotation,
         bandLabel: `vùng ngang ${i + 1}/${bandCount}`,
+        bandY0: Math.round(y0 * 1000 / canvas.height),
+        bandY1: Math.round(y1 * 1000 / canvas.height),
       });
     }
     return out;
@@ -754,6 +756,11 @@ QUY TẮC LAYOUT:
 ${previousSectionTitle ? `13) Context trang trước kết thúc ở section "${previousSectionTitle}". Chỉ dùng làm gợi ý nếu trang hiện tại rõ ràng tiếp tục cùng bảng; không copy mù.` : ""}
 ${templateHint ? `14) ${templateHint}` : ""}
 
+OUTPUT TỐI GIẢN:
+- Chỉ trả đúng các key: page, pageType, tables, sections, rows, ignoredRegions.
+- rows là MẢNG PHẲNG. Không lặp lại header/spec dùng chung trong từng row; dùng sectionId + sections.sharedSpecs.
+- Không trả sourceFile, supplier, explanation, markdown hoặc code fence.
+- BBOX chỉ cần ở cấp row trong pass đầu; không tạo bbox riêng cho từng field.
 Output bị khóa bằng JSON Schema. Không giải thích ngoài schema.`;
 }
 
@@ -761,9 +768,12 @@ async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum
   const templateHint = getPdfTemplateHint({ supplierGuess, fileName: file.name });
   const parsed = await callClaudeStructured({
     model: "claude-sonnet-5",
-    max_tokens: recoveryMode ? 12000 : 10000,
+    // Sonnet 5 tokenizes equivalent JSON more densely than 4.6 and adaptive
+    // thinking shares this budget. Compact IR + thinking disabled leaves enough
+    // room for dense catalog pages without paying 30k tokens for normal pages.
+    max_tokens: bandLabel ? 10000 : (recoveryMode ? 26000 : 22000),
+    thinking: { type: "disabled" },
     output_config: {
-      effort: "low",
       format: { type: "json_schema", schema: PDF_PAGE_DOCUMENT_IR_SCHEMA },
     },
     messages: [{
@@ -795,13 +805,84 @@ FILE: ${file.name}; NCC: ${supplierGuess || "Chung"}; trang ${pageNum}; section:
 Output chỉ theo JSON Schema.`;
   return callClaudeStructured({
     model: "claude-sonnet-5",
-    max_tokens: 3000,
-    output_config: { effort: "low", format: { type: "json_schema", schema: PDF_ROW_RECOVERY_SCHEMA } },
+    max_tokens: 4000,
+    thinking: { type: "disabled" },
+    output_config: { format: { type: "json_schema", schema: PDF_ROW_RECOVERY_SCHEMA } },
     messages: [{ role: "user", content: [
       { type: "image", source: { type: "base64", media_type: image.mediaType || "image/jpeg", data: image.base64 } },
       { type: "text", text: prompt },
     ] }],
   });
+}
+
+function isLayoutSplitError(err) {
+  const msg = String(err?.message || err || '').toLowerCase();
+  const stop = String(err?.stopReason || '').toLowerCase();
+  return stop === 'max_tokens'
+    || stop === 'model_context_window_exceeded'
+    || msg.includes('max_tokens')
+    || msg.includes('bị cắt')
+    || msg.includes('không parse được json')
+    || msg.includes('không phải json hợp lệ')
+    || msg.includes('schema is too complex')
+    || msg.includes('grammar');
+}
+
+function remapBandBbox(bbox, band) {
+  if (!Array.isArray(bbox) || bbox.length !== 4) return bbox;
+  const y0 = Number(band?.bandY0);
+  const y1 = Number(band?.bandY1);
+  if (!Number.isFinite(y0) || !Number.isFinite(y1) || y1 <= y0) return bbox;
+  const span = y1 - y0;
+  const [x1, by1, x2, by2] = bbox.map((n) => Math.max(0, Math.min(1000, Number(n) || 0)));
+  return [x1, Math.round(y0 + by1 * span / 1000), x2, Math.round(y0 + by2 * span / 1000)];
+}
+
+function remapBandProduct(item, band) {
+  const mapped = { ...item, sourceBBox: remapBandBbox(item?.sourceBBox, band) };
+  if (mapped.fieldEvidence) {
+    mapped.fieldEvidence = Object.fromEntries(Object.entries(mapped.fieldEvidence).map(([k, v]) => [k, {
+      ...(v || {}), bbox: remapBandBbox(v?.bbox, band),
+    }]));
+  }
+  mapped.evidence = { ...(mapped.evidence || {}), bandRecovered: true, bandLabel: band?.bandLabel || '' };
+  return mapped;
+}
+
+function dedupeLayoutPageRows(items = []) {
+  const seen = new Set();
+  const out = [];
+  for (const item of items || []) {
+    const sku = normalizeText(item?.sku || '').toLowerCase();
+    const name = normalizeText(item?.name || '').toLowerCase();
+    const price = Number(item?.costPrice || item?.price || 0) || 0;
+    const variants = (item?.variants || []).map((v) => `${normalizeText(v?.sku).toLowerCase()}:${Number(v?.price || 0)}`).sort().join('|');
+    const key = sku ? `sku:${sku}:${price}:${variants}` : `name:${name}:${price}:${variants}`;
+    if (!name || seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+}
+
+async function parsePageBands({ file, renderer, supplierGuess, pageNum, totalPages, previousSectionTitle, pageIrs, pageErrors }) {
+  const bands = await renderer.renderBands(pageNum);
+  const out = [];
+  for (let i = 0; i < bands.length; i++) {
+    const band = bands[i];
+    try {
+      const rows = await parseDocumentPageWithClaude({
+        file, image: band, supplierGuess, pageNum, pageCount: totalPages,
+        recoveryMode: true, bandLabel: band.bandLabel, previousSectionTitle,
+      });
+      out.push(...rows.map((item) => remapBandProduct(item, band)));
+      if (rows.documentIR) pageIrs.push(rows.documentIR);
+    } catch (err) {
+      pageErrors.push(`Trang ${pageNum} ${band.bandLabel}: ${String(err?.message || err || 'Lỗi không xác định')}`);
+    }
+    if (i < bands.length - 1) await new Promise((r) => setTimeout(r, 100));
+  }
+  return dedupeLayoutPageRows(out);
 }
 
 async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
@@ -816,83 +897,85 @@ async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPag
     onProgress?.({
       stage: recoveryMode ? "vision_recovery_page" : "vision_page",
       message: recoveryMode
-        ? `PDF scan/ảnh: đang dựng lại layout trang ${pageNum}/${totalPages} ở độ phân giải cao...`
+        ? `PDF scan/ảnh: đang dựng lại layout trang ${pageNum}/${totalPages}...`
         : `PDF scan/ảnh: đang dựng Document IR trang ${pageNum}/${totalPages}...`,
-      current: pageNum,
-      total: totalPages,
+      current: pageNum, total: totalPages,
     });
+
+    let pageItems = [];
+    let pageIr = null;
+    let fullPageError = null;
     try {
       const image = await renderer.renderPage(pageNum, { recoveryMode });
-      let pageItems = await parseDocumentPageWithClaude({
+      pageItems = await parseDocumentPageWithClaude({
         file, image, supplierGuess, pageNum, pageCount: totalPages, recoveryMode, previousSectionTitle,
       });
-      const pageIr = pageItems.documentIR || null;
+      pageIr = pageItems.documentIR || null;
       if (pageIr) {
         pageIrs.push(pageIr);
         const titles = (pageIr.tables || []).flatMap((t) => (t.sections || []).map((sec) => sec.title).filter(Boolean));
         if (titles.length) previousSectionTitle = titles[titles.length - 1];
       }
-
-      // Phase 14.2E — field/row-targeted recovery. Do not re-read a whole document
-      // because one SKU/price cell is weak. Crop only the uncertain physical row.
-      if (!recoveryMode && pageItems.length && typeof renderer.renderCrop === "function") {
-        const candidates = pageItems
-          .map((item, index) => ({ item, index }))
-          .filter(({ item }) => item?._layoutNeedsRecovery && Array.isArray(item?.sourceBBox) && item.sourceBBox.length === 4)
-          .slice(0, 4);
-        for (const { item, index } of candidates) {
-          try {
-            const crop = await renderer.renderCrop(pageNum, item.sourceBBox);
-            if (!crop) continue;
-            const recovered = await recoverLayoutProductWithClaude({ file, image: crop, product: item, supplierGuess, pageNum });
-            pageItems[index] = mergeRecoveredPdfRow(item, recovered || {});
-            targetedRecoveries += 1;
-          } catch (recoverErr) {
-            console.warn("PDF targeted row recovery failed", { pageNum, error: recoverErr?.message || recoverErr });
-          }
-        }
-      }
-
-      // Last-resort layout recovery for a page that produced no product rows.
-      if (!pageItems.length && recoveryMode) {
-        const bands = await renderer.renderBands(pageNum);
-        const bandItems = [];
-        for (let i = 0; i < bands.length; i++) {
-          const band = bands[i];
-          const rows = await parseDocumentPageWithClaude({
-            file,
-            image: band,
-            supplierGuess,
-            pageNum,
-            pageCount: totalPages,
-            recoveryMode: true,
-            bandLabel: band.bandLabel,
-            previousSectionTitle,
-          });
-          bandItems.push(...rows);
-          if (rows.documentIR) pageIrs.push(rows.documentIR);
-          if (i < bands.length - 1) await new Promise((r) => setTimeout(r, 100));
-        }
-        pageItems = bandItems;
-      }
-
-      // A valid non-catalog page may legitimately contain zero product rows.
-      // Only treat an empty catalog/mixed/unknown page as a recoverable extraction miss.
-      const pageType = String(pageIr?.pageType || "unknown");
-      if (!pageItems.length && pageType !== "non_catalog") {
-        failedPageNumbers.add(pageNum);
-        pageErrors.push(`Trang ${pageNum}: Document IR không có product row (pageType=${pageType}).`);
-      }
-      raw.push(...pageItems.map((it) => ({ ...it, sourcePage: Number(it.sourcePage || pageNum) || pageNum })));
     } catch (err) {
-      failedPageNumbers.add(pageNum);
-      const message = String(err?.message || err || "Lỗi không xác định");
-      pageErrors.push(`Trang ${pageNum}: ${message}`);
-      console.warn("PDF page layout extraction failed", { pageNum, recoveryMode, error: message });
+      fullPageError = err;
     }
-    if (pageNum < totalPages) await new Promise((r) => setTimeout(r, recoveryMode ? 220 : 160));
+
+    const pageType = String(pageIr?.pageType || 'unknown');
+    const needsBands = !!fullPageError
+      || (!pageItems.length && pageType !== 'non_catalog')
+      || (pageType === 'unknown' && pageItems.length === 0);
+
+    if (needsBands) {
+      // Dense pages often exceed a single structured-output budget; sparse end
+      // pages can hide a tiny table above a large signature/footer. Split both.
+      if (fullPageError && !isLayoutSplitError(fullPageError)) {
+        pageErrors.push(`Trang ${pageNum} full-page: ${String(fullPageError?.message || fullPageError)}`);
+      }
+      const bandItems = await parsePageBands({
+        file, renderer, supplierGuess, pageNum, totalPages, previousSectionTitle, pageIrs, pageErrors,
+      });
+      if (bandItems.length) pageItems = bandItems;
+      else if (fullPageError) pageErrors.push(`Trang ${pageNum}: ${String(fullPageError?.message || fullPageError)}`);
+    }
+
+    pageItems = dedupeLayoutPageRows(pageItems);
+
+    // Phase 14.2E — recover only weak rows, now with band bbox remapped to page coordinates.
+    if (pageItems.length && typeof renderer.renderCrop === 'function') {
+      const candidates = pageItems
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => item?._layoutNeedsRecovery && Array.isArray(item?.sourceBBox) && item.sourceBBox.length === 4)
+        .slice(0, 4);
+      for (const { item, index } of candidates) {
+        try {
+          const crop = await renderer.renderCrop(pageNum, item.sourceBBox);
+          if (!crop) continue;
+          const recovered = await recoverLayoutProductWithClaude({ file, image: crop, product: item, supplierGuess, pageNum });
+          pageItems[index] = mergeRecoveredPdfRow(item, recovered || {});
+          targetedRecoveries += 1;
+        } catch (recoverErr) {
+          console.warn('PDF targeted row recovery failed', { pageNum, error: recoverErr?.message || recoverErr });
+        }
+      }
+    }
+
+    if (!pageItems.length && pageType !== 'non_catalog') {
+      failedPageNumbers.add(pageNum);
+      if (!fullPageError) pageErrors.push(`Trang ${pageNum}: không tìm thấy product row sau full-page + band recovery (pageType=${pageType}).`);
+    }
+
+    raw.push(...pageItems.map((it) => ({ ...it, sourcePage: Number(it.sourcePage || pageNum) || pageNum })));
+    if (pageNum < totalPages) await new Promise((r) => setTimeout(r, recoveryMode ? 180 : 120));
   }
-  return { raw, failedPages: failedPageNumbers.size, failedPageNumbers: [...failedPageNumbers], pageErrors, pageIrs, targetedRecoveries };
+
+  return {
+    raw,
+    failedPages: failedPageNumbers.size,
+    failedPageNumbers: [...failedPageNumbers],
+    pageErrors,
+    pageIrs,
+    targetedRecoveries,
+  };
 }
 
 async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, pageCount, onProgress }) {

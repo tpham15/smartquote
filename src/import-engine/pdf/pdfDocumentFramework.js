@@ -86,8 +86,7 @@ const VARIANT_SCHEMA = {
 };
 
 export const PDF_PAGE_DOCUMENT_IR_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
+  type: 'object', additionalProperties: false,
   properties: {
     page: { type: 'integer' },
     pageType: { type: 'string', enum: ['catalog_table', 'quotation_table', 'mixed', 'non_catalog', 'unknown'] },
@@ -96,7 +95,7 @@ export const PDF_PAGE_DOCUMENT_IR_SCHEMA = {
       items: {
         type: 'object', additionalProperties: false,
         properties: {
-          tableId: { type: 'string' },
+          id: { type: 'string' },
           title: { type: 'string' },
           rowModel: { type: 'string', enum: ['single_sku', 'product_family_variants', 'mixed', 'unknown'] },
           headers: {
@@ -108,50 +107,80 @@ export const PDF_PAGE_DOCUMENT_IR_SCHEMA = {
                 role: { type: 'string', enum: ['row_index', 'product_name', 'sku', 'unit', 'specs', 'variant_price', 'commercial_price', 'quote_value', 'image', 'unknown'] },
                 priceRole: { type: 'string', enum: ['variant_price', 'commercial_price', 'quote_value', 'unknown'] },
                 variantKey: { type: 'string' },
-                bbox: BBOX_SCHEMA,
               },
-              required: ['label', 'role', 'priceRole', 'variantKey', 'bbox'],
+              required: ['label', 'role', 'priceRole', 'variantKey'],
             },
           },
-          sections: {
+        },
+        required: ['id', 'title', 'rowModel', 'headers'],
+      },
+    },
+    sections: {
+      type: 'array',
+      items: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          id: { type: 'string' },
+          tableId: { type: 'string' },
+          title: { type: 'string' },
+          sharedSpecs: { type: 'string' },
+        },
+        required: ['id', 'tableId', 'title', 'sharedSpecs'],
+      },
+    },
+    rows: {
+      type: 'array',
+      items: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          kind: { type: 'string', enum: ['product', 'header', 'section_header', 'note', 'subtotal', 'footer', 'unknown'] },
+          tableId: { type: 'string' },
+          sectionId: { type: 'string' },
+          visibleRowLabel: { type: 'string' },
+          sourceRow: { type: 'integer' },
+          rowIndex: { type: 'integer' },
+          bbox: BBOX_SCHEMA,
+          name: { type: 'string' },
+          sku: { type: 'string' },
+          unit: { type: 'string' },
+          specs: { type: 'string' },
+          confidence: { type: 'integer' },
+          prices: {
             type: 'array',
             items: {
               type: 'object', additionalProperties: false,
               properties: {
-                title: { type: 'string' },
-                sharedSpecs: { type: 'string' },
-                bbox: BBOX_SCHEMA,
-                rows: {
-                  type: 'array',
-                  items: {
-                    type: 'object', additionalProperties: false,
-                    properties: {
-                      kind: { type: 'string', enum: ['product', 'header', 'section_header', 'note', 'subtotal', 'footer', 'unknown'] },
-                      visibleRowLabel: { type: 'string' },
-                      sourceRow: { type: 'integer' },
-                      rowIndex: { type: 'integer' },
-                      bbox: BBOX_SCHEMA,
-                      name: FIELD_SCHEMA,
-                      sku: FIELD_SCHEMA,
-                      unit: FIELD_SCHEMA,
-                      specs: FIELD_SCHEMA,
-                      prices: { type: 'array', items: PRICE_SCHEMA },
-                      variants: { type: 'array', items: VARIANT_SCHEMA },
-                    },
-                    required: ['kind', 'visibleRowLabel', 'sourceRow', 'rowIndex', 'bbox', 'name', 'sku', 'unit', 'specs', 'prices', 'variants'],
-                  },
-                },
+                label: { type: 'string' },
+                role: { type: 'string', enum: ['variant_price', 'commercial_price', 'quote_value', 'unknown'] },
+                variantKey: { type: 'string' },
+                value: { type: 'integer' },
+                confidence: { type: 'integer' },
               },
-              required: ['title', 'sharedSpecs', 'bbox', 'rows'],
+              required: ['label', 'role', 'variantKey', 'value', 'confidence'],
+            },
+          },
+          variants: {
+            type: 'array',
+            items: {
+              type: 'object', additionalProperties: false,
+              properties: {
+                sku: { type: 'string' },
+                label: { type: 'string' },
+                variantKey: { type: 'string' },
+                priceRole: { type: 'string', enum: ['variant_price', 'commercial_price', 'quote_value', 'unknown'] },
+                price: { type: 'integer' },
+                confidence: { type: 'integer' },
+              },
+              required: ['sku', 'label', 'variantKey', 'priceRole', 'price', 'confidence'],
             },
           },
         },
-        required: ['tableId', 'title', 'rowModel', 'headers', 'sections'],
+        required: ['kind', 'tableId', 'sectionId', 'visibleRowLabel', 'sourceRow', 'rowIndex', 'bbox', 'name', 'sku', 'unit', 'specs', 'confidence', 'prices', 'variants'],
       },
     },
     ignoredRegions: { type: 'array', items: { type: 'string' } },
   },
-  required: ['page', 'pageType', 'tables', 'ignoredRegions'],
+  required: ['page', 'pageType', 'tables', 'sections', 'rows', 'ignoredRegions'],
 };
 
 export const PDF_ROW_RECOVERY_SCHEMA = {
@@ -191,7 +220,71 @@ function normalizeVariant(raw = {}) {
   };
 }
 
+function expandCompactPdfDocumentIR(raw = {}, pageNum = 1) {
+  if (!Array.isArray(raw?.rows) || !Array.isArray(raw?.sections)) return raw;
+  const page = Math.max(1, Number(raw?.page || pageNum) || pageNum);
+  const compactTables = Array.isArray(raw?.tables) && raw.tables.length
+    ? raw.tables
+    : [{ id: `p${page}_t1`, title: '', rowModel: 'unknown', headers: [] }];
+  const compactSections = Array.isArray(raw?.sections) ? raw.sections : [];
+  const compactRows = Array.isArray(raw?.rows) ? raw.rows : [];
+
+  const tables = compactTables.map((table, ti) => {
+    const tableId = text(table?.id) || `p${page}_t${ti + 1}`;
+    let sections = compactSections.filter((s) => !text(s?.tableId) || text(s.tableId) === tableId);
+    if (!sections.length) sections = [{ id: `${tableId}_s1`, tableId, title: '', sharedSpecs: '' }];
+
+    const richSections = sections.map((section, si) => {
+      const sectionId = text(section?.id) || `${tableId}_s${si + 1}`;
+      const rows = compactRows
+        .filter((r) => {
+          const rt = text(r?.tableId);
+          const rs = text(r?.sectionId);
+          return (!rt || rt === tableId) && (!rs || rs === sectionId);
+        })
+        .map((row, ri) => {
+          const conf = clamp01(row?.confidence, row?.name || row?.sku ? 0.82 : 0.62);
+          const bbox = normalizeBbox(row?.bbox);
+          const field = (value, fallback = conf) => ({ text: text(value), confidence: text(value) ? fallback : 0, bbox });
+          const prices = (Array.isArray(row?.prices) ? row.prices : []).map((p) => ({
+            label: text(p?.label), role: text(p?.role) || 'unknown', variantKey: text(p?.variantKey),
+            text: Number(p?.value || 0) > 0 ? String(Math.round(Number(p.value))) : '',
+            value: Math.round(Number(p?.value || 0) || 0), confidence: clamp01(p?.confidence, conf), bbox,
+          }));
+          const variants = (Array.isArray(row?.variants) ? row.variants : []).map((v) => ({
+            sku: text(v?.sku), label: text(v?.label), variantKey: text(v?.variantKey),
+            priceRole: text(v?.priceRole) || 'unknown', price: Math.round(Number(v?.price || 0) || 0),
+            confidence: clamp01(v?.confidence, conf), bbox,
+          }));
+          return {
+            kind: text(row?.kind) || 'unknown', visibleRowLabel: text(row?.visibleRowLabel),
+            sourceRow: Math.max(0, Number(row?.sourceRow || 0) || 0),
+            rowIndex: Math.max(1, Number(row?.rowIndex || ri + 1) || ri + 1), bbox,
+            name: field(row?.name, Math.max(conf, row?.name ? 0.80 : 0)),
+            sku: field(row?.sku, Math.max(conf, row?.sku ? 0.80 : 0)),
+            unit: field(row?.unit, row?.unit ? Math.max(0.72, conf) : 0),
+            specs: field(row?.specs, row?.specs ? Math.max(0.70, conf) : 0),
+            prices, variants,
+          };
+        });
+      return { title: text(section?.title), sharedSpecs: text(section?.sharedSpecs), bbox: null, rows };
+    });
+
+    return {
+      tableId, title: text(table?.title), rowModel: text(table?.rowModel) || 'unknown',
+      headers: (Array.isArray(table?.headers) ? table.headers : []).map((h) => ({
+        label: text(h?.label), role: text(h?.role) || 'unknown', priceRole: text(h?.priceRole) || 'unknown',
+        variantKey: text(h?.variantKey), bbox: null,
+      })),
+      sections: richSections,
+    };
+  });
+
+  return { page, pageType: text(raw?.pageType) || 'unknown', tables, ignoredRegions: Array.isArray(raw?.ignoredRegions) ? raw.ignoredRegions : [] };
+}
+
 export function normalizePdfDocumentIR(raw = {}, { pageNum = 1 } = {}) {
+  raw = expandCompactPdfDocumentIR(raw, pageNum);
   const page = Math.max(1, Number(raw?.page || pageNum) || pageNum);
   const pageType = ['catalog_table', 'quotation_table', 'mixed', 'non_catalog'].includes(raw?.pageType) ? raw.pageType : 'unknown';
   const tables = (Array.isArray(raw?.tables) ? raw.tables : []).map((table, ti) => {

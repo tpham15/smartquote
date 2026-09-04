@@ -146,6 +146,13 @@ function sanitizeClaudeRequest(body = {}) {
   const outputConfig = sanitizeOutputConfig(body?.output_config);
   if (outputConfig) out.output_config = outputConfig;
 
+  // Sonnet 5 uses adaptive thinking by default. For deterministic document
+  // extraction we may explicitly disable it so max_tokens is available to JSON.
+  const thinkingType = String(body?.thinking?.type || '').trim();
+  if (/^claude-(?:sonnet|opus|fable)-5(?:$|-)/.test(model) && ['disabled', 'adaptive'].includes(thinkingType)) {
+    out.thinking = { type: thinkingType };
+  }
+
   // Sonnet 5 rejects non-default sampling parameters. Extraction does not need
   // temperature at all, so never forward it to generation-5 models.
   const generation5 = /^claude-(?:sonnet|opus|fable)-5(?:$|-)/.test(model);

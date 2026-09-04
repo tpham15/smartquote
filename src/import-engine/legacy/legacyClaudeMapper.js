@@ -92,6 +92,7 @@ export async function callClaudeText(payload) {
   };
   if (payload.system) body.system = payload.system;
   if (payload.output_config) body.output_config = payload.output_config;
+  if (payload.thinking) body.thinking = payload.thinking;
   if (payload.temperature !== undefined) body.temperature = payload.temperature;
 
   const res = await smartQuoteFetch("/api/claude", {
@@ -130,6 +131,14 @@ export async function callClaudeText(payload) {
 export async function callClaudeStructured(payload) {
   try {
     const raw = await callClaudeText(payload);
+    if (raw.stopReason === "max_tokens" || raw.stopReason === "model_context_window_exceeded") {
+      const error = new Error(`Claude Structured Output bị cắt (${raw.stopReason}).`);
+      error.rawText = raw.text;
+      error.extractedJsonText = raw.text;
+      error.stopReason = raw.stopReason;
+      error.response = raw.raw;
+      throw error;
+    }
     try {
       return JSON.parse(raw.text);
     } catch (err) {
