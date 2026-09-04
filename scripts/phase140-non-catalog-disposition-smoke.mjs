@@ -6,7 +6,7 @@ import { detectRegions, isQuoteContextSubtotalRow } from "../src/import-engine/d
 import { extractItemsWithStats } from "../src/import-engine/extractItems.js";
 import { validateItems } from "../src/import-engine/validateItems.js";
 import { scoreConfidence } from "../src/import-engine/scoreConfidence.js";
-import { dedupeCatalogIdentities } from "../src/import-engine/productSanitizer.js";
+import { dedupeCatalogIdentities, sanitizeCatalogProduct } from "../src/import-engine/productSanitizer.js";
 import { engineResultToImportPreviewResult, importPreviewLinesToProducts } from "../src/import-engine/previewResult.js";
 
 function row(r, values) {
@@ -62,6 +62,29 @@ const generic = deduped.products.find((p) => /vật tư phụ|vat tu phu/i.test(
 assert.ok(generic, "generic ancillary row should remain auditable inside engine output");
 assert.equal(generic.status, "skipped", "generic ancillary row must be dispositioned as skipped, never review/error");
 assert.equal(deduped.deduped, 1, "repeated lighting occurrence must be merged, not skipped");
+
+
+// UI hardening: even if a stale/manual mapping has already copied a context label
+// into both product name and SKU, sanitizer must still disposition it as skipped.
+const mappedFloorSubtotal = sanitizeCatalogProduct({
+  name: "Tầng 1",
+  sku: "Tầng 1",
+  costPrice: 50139000,
+  unit: "",
+  specs: "",
+  _meta: { source: { rawText: "Tầng 1 50.139.000", fileName: "3-1-25 BG VILLA BÙI VIỆN.xlsx" } },
+}, { oldQuoteMode: true, sourceFileName: "3-1-25 BG VILLA BÙI VIỆN.xlsx" });
+assert.equal(mappedFloorSubtotal?._meta?.canonicalStatus, "skipped", "mis-mapped floor subtotal must be skipped even when copied into SKU");
+
+const mappedGenericMaterial = sanitizeCatalogProduct({
+  name: "Vật tư phụ: dây điện, đá cắt, ống gen, ruột gà",
+  sku: "VT-PHU",
+  costPrice: 2500000,
+  unit: "Gói",
+  specs: "",
+  _meta: { source: { rawText: "Vật tư phụ: dây điện, đá cắt, ống gen, ruột gà 2.500.000", fileName: "3-1-25 BG VILLA BÙI VIỆN.xlsx" } },
+}, { oldQuoteMode: true, sourceFileName: "3-1-25 BG VILLA BÙI VIỆN.xlsx" });
+assert.equal(mappedGenericMaterial?._meta?.canonicalStatus, "skipped", "generic ancillary row must be skipped before pseudo-SKU evidence can rescue it");
 
 const result = {
   items: deduped.products,

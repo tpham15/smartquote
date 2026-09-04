@@ -547,20 +547,23 @@ export function isLikelyOldQuoteAggregateProduct(product = {}, opts = {}) {
   if (!oldQuoteContext) return false;
 
   const sku = text(p.sku);
-  // Mapping lỗi có thể chép chính sub-header vào cả Tên và SKU. Phải nhận diện
-  // cấu trúc group/subtotal TRƯỚC khi xem một ô SKU không-rỗng là bằng chứng product.
-  if (isLikelyOldQuoteSectionRow(p.name) || isLikelyOldQuoteSectionRow(sku)) return true;
-  if (sku && !/^(n\/?a|na|null|none|—|-)$/.test(sku)) return false;
-
   const name = asciiFold(p.name);
   const unit = asciiFold(p.unit);
   const specs = text(p.specs);
   const supplier = asciiFold(p.supplier);
   const combined = asciiFold([p.name, p.category, p.supplier, p.unit, p.specs, rawText].join(" "));
 
+  // Quote context/subtotal phải được nhận diện TRƯỚC khi coi một SKU không-rỗng
+  // là bằng chứng product. Mapping lỗi có thể chép "Tầng 1" vào cả Tên + SKU,
+  // hoặc tạo pseudo-SKU cho dòng vật tư phụ / tổng nhóm.
+  const contextLabel = asciiFold(p.name || sku);
+  if (/^(?:tong\s+)?(?:tang|lau|floor)\s*(?:\d+|tret|mai|ham)\b/.test(contextLabel)) return true;
+  if (isLikelyOldQuoteSectionRow(p.name) || isLikelyOldQuoteSectionRow(sku)) return true;
   if (isLikelyOldQuoteSectionRow([p.name, rawText].filter(Boolean).join(" "))) return true;
   if (OLD_QUOTE_GROUP_WORD_RE.test(name)) return true;
   if (/\b(vat\s*tu\s*phu|phu\s*kien\s*phu|goi\s*vat\s*tu|goi\s*phu\s*kien)\b/i.test(combined) && (!unit || unit === "goi" || unit === "bo")) return true;
+
+  if (sku && !/^(n\/?a|na|null|none|—|-)$/.test(sku)) return false;
   if (/\b(tong\s*gia\s*tri|tong\s*cong|tam\s*tinh|thanh\s*tien|nhan\s*cong\s*,?\s*lap\s*trinh|nhan\s*cong|lap\s*dat|thi\s*cong)\b/i.test(name)) return true;
 
   const hasDetailedSpecs = specs.length >= 35 || /(model|sku|ma\s*thiet\s*bi|dien\s*ap|cong\s*suat|kich\s*thuoc|nguon|chuan\s*ket\s*noi|bao\s*hanh)/i.test(asciiFold(specs));
