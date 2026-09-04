@@ -20,6 +20,7 @@ import { PLAN_LIMITS, PLAN_ORDER, FEATURE_LABELS, normalizeBilling, canUseFeatur
 import { canAccessCapability, CAPABILITY_LABELS, PLAN_CAPABILITIES } from "./billing/planCapabilities.js";
 import { QUOTE_TEMPLATE_PRESET_LIST, applyQuoteTemplatePreset, buildDefaultQuoteTemplateConfig, normalizeQuoteTemplateConfig, getQuoteTemplateLabel } from "./quoteTemplates.js";
 import { assertSmartQuoteUploadFile, filterSafeSmartQuoteFiles, rejectedFilesMessage } from "./import-engine/fileGuards.js";
+import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 import {
   loadCatalogTemplate as loadStoredCatalogTemplate,
   saveCatalogTemplate as persistCatalogTemplate,
@@ -4732,7 +4733,12 @@ function PdfGroundingViewer({ file, source, value, onClose }) {
         setRenderState((s) => ({ ...s, loading: true, error: "" }));
         const data = new Uint8Array(await file.arrayBuffer());
         const pdfjsPilot = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        const task = pdfjsPilot.getDocument({ data, disableWorker: true, isEvalSupported: false, useSystemFonts: true });
+
+        if (!pdfjsPilot.GlobalWorkerOptions.workerSrc) {
+          pdfjsPilot.GlobalWorkerOptions.workerSrc = pdfJsWorkerUrl;
+        }
+
+        const task = pdfjsPilot.getDocument({ data, isEvalSupported: false, useSystemFonts: true });
         doc = await task.promise;
         const page = await doc.getPage(Math.min(Math.max(1, pageNum), doc.numPages));
         const base = page.getViewport({ scale: 1 });

@@ -16,6 +16,7 @@ import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
 import { assessPdfPositiveEvidence, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
 
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
+import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 
 const DEFAULT_MAX_CHARS_PER_CHUNK = 850;
 const DEFAULT_MAX_LINES_PER_CHUNK = 8;
@@ -651,9 +652,13 @@ async function createPdfVisionRenderer(file) {
   }
   const data = new Uint8Array(await file.arrayBuffer());
   const pdfjsVision = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+  if (!pdfjsVision.GlobalWorkerOptions.workerSrc) {
+    pdfjsVision.GlobalWorkerOptions.workerSrc = pdfJsWorkerUrl;
+  }
+
   const task = pdfjsVision.getDocument({
     data,
-    disableWorker: true,
     isEvalSupported: false,
     useSystemFonts: true,
   });
