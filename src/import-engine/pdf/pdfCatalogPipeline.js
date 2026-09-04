@@ -15,6 +15,8 @@ import { sanitizeCatalogProduct, sanitizeCatalogProducts } from "../productSanit
 import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
 import { assessPdfPositiveEvidence, assessPdfVisionTrust, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
 import { normalizeSellableVariants, normalizePdfTableSemantics } from "./pdfVariants.js";
+import { PDF_PAGE_DOCUMENT_IR_SCHEMA, PDF_ROW_RECOVERY_SCHEMA, normalizePdfDocumentIR, assembleProductsFromPdfDocumentIR, mergeRecoveredPdfRow } from "./pdfDocumentFramework.js";
+import { getPdfTemplateHint, rememberPdfTemplate } from "./pdfTemplateMemory.js";
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
 import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 
@@ -298,8 +300,16 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
       meta.canonicalStatus = "need_review";
       meta.status = "review";
       meta.confidence = Math.min(Number(meta.confidence || 0.72), 0.68);
-      if (!issues.some((it) => issueCodeValue(it) === "pdf_ai_needs_review")) {
-        issues.push(simpleIssue("pdf_ai_needs_review", "warning", "PDF chưa đủ bằng chứng để tự duyệt dòng này", "name", "Kiểm tra SKU/giá hoặc nguồn STT của riêng dòng này"));
+      const isLayoutIr = String(engine || meta.engine || "").includes("layout-ir");
+      if (isLayoutIr && trust?.signals?.fieldConfidenceStrong === false) {
+        const fc = trust?.signals?.fieldConfidence || {};
+        const weakField = Number(fc.sku || 0) < 0.72 ? "sku" : (Number(fc.price || 0) < 0.72 ? "price" : "name");
+        const label = weakField === "sku" ? "mã sản phẩm" : (weakField === "price" ? "giá" : "tên sản phẩm");
+        if (!issues.some((it) => issueCodeValue(it) === "pdf_field_confidence_low")) {
+          issues.push(simpleIssue("pdf_field_confidence_low", "warning", `Chỉ cần kiểm tra lại ${label}; các field khác đã có bằng chứng tốt`, weakField, "SmartQuote đã crop/đọc lại hàng này nếu có thể"));
+        }
+      } else if (!issues.some((it) => issueCodeValue(it) === "pdf_ai_needs_review")) {
+        issues.push(simpleIssue("pdf_ai_needs_review", "warning", "PDF chưa đủ bằng chứng để tự duyệt dòng này", "name", "Kiểm tra riêng field còn thiếu/không chắc"));
       }
     }
   }
@@ -649,6 +659,35 @@ async function createPdfVisionRenderer(file) {
     throw new Error(`Ảnh trang ${pageNum} vẫn quá lớn sau khi nén; không gửi request vượt giới hạn Claude.`);
   }
 
+  async function renderCrop(pageNum, bbox, { targetLongSide = 2600, padRatio = 0.035 } = {}) {
+    if (!Array.isArray(bbox) || bbox.length !== 4) return null;
+    const rendered = await renderPageCanvas(pageNum, targetLongSide);
+    const { canvas } = rendered;
+    const [x1, y1, x2, y2] = bbox.map((n) => Math.max(0, Math.min(1000, Number(n) || 0)));
+    if (x2 <= x1 || y2 <= y1) return null;
+    const padX = Math.round(canvas.width * padRatio);
+    const padY = Math.round(canvas.height * padRatio);
+    const sx = Math.max(0, Math.floor(canvas.width * x1 / 1000) - padX);
+    const sy = Math.max(0, Math.floor(canvas.height * y1 / 1000) - padY);
+    const ex = Math.min(canvas.width, Math.ceil(canvas.width * x2 / 1000) + padX);
+    const ey = Math.min(canvas.height, Math.ceil(canvas.height * y2 / 1000) + padY);
+    const sw = Math.max(1, ex - sx);
+    const sh = Math.max(1, ey - sy);
+    const crop = document.createElement("canvas");
+    crop.width = sw;
+    crop.height = sh;
+    const ctx = crop.getContext("2d", { alpha: false });
+    if (!ctx) return null;
+    ctx.save();
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, sw, sh);
+    ctx.restore();
+    ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+    const encoded = jpegFromCanvasWithinBudget(crop);
+    if (!encoded) return null;
+    return { ...encoded, width: sw, height: sh, rotation: rendered.rotation, cropOfPage: pageNum, bbox: [x1, y1, x2, y2] };
+  }
+
   async function renderBands(pageNum) {
     const rendered = await renderPageCanvas(pageNum, 2100);
     const { canvas } = rendered;
@@ -683,50 +722,137 @@ async function createPdfVisionRenderer(file) {
     pageCount: pdf.numPages,
     renderPage,
     renderBands,
+    renderCrop,
     async destroy() { try { await pdf.destroy?.(); } catch (_) {} },
   };
 }
 
-async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "" }) {
+function buildDocumentLayoutPrompt({ fileName, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "", templateHint = "", previousSectionTitle = "" }) {
+  return `Bạn là lớp DOCUMENT PERCEPTION của SmartQuote. Không được nhảy thẳng từ ảnh sang danh sách product phẳng.
+FILE: ${fileName}
+NCC: ${supplierGuess || "Chung"}
+Đang đọc ${bandLabel ? `${bandLabel} của ` : ""}trang ${pageNum}/${pageCount || "?"}.
+
+MỤC TIÊU: dựng lại cấu trúc bảng trước, sau đó SmartQuote sẽ tự assemble product.
+
+QUY TẮC LAYOUT:
+1) Xác định từng TABLE, HEADER, SECTION và PRODUCT ROW theo vị trí thực tế trên ảnh.
+2) BBOX dùng tọa độ chuẩn hóa [x1,y1,x2,y2] trong khoảng 0..1000 của chính ảnh đang xem. Nếu thật sự không xác định được, dùng [0,0,0,0].
+3) kind="product" CHỈ cho hàng bán được. Header section, subtotal, footer, ghi chú, ngày hiệu lực, chữ ký/con dấu không được thành product.
+4) Nếu bảng KHÔNG có STT, sourceRow=0 và rowIndex phải là thứ tự hàng vật lý trong table/section. SmartQuote dùng rowIndex làm provenance, không được bịa STT.
+5) Với ô merge/rowspan ở cột mô tả: đặt nội dung dùng chung vào section.sharedSpecs nếu nó áp dụng cho nhiều product row. Không tạo product từ ô mô tả merge và không bỏ mất nội dung đó.
+6) section.title phải lấy heading gần nhất (ví dụ CÔNG TẮC LUTO, CẢM BIẾN PHỤ TRỢ, MODULE...). Nếu trang bắt đầu giữa một section và không thấy heading, để title="" thay vì đoán.
+7) Đọc header để phân loại role của cột: product_name, sku, specs, unit, variant_price, commercial_price, quote_value, image, unknown.
+8) Phân biệt price semantics:
+   - variant_price = các cấu hình/SKU khác nhau như On/off, Smart dimmable, Smart Tunable.
+   - commercial_price = giá đại lý/giá công bố/MSRP của cùng SKU.
+   - quote_value = số lượng/đơn giá/thành tiền của quotation; không coi Thành tiền là giá catalog.
+9) Nếu một row có nhiều SKU variant, variants phải giữ one-to-one SKU ↔ cấu hình ↔ giá. Nếu chỉ có 1 SKU + 1 đơn giá thì prices chứa một commercial_price.
+10) confidence 0..100 phản ánh độ chắc chắn RIÊNG của name/sku/specs/price. Không nâng confidence chỉ vì row trông giống product.
+11) Không dùng số trong điện áp, kích thước, CRI/IP/CCT, tuổi thọ 25,000/50,000h làm giá.
+12) ${recoveryMode ? "Recovery mode: ưu tiên phục hồi cell mờ nhưng vẫn dùng confidence thấp nếu chưa chắc; tuyệt đối không đoán." : "Ưu tiên precision nhưng phải giữ đủ mọi product row nhìn thấy."}
+${previousSectionTitle ? `13) Context trang trước kết thúc ở section "${previousSectionTitle}". Chỉ dùng làm gợi ý nếu trang hiện tại rõ ràng tiếp tục cùng bảng; không copy mù.` : ""}
+${templateHint ? `14) ${templateHint}` : ""}
+
+Output bị khóa bằng JSON Schema. Không giải thích ngoài schema.`;
+}
+
+async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "", previousSectionTitle = "" }) {
+  const templateHint = getPdfTemplateHint({ supplierGuess, fileName: file.name });
   const parsed = await callClaudeStructured({
     model: "claude-sonnet-5",
-    max_tokens: recoveryMode ? 9000 : 7000,
+    max_tokens: recoveryMode ? 12000 : 10000,
     output_config: {
       effort: "low",
-      format: { type: "json_schema", schema: PDF_CATALOG_OUTPUT_SCHEMA },
+      format: { type: "json_schema", schema: PDF_PAGE_DOCUMENT_IR_SCHEMA },
     },
     messages: [{
       role: "user",
       content: [
         { type: "image", source: { type: "base64", media_type: image.mediaType || "image/jpeg", data: image.base64 } },
-        { type: "text", text: buildDocumentPagePrompt({ fileName: file.name, supplierGuess, pageNum, pageCount, recoveryMode, bandLabel }) },
+        { type: "text", text: buildDocumentLayoutPrompt({ fileName: file.name, supplierGuess, pageNum, pageCount, recoveryMode, bandLabel, templateHint, previousSectionTitle }) },
       ],
     }],
   });
-  const semantics = parsed?.tableSemantics || { rowModel: "unknown", priceColumns: [] };
-  return Array.isArray(parsed?.products)
-    ? parsed.products.map((product) => ({ ...product, tableSemantics: semantics }))
-    : [];
+  const ir = normalizePdfDocumentIR(parsed || {}, { pageNum });
+  rememberPdfTemplate({ supplierGuess, fileName: file.name, pageIrs: [ir] });
+  const assembled = assembleProductsFromPdfDocumentIR(ir, { supplierGuess });
+  const products = assembled.products;
+  products.documentIR = ir;
+  products.documentStats = assembled.stats;
+  return products;
+}
+
+async function recoverLayoutProductWithClaude({ file, image, product, supplierGuess, pageNum }) {
+  const section = product?.category || "";
+  const prompt = `Bạn đang kiểm chứng CHỈ MỘT HÀNG sản phẩm đã crop từ PDF catalog.
+FILE: ${file.name}; NCC: ${supplierGuess || "Chung"}; trang ${pageNum}; section: ${section || "không rõ"}.
+Đọc lại chính xác name, sku, unit, specs và mọi ô giá/variant nhìn thấy trong crop.
+- Không tạo dữ liệu không có trên ảnh.
+- Phân biệt giá variant với commercial_price/quote_value.
+- confidence 0..100 cho từng field.
+- Nếu mờ: để text=""/value=0 với confidence thấp, không đoán.
+Output chỉ theo JSON Schema.`;
+  return callClaudeStructured({
+    model: "claude-sonnet-5",
+    max_tokens: 3000,
+    output_config: { effort: "low", format: { type: "json_schema", schema: PDF_ROW_RECOVERY_SCHEMA } },
+    messages: [{ role: "user", content: [
+      { type: "image", source: { type: "base64", media_type: image.mediaType || "image/jpeg", data: image.base64 } },
+      { type: "text", text: prompt },
+    ] }],
+  });
 }
 
 async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
   const raw = [];
+  const pageIrs = [];
   let failedPages = 0;
+  let targetedRecoveries = 0;
+  let previousSectionTitle = "";
+
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
     onProgress?.({
       stage: recoveryMode ? "vision_recovery_page" : "vision_page",
       message: recoveryMode
-        ? `PDF scan/ảnh: AI đang dò lại dòng bị thiếu trang ${pageNum}/${totalPages}...`
-        : `PDF scan/ảnh: AI đang đọc ảnh trang ${pageNum}/${totalPages}...`,
+        ? `PDF scan/ảnh: đang dựng lại layout trang ${pageNum}/${totalPages} ở độ phân giải cao...`
+        : `PDF scan/ảnh: đang dựng Document IR trang ${pageNum}/${totalPages}...`,
       current: pageNum,
       total: totalPages,
     });
     try {
       const image = await renderer.renderPage(pageNum, { recoveryMode });
-      let pageItems = await parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum, pageCount: totalPages, recoveryMode });
+      let pageItems = await parseDocumentPageWithClaude({
+        file, image, supplierGuess, pageNum, pageCount: totalPages, recoveryMode, previousSectionTitle,
+      });
+      const pageIr = pageItems.documentIR || null;
+      if (pageIr) {
+        pageIrs.push(pageIr);
+        const titles = (pageIr.tables || []).flatMap((t) => (t.sections || []).map((sec) => sec.title).filter(Boolean));
+        if (titles.length) previousSectionTitle = titles[titles.length - 1];
+      }
 
-      // If a dense scan page still returns zero rows, split it into three overlapping
-      // horizontal bands. This increases effective text size without sending a huge image.
+      // Phase 14.2E — field/row-targeted recovery. Do not re-read a whole document
+      // because one SKU/price cell is weak. Crop only the uncertain physical row.
+      if (!recoveryMode && pageItems.length && typeof renderer.renderCrop === "function") {
+        const candidates = pageItems
+          .map((item, index) => ({ item, index }))
+          .filter(({ item }) => item?._layoutNeedsRecovery && Array.isArray(item?.sourceBBox) && item.sourceBBox.length === 4)
+          .slice(0, 4);
+        for (const { item, index } of candidates) {
+          try {
+            const crop = await renderer.renderCrop(pageNum, item.sourceBBox);
+            if (!crop) continue;
+            const recovered = await recoverLayoutProductWithClaude({ file, image: crop, product: item, supplierGuess, pageNum });
+            pageItems[index] = mergeRecoveredPdfRow(item, recovered || {});
+            targetedRecoveries += 1;
+          } catch (recoverErr) {
+            console.warn("PDF targeted row recovery failed", { pageNum, error: recoverErr?.message || recoverErr });
+          }
+        }
+      }
+
+      // Last-resort layout recovery for a page that produced no product rows.
       if (!pageItems.length && recoveryMode) {
         const bands = await renderer.renderBands(pageNum);
         const bandItems = [];
@@ -740,8 +866,10 @@ async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPag
             pageCount: totalPages,
             recoveryMode: true,
             bandLabel: band.bandLabel,
+            previousSectionTitle,
           });
           bandItems.push(...rows);
+          if (rows.documentIR) pageIrs.push(rows.documentIR);
           if (i < bands.length - 1) await new Promise((r) => setTimeout(r, 100));
         }
         pageItems = bandItems;
@@ -751,105 +879,11 @@ async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPag
       raw.push(...pageItems.map((it) => ({ ...it, sourcePage: Number(it.sourcePage || pageNum) || pageNum })));
     } catch (err) {
       failedPages += 1;
-      console.warn("PDF page-image OCR failed", { pageNum, recoveryMode, error: err?.message || err });
+      console.warn("PDF page layout extraction failed", { pageNum, recoveryMode, error: err?.message || err });
     }
     if (pageNum < totalPages) await new Promise((r) => setTimeout(r, recoveryMode ? 220 : 160));
   }
-  return { raw, failedPages };
-}
-
-
-// Phase 14.0D — document-level confidence calibration for page-image PDF extraction.
-// Claude is allowed to READ rows, but SmartQuote decides whether a row is safe to
-// auto-approve using deterministic evidence and document structure.
-function calibratePdfVisionConfidence(items = [], { expectedRows = 0 } = {}) {
-  const rows = (items || [])
-    .map((it) => Number(it?._meta?.source?.row || 0))
-    .filter((n) => Number.isInteger(n) && n > 0);
-
-  const uniqueRows = new Set(rows);
-  const exactExpectedCoverage = Number(expectedRows || 0) > 0
-    && items.length === Number(expectedRows)
-    && rows.length === items.length
-    && uniqueRows.size === Number(expectedRows)
-    && Array.from({ length: Number(expectedRows) }, (_, i) => i + 1).every((n) => uniqueRows.has(n));
-
-  // Generic row-indexed tables can also be trusted when STT is a complete 1..N
-  // sequence. We deliberately require >= 3 rows to avoid over-trusting tiny docs.
-  const genericContiguousCoverage = !expectedRows
-    && items.length >= 3
-    && rows.length === items.length
-    && uniqueRows.size === items.length
-    && Math.min(...rows) === 1
-    && Math.max(...rows) === items.length
-    && Array.from({ length: items.length }, (_, i) => i + 1).every((n) => uniqueRows.has(n));
-
-  const documentStructureVerified = exactExpectedCoverage || genericContiguousCoverage;
-
-  return (items || []).map((item) => {
-    const meta = { ...(item?._meta || {}) };
-    const source = { ...(meta.source || {}) };
-    const evidence = assessPdfPositiveEvidence({ ...item, _meta: meta }, meta.engine || "pdf-v5-page-image-jsonl");
-    const issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
-
-    const strongIdentity =
-      !!evidence.signals?.validPrice &&
-      !!evidence.signals?.goodName &&
-      !!evidence.signals?.clearSku &&
-      Number(evidence.score || 0) >= 6;
-
-    const hasRowProvenance =
-      Number.isInteger(Number(source.page)) &&
-      Number(source.page) > 0 &&
-      Number.isInteger(Number(source.row)) &&
-      Number(source.row) > 0;
-
-    const blockingCodes = new Set([
-      "pdf_price_looks_like_life_hours",
-      "pdf_scan_low_recall",
-      "missing_product_name",
-      "price_parse_failed",
-      "price_unreasonable",
-      "pdf_ocr_low_quality",
-      "pdf_insufficient_product_evidence",
-    ]);
-
-    const hasBlockingIssue = issues.some((issue) => {
-      const code = String(typeof issue === "string" ? issue : (issue?.code || "")).toLowerCase();
-      const level = String(typeof issue === "string" ? "" : (issue?.level || "")).toLowerCase();
-      return blockingCodes.has(code) || level === "error";
-    });
-
-    if (documentStructureVerified && strongIdentity && hasRowProvenance && !hasBlockingIssue) {
-      const filteredIssues = issues.filter((issue) => {
-        const code = String(typeof issue === "string" ? issue : (issue?.code || "")).toLowerCase();
-        return code !== "pdf_ai_needs_review" && code !== "pdf_ocr_uncertain";
-      });
-
-      meta.issues = filteredIssues;
-      meta.productEvidence = {
-        ...(meta.productEvidence || {}),
-        ...evidence,
-        documentStructureVerified: true,
-        exactExpectedCoverage,
-        genericContiguousCoverage,
-      };
-      meta.canonicalStatus = "auto_approved";
-      meta.status = "new";
-      meta.confidence = Math.max(Number(meta.confidence || 0), exactExpectedCoverage ? 0.95 : 0.92);
-
-      return { ...item, _meta: meta };
-    }
-
-    meta.productEvidence = {
-      ...(meta.productEvidence || {}),
-      ...evidence,
-      documentStructureVerified,
-      exactExpectedCoverage,
-      genericContiguousCoverage,
-    };
-    return { ...item, _meta: meta };
-  });
+  return { raw, failedPages, pageIrs, targetedRecoveries };
 }
 
 async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, pageCount, onProgress }) {
@@ -861,27 +895,37 @@ async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, p
     const first = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: false });
     let raw = first.raw;
     let failedPages = first.failedPages;
-    let items = normalizePdfItems(raw, supplierGuess, "pdf-v6-page-structured");
+    let items = normalizePdfItems(raw, supplierGuess, "pdf-v7-layout-ir");
     let finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
 
-    if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.96)) {
-      onProgress?.({ stage: "vision_recovery", message: `PDF scan có thể thiếu dòng (${finalItems.length}/${expectedRows}). Đang dò lại ở độ phân giải cao...`, current: finalItems.length, total: expectedRows, expectedRows });
+    const lowExpectedCoverage = expectedRows && finalItems.length < Math.ceil(expectedRows * 0.96);
+    const pageFailureRecovery = failedPages > 0;
+    if (lowExpectedCoverage || pageFailureRecovery) {
+      onProgress?.({
+        stage: "vision_recovery",
+        message: lowExpectedCoverage
+          ? `PDF có thể thiếu dòng (${finalItems.length}/${expectedRows}). Đang dựng lại layout ở độ phân giải cao...`
+          : `Có ${failedPages} trang chưa dựng được layout. Đang phục hồi riêng các trang PDF khó...`,
+        current: finalItems.length,
+        total: expectedRows || totalPages,
+        expectedRows: expectedRows || null,
+      });
       const second = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: true });
       failedPages += second.failedPages;
       raw = [...raw, ...second.raw];
-      items = normalizePdfItems(raw, supplierGuess, "pdf-v6-page-structured");
+      items = normalizePdfItems(raw, supplierGuess, "pdf-v7-layout-ir");
       finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
     }
 
     if (!finalItems.length) throw new Error(`Claude page vision không tìm được sản phẩm (${failedPages}/${totalPages} trang lỗi).`);
 
-    const finalized = finalizePdfTrust(finalItems, { expectedRows, failedPages, engine: "pdf-v6-page-structured" });
+    const finalized = finalizePdfTrust(finalItems, { expectedRows, failedPages, engine: "pdf-v7-layout-ir" });
     const warning = expectedRows && finalized.items.length < expectedRows
       ? `; có thể thiếu ${Math.max(0, expectedRows - finalized.items.length)} STT`
       : "";
     onProgress?.({
       stage: "done",
-      message: `PDF đọc được ${finalized.items.length} sản phẩm bằng Structured Vision${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${warning}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
+      message: `PDF đọc được ${finalized.items.length} sản phẩm qua Document IR + Layout Vision${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${warning}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
       current: totalPages,
       total: totalPages,
       warningPages: failedPages,
@@ -987,10 +1031,14 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
             parts: Array.isArray(it.sourceParts) ? it.sourceParts.slice(0, 80) : [],
             pageWidth: Number(it.sourcePageWidth || it.pageWidth || 0) || null,
             pageHeight: Number(it.sourcePageHeight || it.pageHeight || 0) || null,
+            layoutGrounded: !!(it.layoutGrounded || it?.evidence?.layoutGrounded),
+            layoutRowIndex: Number(it.layoutRowIndex || it?.evidence?.layoutRowIndex || 0) || null,
+            rowSourceKind: normalizeText(it.rowSourceKind || it?.evidence?.rowSourceKind || ""),
           },
           variants,
           tableSemantics,
           variantBinding: { visibleSkuCount, visiblePriceCount },
+          fieldEvidence: it.fieldEvidence || it?.evidence?.fieldEvidence || {},
           productEvidence: { ...(it.evidence || {}), quoteArithmeticMatched: quoteEconomics.matched },
           quoteEconomics: quoteEconomics.matched ? quoteEconomics : null,
           status: "new",

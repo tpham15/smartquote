@@ -102,7 +102,8 @@
     "smoke:phase14.0:section-drift": "node scripts/phase140-section-schema-drift-smoke.mjs",
     "smoke:phase14.0:import-session": "node scripts/phase140-import-session-smoke.mjs",
     "smoke:phase14.0:non-catalog": "node scripts/phase140-non-catalog-disposition-smoke.mjs",
-    "smoke:phase14.0A": "node scripts/phase140a-scan-pdf-page-image-smoke.mjs"
+    "smoke:phase14.0A": "node scripts/phase140a-scan-pdf-page-image-smoke.mjs",
+    "smoke:phase14.2": "node scripts/phase142-universal-pdf-framework-smoke.mjs && node scripts/phase141a-semantic-variant-binding-smoke.mjs && node scripts/phase141-pdf-engine-v6-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

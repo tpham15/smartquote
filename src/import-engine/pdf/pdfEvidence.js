@@ -197,7 +197,26 @@ export function assessPdfVisionTrust(item = {}, engine = "") {
   const hasVariantPrice = variants.some((v) => Number(v?.price || 0) >= 1000 && Number(v?.price || 0) <= 1_000_000_000);
   const clearIdentity = !!ev.signals?.clearSku || hasVariantSku;
   const validCommercialPrice = !!ev.signals?.validPrice || hasVariantPrice;
-  const rowGrounded = Number(source.page || 0) > 0 && Number(source.row || 0) > 0;
+
+  // Phase 14.2: many catalogs do not print an STT column. A stable table-row
+  // ordinal/bbox from Document IR is valid provenance; requiring visible STT made
+  // every row in otherwise clean catalogs fall into review.
+  const layoutGrounded = !!source.layoutGrounded || !!meta?.productEvidence?.layoutGrounded || !!source.bbox;
+  const rowGrounded = Number(source.page || 0) > 0 && (Number(source.row || 0) > 0 || layoutGrounded);
+
+  const fieldEvidence = meta.fieldEvidence || {};
+  const nameConfidence = Number(fieldEvidence?.name?.confidence ?? meta?.productEvidence?.fieldConfidence?.name ?? 0) || 0;
+  const skuConfidence = Number(fieldEvidence?.sku?.confidence ?? meta?.productEvidence?.fieldConfidence?.sku ?? 0) || 0;
+  const priceConfidence = Number(fieldEvidence?.price?.confidence ?? meta?.productEvidence?.fieldConfidence?.price ?? 0) || 0;
+  const layoutEngine = String(engine || meta.engine || '').includes('layout-ir');
+  // Older PDF engines did not emit field confidence. For v7 layout IR, require
+  // explicit confidence so auto-approval is evidence-based, not just AI-shaped.
+  const fieldConfidenceStrong = !layoutEngine || (
+    nameConfidence >= 0.72
+    && (skuConfidence >= 0.72 || hasVariantSku)
+    && (priceConfidence >= 0.72 || hasVariantPrice)
+  );
+
   const isPdfVision = (meta.source?.type === "pdf" || String(engine || meta.engine || "").startsWith("pdf"))
     && !String(engine || meta.engine || "").includes("heuristic");
   const trusted = isPdfVision
@@ -205,12 +224,23 @@ export function assessPdfVisionTrust(item = {}, engine = "") {
     && clearIdentity
     && validCommercialPrice
     && !!ev.signals?.goodName
+    && fieldConfidenceStrong
     && Number(ev.score || 0) >= 6;
   return {
     trusted,
     score: ev.score,
     reasons: ev.reasons,
-    signals: { ...ev.signals, rowGrounded, clearIdentity, validCommercialPrice, hasVariantSku, hasVariantPrice },
+    signals: {
+      ...ev.signals,
+      rowGrounded,
+      layoutGrounded,
+      clearIdentity,
+      validCommercialPrice,
+      hasVariantSku,
+      hasVariantPrice,
+      fieldConfidenceStrong,
+      fieldConfidence: { name: nameConfidence, sku: skuConfidence, price: priceConfidence },
+    },
   };
 }
 

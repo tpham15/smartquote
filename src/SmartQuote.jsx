@@ -4844,7 +4844,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   useEffect(() => { products_ref.current = products; }, [products]);
 
   // ── LỚP 3: CACHE — không gọi AI lại cho file giống nhau ──
-  const PDF_CACHE_SCHEMA = "v14_1a_semantic_variant_binding_v1";
+  const PDF_CACHE_SCHEMA = "v14_2_universal_document_ir_v1";
   const getCached = (hash) => {
     try {
       const c = tenantStorageGetItem(`sq_pdf_cache_${PDF_CACHE_SCHEMA}_${hash}`);
