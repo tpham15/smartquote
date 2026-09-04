@@ -7,6 +7,51 @@
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
+const PDF_MODEL = "claude-sonnet-5";
+
+export const PDF_CATALOG_OUTPUT_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    products: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          name: { type: "string" },
+          sku: { type: "string" },
+          category: { type: "string" },
+          supplier: { type: "string" },
+          unit: { type: "string" },
+          costPrice: { type: "integer" },
+          listPrice: { type: "integer" },
+          minRetailPrice: { type: "integer" },
+          specs: { type: "string" },
+          rawText: { type: "string" },
+          sourcePage: { type: "integer" },
+          sourceRow: { type: "integer" },
+          variants: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                sku: { type: "string" },
+                label: { type: "string" },
+                price: { type: "integer" },
+              },
+              required: ["sku", "label", "price"],
+            },
+          },
+        },
+        required: ["name", "sku", "category", "supplier", "unit", "costPrice", "listPrice", "minRetailPrice", "specs", "rawText", "sourcePage", "sourceRow", "variants"],
+      },
+    },
+  },
+  required: ["products"],
+};
+
 
 /**
  * Gọi /api/claude và trả raw text từ Claude, không parse JSON.
@@ -16,14 +61,19 @@ const DEFAULT_MODEL = "claude-sonnet-4-6";
  */
 export async function callClaudeText(payload) {
   let data;
+  const body = {
+    model: payload.model || DEFAULT_MODEL,
+    max_tokens: payload.max_tokens || 1000,
+    messages: payload.messages,
+  };
+  if (payload.system) body.system = payload.system;
+  if (payload.output_config) body.output_config = payload.output_config;
+  if (payload.temperature !== undefined) body.temperature = payload.temperature;
+
   const res = await smartQuoteFetch("/api/claude", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: payload.model || DEFAULT_MODEL,
-      max_tokens: payload.max_tokens || 1000,
-      messages: payload.messages,
-    }),
+    body: JSON.stringify(body),
   });
 
   try {
@@ -49,6 +99,20 @@ export async function callClaudeText(payload) {
   }
 
   return { text: rawText, stopReason: data.stop_reason || null, raw: data };
+}
+
+
+/** Guaranteed schema-conformant JSON via Claude Structured Outputs. */
+export async function callClaudeStructured(payload) {
+  const raw = await callClaudeText(payload);
+  try {
+    return JSON.parse(raw.text);
+  } catch (err) {
+    const error = new Error(`Structured Output không parse được JSON: ${err.message}`);
+    error.rawText = raw.text;
+    error.response = raw.raw;
+    throw error;
+  }
 }
 
 /**
@@ -248,57 +312,41 @@ Chỉ JSON thuần.`;
  * @returns {Promise<Array>}
  */
 export async function extractCatalogPdfWithClaude({ file, supplierGuess }) {
-  const base64 = await new Promise((res, rej) => {
+  const base64 = await new Promise((resolve, reject) => {
     const r = new FileReader();
-    r.onload = e => res(e.target.result.split(",")[1]);
-    r.onerror = rej;
+    r.onload = (event) => resolve(String(event.target.result).split(",")[1] || "");
+    r.onerror = reject;
     r.readAsDataURL(file);
   });
 
-  const prompt = `Bạn là chuyên gia trích xuất dữ liệu bảng giá sản phẩm. Đọc KỸ file PDF bảng giá này và trích xuất TẤT CẢ sản phẩm — không bỏ sót dòng nào.
+  const prompt = `Bạn là engine Document AI cho catalog/bảng giá Việt Nam.
+Đọc toàn bộ PDF, bao gồm bảng scan, hình, text và mọi trang.
 
-QUY TẮC TRÍCH XUẤT:
-1. Đọc hết mọi trang, mọi bảng, mọi section/nhóm trong file.
-2. Mỗi DÒNG SẢN PHẨM = 1 item (sản phẩm có giá tiền cụ thể).
-3. Nhóm/section header (vd "CÔNG TẮC LUTO", "THIẾT BỊ CỔNG TỰ ĐỘNG", "THANH RAY KÉO TAY KS") → dùng làm "category" cho các sản phẩm bên dưới nó, KHÔNG tạo thành item riêng.
-4. Nếu mô tả/thông số bị gộp ô (1 mô tả cho nhiều sản phẩm) → áp dụng mô tả đó cho tất cả sản phẩm trong nhóm.
+MỤC TIÊU:
+- Mỗi STT/hàng sản phẩm vật lý = đúng 1 product.
+- Không tạo product từ header, subtotal, footer, điều khoản, tuổi thọ, điện áp hoặc số trong specs.
+- sourcePage là số trang PDF (1-based); sourceRow là STT vật lý nếu nhìn thấy, nếu không thì số thứ tự hàng sản phẩm trên trang.
+- Tên lấy từ cột tên/thiết bị; SKU lấy từ cột mã.
+- costPrice là giá nhập/đại lý/đơn giá tương ứng sản phẩm, không phải Thành tiền và không phải 25,000/50,000 giờ tuổi thọ.
+- Nếu một STT chứa nhiều SKU với giá khác nhau, GIỮ mapping trong variants [{sku,label,price}]. costPrice dùng giá thấp nhất chỉ để tương thích UI hiện tại; không được làm mất giá theo SKU.
+- Nếu SKU hoặc giá không chắc, dùng chuỗi rỗng / 0 thay vì đoán.
+- category lấy từ section gần nhất.
+- Trả đủ mọi dòng sản phẩm nhìn thấy; không giải thích ngoài schema.`;
 
-XỬ LÝ CÁC TRƯỜNG HỢP:
-- Có MÃ SP riêng (vd LM-S1N/S, 22F005, PHOX2-433) → điền vào "sku".
-- KHÔNG có mã SP riêng → để sku rỗng "", giữ nguyên tên đầy đủ.
-- Nhiều cột giá (vd "Giá lẻ" + "Giá NPP", hoặc "Giá đại lý"):
-  → "costPrice" = giá THẤP NHẤT (giá nhập/đại lý/NPP — giá gốc để công ty mua vào).
-  → Ghi các giá khác vào "specs" (vd "Giá lẻ: 12.345.000").
-- ĐVT (Bộ/Cái/md/chiếc/đôi) → "unit".
-- Giá: bỏ dấu chấm/phẩy phân cách, chỉ lấy số (vd "1,944,000" → 1944000).
-- Tên sản phẩm phải NGẮN GỌN, chỉ là tên/model. KHÔNG nhét toàn bộ thông số vào name.
-  Ví dụ sai: name="Công tắc tiết kiệm điện Chất liệu: Nhựa PC... Nguồn cấp..."
-  Ví dụ đúng: name="Công tắc tiết kiệm điện", specs="Chất liệu: Nhựa PC... Nguồn cấp..."
-- Nếu text có từ khóa Chất liệu/Nguồn cấp/Công suất/Kích thước/Tích hợp/Mã khóa..., phần sau các từ đó đưa vào specs.
-- Nếu text giá bị dính thành chuỗi rất dài như "7.200.001.600.017...", KHÔNG dùng chuỗi đó; hãy lấy giá tiền rõ ràng hợp lý hoặc để costPrice=0.
-- Nếu category bị lỗi font/ký tự lạ, để category="Chung".
-
-BỎ QUA (không phải sản phẩm):
-- Dòng tiêu đề cột (STT, Tên, Mã, Đơn giá...).
-- Dòng tổng, ghi chú, chính sách, điều khoản thanh toán, bảo hành.
-- Thông tin chuyển khoản, địa chỉ, hotline, người phụ trách.
-- Dòng chỉ có chữ không có giá tiền.
-
-Trả về JSON array, mỗi item:
-{"name":"tên ngắn gọn không chứa specs dài", "sku":"mã hoặc rỗng", "category":"tên nhóm hoặc Chung", "supplier":"${supplierGuess}", "unit":"đvt", "costPrice":số_nguyên, "specs":"thông số kỹ thuật + giá khác nếu có", "rawText":"dòng text nguồn"}
-
-CHỈ trả JSON array thuần, KHÔNG markdown, KHÔNG giải thích. Bắt đầu bằng [ kết thúc bằng ].`;
-
-  try {
-    const parsed = await callClaudeJSON({
-      max_tokens: 8000,
-      messages: [{ role: "user", content: [
+  const parsed = await callClaudeStructured({
+    model: PDF_MODEL,
+    max_tokens: 24000,
+    output_config: {
+      effort: "low",
+      format: { type: "json_schema", schema: PDF_CATALOG_OUTPUT_SCHEMA },
+    },
+    messages: [{
+      role: "user",
+      content: [
         { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
-        { type: "text", text: prompt }
-      ]}],
-    });
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    throw new Error(e?.message || "AI trả về không đọc được");
-  }
+        { type: "text", text: prompt },
+      ],
+    }],
+  });
+  return Array.isArray(parsed?.products) ? parsed.products : [];
 }

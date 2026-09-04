@@ -11,7 +11,7 @@ import { assertWithinQuota, recordUsage, sendQuotaError } from './_lib/usage.js'
 const EVENT_TYPE = 'ai_claude_request';
 
 function allowedClaudeModels() {
-  const raw = process.env.SMARTQUOTE_ALLOWED_CLAUDE_MODELS || 'claude-sonnet-4-6,claude-sonnet-4-5,claude-3-7-sonnet-latest,claude-3-5-sonnet-latest';
+  const raw = process.env.SMARTQUOTE_ALLOWED_CLAUDE_MODELS || 'claude-sonnet-5,claude-sonnet-4-6,claude-sonnet-4-5,claude-3-7-sonnet-latest,claude-3-5-sonnet-latest';
   return raw.split(',').map((x) => x.trim()).filter(Boolean);
 }
 
@@ -34,8 +34,8 @@ function sanitizeClaudeMessages(messages = []) {
   }
   const maxMessages = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_MESSAGES, 1, 24, 12);
   const maxTextChars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_TEXT_CHARS, 1000, 250000, 120000);
-  const maxDocumentBase64Chars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_DOCUMENT_BASE64_CHARS, 0, 2000000, 950000);
-  const maxImageBase64Chars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_IMAGE_BASE64_CHARS, 0, 1200000, 850000);
+  const maxDocumentBase64Chars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_DOCUMENT_BASE64_CHARS, 0, 3300000, 2800000);
+  const maxImageBase64Chars = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_IMAGE_BASE64_CHARS, 0, 1500000, 1100000);
   let textBudget = maxTextChars;
 
   return messages.slice(0, maxMessages).map((msg) => {
@@ -81,11 +81,30 @@ function sanitizeClaudeMessages(messages = []) {
   });
 }
 
+function sanitizeOutputConfig(config) {
+  if (!config || typeof config !== 'object') return null;
+  const out = {};
+  const effort = String(config.effort || '').trim();
+  if (['low', 'medium', 'high', 'xhigh', 'max'].includes(effort)) out.effort = effort;
+
+  const format = config.format;
+  if (format?.type === 'json_schema' && format.schema && typeof format.schema === 'object' && !Array.isArray(format.schema)) {
+    const schemaText = JSON.stringify(format.schema);
+    if (schemaText.length > 30000) {
+      const err = new Error('Structured-output schema quá lớn.');
+      err.statusCode = 400;
+      throw err;
+    }
+    out.format = { type: 'json_schema', schema: format.schema };
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function sanitizeClaudeRequest(body = {}) {
   const allowed = allowedClaudeModels();
   const requestedModel = String(body?.model || '').trim();
   const model = allowed.includes(requestedModel) ? requestedModel : allowed[0];
-  const maxTokensCap = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_OUTPUT_TOKENS, 512, 12000, 8000);
+  const maxTokensCap = clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_OUTPUT_TOKENS, 512, 64000, 32000);
   const out = {
     model,
     max_tokens: clampNumber(body?.max_tokens, 1, maxTokensCap, 1000),
@@ -94,7 +113,15 @@ function sanitizeClaudeRequest(body = {}) {
   if (typeof body?.system === 'string' && body.system.trim()) {
     out.system = truncateText(body.system, clampNumber(process.env.SMARTQUOTE_MAX_CLAUDE_SYSTEM_CHARS, 1000, 50000, 12000));
   }
-  if (body?.temperature !== undefined) out.temperature = clampNumber(body.temperature, 0, 1, 0);
+  const outputConfig = sanitizeOutputConfig(body?.output_config);
+  if (outputConfig) out.output_config = outputConfig;
+
+  // Sonnet 5 rejects non-default sampling parameters. Extraction does not need
+  // temperature at all, so never forward it to generation-5 models.
+  const generation5 = /^claude-(?:sonnet|opus|fable)-5(?:$|-)/.test(model);
+  if (!generation5 && body?.temperature !== undefined) {
+    out.temperature = clampNumber(body.temperature, 0, 1, 0);
+  }
   return out;
 }
 
@@ -114,7 +141,7 @@ export default async function handler(req, res) {
   if (!auth.ok) return;
 
   try {
-    assertBodySize(req.body, Number(process.env.SMARTQUOTE_MAX_CLAUDE_BODY_BYTES || 1200000), 'Claude request');
+    assertBodySize(req.body, Number(process.env.SMARTQUOTE_MAX_CLAUDE_BODY_BYTES || 3800000), 'Claude request');
     const safeClaudeBody = sanitizeClaudeRequest(req.body || {});
     await assertRateLimit(auth, req, { eventType: EVENT_TYPE, units: 1 });
     await assertPlanCapability(auth, 'ai_import');

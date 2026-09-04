@@ -187,29 +187,30 @@ export function assessPdfPositiveEvidence(item = {}, engine = "") {
 
 // Phase 14.0E — AI may read a PDF row, but SmartQuote decides whether that
 // row is trustworthy. Row correctness and document recall are separate signals.
+
 export function assessPdfVisionTrust(item = {}, engine = "") {
   const meta = item?._meta || {};
   const source = meta.source || {};
-  const effectiveEngine = String(engine || meta.engine || "");
-  const evidence = assessPdfPositiveEvidence(item, effectiveEngine);
-  const sourcePage = Number(source.page || item.sourcePage || item.page || 0) || 0;
-  const sourceRow = Number(source.row || item.sourceRow || item.stt || item.row || 0) || 0;
-  const pageImageAi = effectiveEngine.startsWith("pdf") && !effectiveEngine.includes("heuristic");
-  const autoApprove =
-    pageImageAi &&
-    sourcePage > 0 &&
-    sourceRow > 0 &&
-    evidence.score >= 6 &&
-    !!evidence.signals?.validPrice &&
-    !!evidence.signals?.goodName &&
-    !!evidence.signals?.clearSku;
-
+  const ev = assessPdfPositiveEvidence(item, engine || meta.engine || "");
+  const variants = Array.isArray(item?.variants) ? item.variants : (Array.isArray(meta?.variants) ? meta.variants : []);
+  const hasVariantSku = variants.some((v) => clearSku(v?.sku));
+  const hasVariantPrice = variants.some((v) => Number(v?.price || 0) >= 1000 && Number(v?.price || 0) <= 1_000_000_000);
+  const clearIdentity = !!ev.signals?.clearSku || hasVariantSku;
+  const validCommercialPrice = !!ev.signals?.validPrice || hasVariantPrice;
+  const rowGrounded = Number(source.page || 0) > 0 && Number(source.row || 0) > 0;
+  const isPdfVision = (meta.source?.type === "pdf" || String(engine || meta.engine || "").startsWith("pdf"))
+    && !String(engine || meta.engine || "").includes("heuristic");
+  const trusted = isPdfVision
+    && rowGrounded
+    && clearIdentity
+    && validCommercialPrice
+    && !!ev.signals?.goodName
+    && Number(ev.score || 0) >= 6;
   return {
-    ...evidence,
-    autoApproveVision: autoApprove,
-    sourcePage,
-    sourceRow,
-    pageImageAi,
+    trusted,
+    score: ev.score,
+    reasons: ev.reasons,
+    signals: { ...ev.signals, rowGrounded, clearIdentity, validCommercialPrice, hasVariantSku, hasVariantPrice },
   };
 }
 

@@ -10,11 +10,10 @@
 //   - Legacy direct-document Claude fallback is only used when PDF text extraction
 //     cannot produce any usable row.
 // ============================================================
-import { callClaudeText, extractCatalogPdfWithClaude } from "../legacy/legacyClaudeMapper.js";
+import { callClaudeText, callClaudeStructured, PDF_CATALOG_OUTPUT_SCHEMA, extractCatalogPdfWithClaude } from "../legacy/legacyClaudeMapper.js";
 import { sanitizeCatalogProduct, sanitizeCatalogProducts } from "../productSanitizer.js";
 import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
-import { assessPdfPositiveEvidence, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
-
+import { assessPdfPositiveEvidence, assessPdfVisionTrust, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
 import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 
@@ -28,10 +27,11 @@ const AI_CHUNK_DELAY_MS = 120;
 // Phase 14.0A — real page-image vision for scanned PDFs.
 // /api/claude rejects requests above 1.2MB by default, so keep the encoded
 // page image comfortably below that ceiling after JSON/prompt overhead.
-const PDF_VISION_MAX_BASE64_CHARS = 760000;
+const PDF_VISION_MAX_BASE64_CHARS = 1000000;
 const PDF_VISION_TARGET_LONG_SIDE = 2200;
-const PDF_VISION_RECOVERY_LONG_SIDE = 2400;
+const PDF_VISION_RECOVERY_LONG_SIDE = 2500;
 const PDF_VISION_MIN_LONG_SIDE = 1350;
+const PDF_NATIVE_SCAN_MAX_BYTES = 2000000;
 
 function uid(p = "imp") {
   return `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -252,7 +252,7 @@ function isHighConfidencePdfHeuristicProduct(item, engine) {
 
 function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
   const meta = { ...(item._meta || {}) };
-  const issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
+  let issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
   const isHeuristic = String(engine || meta.engine || "").includes("heuristic");
   const isPdf = meta.source?.type === "pdf" || String(engine || meta.engine || "").startsWith("pdf");
   const evidence = assessPdfPositiveEvidence({ ...item, _meta: meta }, engine || meta.engine);
@@ -266,59 +266,41 @@ function applyPdfOcrQualityGuard(item, engine, supplierGuess) {
     meta.canonicalStatus = "skipped";
     meta.status = "skipped";
     meta.confidence = Math.min(Number(meta.confidence || 0.5), 0.38);
-    issues.push(simpleIssue(
-      "pdf_ocr_low_quality",
-      "info",
-      OCR_BROKEN_SKIP_MESSAGE,
-      "name",
-      "Dòng này là mảnh OCR/fallback text, không phải sản phẩm đủ chắc"
-    ));
+    issues.push(simpleIssue("pdf_ocr_low_quality", "info", OCR_BROKEN_SKIP_MESSAGE, "name", "Dòng này là mảnh OCR/fallback text, không phải sản phẩm đủ chắc"));
   } else if (isHeuristic && !evidence.positive) {
-    // Phase 14.0: positive evidence is required. A price alone is no longer enough
-    // to make a PDF row a product candidate. This specifically attacks false-product.
     item._skipReason = "pdf_insufficient_product_evidence";
     meta.canonicalStatus = "skipped";
     meta.status = "skipped";
     meta.confidence = Math.min(Number(meta.confidence || 0.5), 0.34);
-    issues.push(simpleIssue(
-      "pdf_insufficient_product_evidence",
-      "info",
-      "Bỏ qua vì dòng PDF chưa có đủ bằng chứng dương để coi là sản phẩm",
-      "name",
-      "Cần giá hợp lệ và thêm bằng chứng như SKU, tên sản phẩm rõ, section hoặc vị trí dòng trong bảng"
-    ));
+    issues.push(simpleIssue("pdf_insufficient_product_evidence", "info", "Bỏ qua vì dòng PDF chưa có đủ bằng chứng dương để coi là sản phẩm", "name"));
   } else if (isHeuristic && evidence.autoApprove) {
     meta.canonicalStatus = "auto_approved";
     meta.status = "new";
     meta.confidence = Math.max(Number(meta.confidence || 0), evidence.signals?.quoteArithmeticMatched ? 0.92 : (hasClearSku(item.sku) ? 0.86 : 0.8));
-    // Positive evidence is provenance, not a user-facing problem. Keep it in
-    // productEvidence instead of issues so clean rows remain visually clean.
   } else if (isHeuristic) {
-    meta.canonicalStatus = meta.canonicalStatus || "need_review";
-    meta.status = meta.status || "review";
-    meta.confidence = Math.min(Number(meta.confidence || 0.64), 0.64);
-    issues.push(simpleIssue(
-      "pdf_ocr_uncertain",
-      "warning",
-      "PDF chưa đủ chắc chắn — vui lòng đối chiếu tên, mã và giá với nguồn",
-      "name",
-      "Bấm nguồn để đối chiếu; Sửa nếu tên/giá chưa đúng; Xóa nếu đây là dòng rác"
-    ));
-  } else if (isPdf) {
-    // AI-only PDF identities are never silently clean. They become clean only
-    // after they are merged into a deterministic/grounded anchor or the user
-    // explicitly reviews them. This prevents plausible Claude rows from
-    // inflating a catalog with ungrounded identities.
     meta.canonicalStatus = "need_review";
     meta.status = "review";
-    meta.confidence = Math.min(Number(meta.confidence || 0.74), 0.74);
-    issues.push(simpleIssue(
-      "pdf_ai_needs_review",
-      "warning",
-      "Dòng do AI đọc thêm — cần đối chiếu với file gốc trước khi nhập",
-      "name",
-      "Nếu file có bảng rõ, ưu tiên dòng có nguồn và phép tính SL × đơn giá = thành tiền"
-    ));
+    meta.confidence = Math.min(Number(meta.confidence || 0.64), 0.64);
+    issues.push(simpleIssue("pdf_ocr_uncertain", "warning", "PDF chưa đủ chắc chắn — vui lòng đối chiếu tên, mã và giá với nguồn", "name"));
+  } else if (isPdf) {
+    // Phase 14.1: AI is only the reader. SmartQuote's deterministic evidence
+    // decides whether the row is safe. Do NOT blanket-review every AI row.
+    const probe = { ...item, _meta: { ...meta, issues } };
+    const trust = assessPdfVisionTrust(probe, engine || meta.engine);
+    meta.visionTrust = trust;
+    if (trust.trusted) {
+      issues = issues.filter((it) => !["pdf_ai_needs_review", "pdf_ocr_uncertain"].includes(issueCodeValue(it)));
+      meta.canonicalStatus = "auto_approved";
+      meta.status = "new";
+      meta.confidence = Math.max(Number(meta.confidence || 0), 0.93);
+    } else {
+      meta.canonicalStatus = "need_review";
+      meta.status = "review";
+      meta.confidence = Math.min(Number(meta.confidence || 0.72), 0.68);
+      if (!issues.some((it) => issueCodeValue(it) === "pdf_ai_needs_review")) {
+        issues.push(simpleIssue("pdf_ai_needs_review", "warning", "PDF chưa đủ bằng chứng để tự duyệt dòng này", "name", "Kiểm tra SKU/giá hoặc nguồn STT của riêng dòng này"));
+      }
+    }
   }
 
   item._meta = { ...meta, issues };
@@ -560,75 +542,24 @@ function parseClaudeProductObjects(raw) {
 }
 
 function buildDocumentPagePrompt({ fileName, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "" }) {
-  const lumiSmartHomeMode = isLumiSmarthomeContext({ fileName, supplierGuess, rawText: fileName });
   const expectedRows = getExpectedLumiPdfRows({ fileName, supplierGuess, rawText: fileName });
-  const recoveryRules = recoveryMode ? `
-CHẾ ĐỘ RECOVERY / BẮT DÒNG BỊ THIẾU:
-- Lần đọc trước có thể đã thiếu sản phẩm. Hãy đọc chậm từng hàng ngang trong bảng.
-- Ưu tiên recall: nếu một hàng có tên + giá nhưng SKU mờ, vẫn xuất object.
-- Không tự bỏ qua row vì thiếu SKU, thiếu specs, hoặc cột bị dấu mộc che một phần.
-- Nếu không chắc giá nhưng tên là sản phẩm rõ, vẫn xuất costPrice=0 để user kiểm tra trong preview.
-` : "";
-
-  const bandRules = bandLabel ? `
-ẢNH ĐÍNH KÈM CHỈ LÀ ${bandLabel} CỦA TRANG ${pageNum}:
-- Chỉ xuất các hàng sản phẩm nhìn thấy trong vùng ảnh này.
-- Nếu thấy STT vật lý của bảng, sourceRow phải giữ đúng STT đó; không đánh lại từ 1.
-- Không suy đoán hoặc lặp lại hàng nằm ngoài vùng ảnh.
-` : "";
-
-  const smarthomeRules = lumiSmartHomeMode ? `
-QUY TẮC RIÊNG CHO BẢNG LUMI SMARTHOME SCAN:
-- File này là bảng giá scan/ảnh. Hãy đọc THEO HÀNG VẬT LÝ của bảng, không đọc theo đoạn văn.
-- Mỗi hàng sản phẩm có pattern: TÊN SẢN PHẨM + MÃ LM-* + GIÁ ở cột ngoài cùng bên phải.
-- Mỗi row vật lý = 1 object JSONL. KHÔNG bỏ qua row nếu đã có tên + giá, kể cả SKU/mã bị mờ.
-- Nếu SKU không chắc hoặc không đọc được, để sku="" nhưng vẫn xuất object với tên + giá.
-- sourceRow phải là STT/dòng vật lý trong bảng nếu thấy được. Nếu không thấy STT, đánh số thứ tự trong trang.
-- Không được gộp nhiều dòng sản phẩm thành một object.
-- Không được tách một dòng sản phẩm thành nhiều object chỉ vì specs nhiều dòng.
-- Category lấy từ dòng section gần nhất như CÔNG TẮC LUTO, CẢM BIẾN PHỤ TRỢ, MODULE, WORKS WITH LUMI, Ổ CẮM LUMES.
-- Trang có dấu mộc/ảnh che vẫn phải cố đọc mọi row có tên + giá; nếu giá không chắc, costPrice=0 và vẫn trả object để SmartQuote đưa vào Cần kiểm tra.
-- Mục tiêu recall của toàn file là khoảng ${expectedRows || 49} sản phẩm. Trang nào có bảng sản phẩm thì tuyệt đối không trả thiếu row chỉ vì SKU mờ.
-` : "";
-
-  return `Bạn là engine OCR/catalog cho PDF bảng giá tiếng Việt.
-
+  return `Bạn là Document AI chuyên đọc catalog/bảng giá Việt Nam.
 FILE: ${fileName}
-NCC dự đoán: ${supplierGuess || "Chung"}
-NHIỆM VỤ: Đọc ẢNH TRANG ${pageNum}/${pageCount || "?"} đính kèm.${bandLabel ? ` Đây là ${bandLabel} của trang.` : ""}
+NCC: ${supplierGuess || "Chung"}
+Đang đọc ${bandLabel ? `${bandLabel} của ` : ""}trang ${pageNum}/${pageCount || "?"}.
 
-Ảnh đã được SmartQuote render trực tiếp từ đúng trang PDF và đã áp dụng rotation của PDF. Hãy đọc bằng thị giác.
+Đọc theo HÀNG VẬT LÝ của bảng:
+- Mỗi STT/hàng sản phẩm = đúng 1 product; giữ sourcePage=${pageNum} và sourceRow=STT vật lý nếu nhìn thấy.
+- Bỏ header, subtotal, footer, điều khoản, logo, con dấu và dòng không phải sản phẩm.
+- name lấy từ cột tên/thiết bị; sku lấy từ cột mã. Không biến specs thành tên.
+- costPrice là giá sản phẩm/đơn giá, KHÔNG phải Thành tiền, tuổi thọ 25,000/50,000h, điện áp, kích thước, CRI/IP/CCT.
+- Nếu không chắc SKU hay giá: dùng "" hoặc 0, tuyệt đối không đoán.
+- Nếu một STT có nhiều SKU/giá, vẫn là MỘT product và variants phải giữ chính xác từng {sku,label,price}. costPrice dùng giá thấp nhất chỉ để tương thích UI.
+- category lấy từ section gần nhất; specs giữ thông số hữu ích ngắn gọn.
+- ${recoveryMode ? "Recovery: ưu tiên không bỏ sót row; vẫn xuất row tên rõ dù SKU/giá chưa chắc." : "Ưu tiên độ chính xác và đủ hàng."}
+${expectedRows ? `- File này có chỉ dấu kỳ vọng khoảng ${expectedRows} STT toàn tài liệu; không tự tạo thêm row để đủ số.` : ""}
 
-Trả về JSONL: mỗi dòng là 1 object JSON, KHÔNG dùng mảng lớn, KHÔNG markdown.
-Schema ngắn:
-{"name":"tên ngắn","sku":"mã/model hoặc rỗng nếu không chắc","category":"nhóm","supplier":"${supplierGuess || ""}","unit":"Cái","costPrice":123456,"listPrice":0,"minRetailPrice":0,"specs":"<=100 ký tự","rawText":"<=120 ký tự","sourcePage":${pageNum},"sourceRow":1}
-
-Quy tắc chung cho PDF scan dạng bảng:
-- Đọc THEO HÀNG của bảng. Mỗi hàng sản phẩm = 1 object JSONL.
-- Không bỏ qua một hàng nếu có tên sản phẩm + giá tiền. Nếu SKU mờ, để sku="" và vẫn xuất dòng.
-- Tên sản phẩm lấy từ cột THIẾT BỊ/TÊN SẢN PHẨM, không lấy specs làm tên.
-- SKU/model lấy từ cột MÃ SẢN PHẨM nếu đọc được.
-- Nếu bảng có cột SL + Đơn giá + Thành tiền: costPrice = ĐƠN GIÁ, không phải Thành tiền. Hãy kiểm tra SL × Đơn giá = Thành tiền để xác nhận.
-- Chỉ dùng cột giá ngoài cùng bên phải làm costPrice khi đó thực sự là cột Đơn giá/Giá NPP, không phải Thành tiền.
-- Không được dùng số trong thông số kỹ thuật làm giá: tuổi thọ 50,000h/25,000h, CRI, IP, CCT, 220V, 24V, 48V, kích thước, góc chiếu. Nếu không chắc giá, để costPrice=0.
-- listPrice = 0 nếu bảng không có giá niêm yết/giá bán lẻ riêng.
-- Category lấy từ dòng section gần nhất.
-- Bỏ qua header, logo, footer, con dấu, điều khoản, dòng không phải sản phẩm.
-- Giá phải là số nguyên VND, bỏ dấu chấm/phẩy: "650,000" -> 650000.
-${smarthomeRules}${recoveryRules}${bandRules}
-Quy tắc rất quan trọng cho bảng Lumi Lighting / PDF scan dạng STT:
-- Mỗi STT vật lý trong bảng = 1 sản phẩm. KHÔNG tách 1 STT thành nhiều sản phẩm.
-- Nếu một STT có nhiều SKU trong cột MÃ SẢN PHẨM (vd On/off, Smart dimmable, Smart Tunable), vẫn chỉ trả 1 object. Gộp SKU bằng dấu " / " và ghi biến thể vào specs.
-- Nếu thấy nhiều giá biến thể trong cùng một STT, dùng giá thấp nhất rõ ràng và ghi các giá còn lại vào specs.
-- Tên sản phẩm ngắn theo cột THIẾT BỊ, không thêm (On/off)/(Smart dimmable)/(Tunable) thành tên riêng.
-
-Ví dụ JSONL hợp lệ cho Lumi Smarthome khi SKU mờ nhưng tên+giá rõ:
-{"name":"Công tắc Luto kính phẳng, viền bo champagne","sku":"","category":"CÔNG TẮC LUTO_KÍNH PHẲNG, VIỀN BO","supplier":"${supplierGuess || "Lumi"}","unit":"Cái","costPrice":2484000,"listPrice":0,"minRetailPrice":0,"specs":"Màu trắng/đen; nguồn cấp 220VAC/50Hz","rawText":"Công tắc Luto kính phẳng viền bo champagne 2,484,000","sourcePage":${pageNum},"sourceRow":1}
-
-Ví dụ JSONL hợp lệ cho Lumi Lighting 1 STT có 3 SKU:
-{"name":"Đèn Spotlight âm trần 7W chính hướng, 24D","sku":"LM-ST7-55-O / LM-ST7-55-D / LM-ST7-55-T","category":"DÒNG SẢN PHẨM SPOTLIGHT CHÍNH HƯỚNG 2025","supplier":"${supplierGuess || "Lumi"}","unit":"Cái","costPrice":650000,"listPrice":0,"minRetailPrice":0,"specs":"SKU/giá: O=650000; D=820000; T=1090000; công suất 7W; lỗ khoét 55mm","rawText":"STT 1 LM-ST7-55-O/D/T 650,000 820,000 1,090,000","sourcePage":${pageNum},"sourceRow":1}
-
-Chỉ trả JSONL thuần.`;
+Output bị khóa bằng JSON Schema; chỉ điền dữ liệu nhìn thấy trong ảnh.`;
 }
 
 function dataUrlBase64(dataUrl = "") {
@@ -753,8 +684,13 @@ async function createPdfVisionRenderer(file) {
 }
 
 async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum, pageCount, recoveryMode = false, bandLabel = "" }) {
-  const { text, stopReason } = await callClaudeText({
-    max_tokens: recoveryMode ? 3600 : 2600,
+  const parsed = await callClaudeStructured({
+    model: "claude-sonnet-5",
+    max_tokens: recoveryMode ? 9000 : 7000,
+    output_config: {
+      effort: "low",
+      format: { type: "json_schema", schema: PDF_CATALOG_OUTPUT_SCHEMA },
+    },
     messages: [{
       role: "user",
       content: [
@@ -763,9 +699,7 @@ async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum
       ],
     }],
   });
-  const items = parseClaudeProductObjects(text);
-  if (items.length || stopReason !== "max_tokens") return items;
-  return items;
+  return Array.isArray(parsed?.products) ? parsed.products : [];
 }
 
 async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
@@ -920,59 +854,35 @@ async function extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, p
     const first = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: false });
     let raw = first.raw;
     let failedPages = first.failedPages;
-
-    let items = normalizePdfItems(raw, supplierGuess, "pdf-v5-page-image-jsonl");
+    let items = normalizePdfItems(raw, supplierGuess, "pdf-v6-page-structured");
     let finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
 
-    // Targeted second pass for scanned Lumi Smarthome/Lighting catalogs. These files are
-    // row-indexed price tables. If the first vision pass under-recovers rows, use a slightly
-    // larger page render and band fallback on pages that return zero rows.
-    if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.9)) {
-      onProgress?.({
-        stage: "vision_recovery",
-        message: `PDF scan có thể đọc thiếu dòng (${finalItems.length}/${expectedRows}). SmartQuote đang dò lại theo từng hàng bảng...`,
-        current: finalItems.length,
-        total: expectedRows,
-        expectedRows,
-      });
+    if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.96)) {
+      onProgress?.({ stage: "vision_recovery", message: `PDF scan có thể thiếu dòng (${finalItems.length}/${expectedRows}). Đang dò lại ở độ phân giải cao...`, current: finalItems.length, total: expectedRows, expectedRows });
       const second = await collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode: true });
       failedPages += second.failedPages;
       raw = [...raw, ...second.raw];
-      items = normalizePdfItems(raw, supplierGuess, "pdf-v5-page-image-jsonl");
+      items = normalizePdfItems(raw, supplierGuess, "pdf-v6-page-structured");
       finalItems = dedupeProducts(items, { fileName: file.name, supplierGuess });
     }
 
-    if (!finalItems.length) {
-      throw new Error(`Claude page-image vision không tìm được sản phẩm (${failedPages}/${totalPages} trang lỗi).`);
-    }
+    if (!finalItems.length) throw new Error(`Claude page vision không tìm được sản phẩm (${failedPages}/${totalPages} trang lỗi).`);
 
-    const coverageRatio = expectedRows ? finalItems.length / expectedRows : 1;
-    if (expectedRows && finalItems.length < Math.ceil(expectedRows * 0.9)) {
-      for (const it of finalItems) {
-        it._meta = it._meta || {};
-        it._meta.issues = [...(it._meta.issues || []), simpleIssue(
-          "pdf_scan_low_recall",
-          "warning",
-          `PDF scan có thể đọc thiếu dòng: tìm thấy ${finalItems.length}/${expectedRows} sản phẩm dự kiến`,
-          "file",
-          "Kiểm tra lại file PDF hoặc chạy lại sau khi cải thiện OCR/vision"
-        )];
-        it._meta.pdfExpectedRows = expectedRows;
-        it._meta.pdfCoverageRatio = coverageRatio;
-      }
-    }
-    finalItems = calibratePdfVisionConfidence(finalItems, { expectedRows });
-
+    const finalized = finalizePdfTrust(finalItems, { expectedRows, failedPages, engine: "pdf-v6-page-structured" });
+    const warning = expectedRows && finalized.items.length < expectedRows
+      ? `; có thể thiếu ${Math.max(0, expectedRows - finalized.items.length)} STT`
+      : "";
     onProgress?.({
       stage: "done",
-      message: `PDF scan/ảnh đọc được ${finalItems.length} sản phẩm bằng AI theo ảnh từng trang${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
+      message: `PDF đọc được ${finalized.items.length} sản phẩm bằng Structured Vision${expectedRows ? ` / ${expectedRows} dự kiến` : ""}${warning}${failedPages ? `; ${failedPages} trang lỗi` : ""}.`,
       current: totalPages,
       total: totalPages,
       warningPages: failedPages,
       expectedRows,
-      coverageRatio,
+      coverageRatio: finalized.coverageRatio,
+      missingRows: finalized.missingRows,
     });
-    return finalItems;
+    return finalized.items;
   } finally {
     await renderer.destroy();
   }
@@ -1022,6 +932,22 @@ async function parseTextChunkWithClaude(params, depth = 0) {
   }
 }
 
+function normalizePdfVariants(values = []) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of Array.isArray(values) ? values : []) {
+    const sku = normalizePdfSku(raw?.sku || "");
+    const label = normalizeText(raw?.label || "");
+    const price = normalizePrice(raw?.price || 0);
+    if (!sku && !price) continue;
+    const k = `${sku.toUpperCase()}|${price}|${label.toLowerCase()}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ sku, label, price });
+  }
+  return out.slice(0, 16);
+}
+
 function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
   return (items || [])
     .map((it) => {
@@ -1030,26 +956,28 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
       if (!structural.catalogEligible) return null;
       const sourceRow = Number(it.sourceRow || it.stt || it.row || extractSourceRowNumber(rawText) || 0) || null;
       const specs = normalizeText(it.specs);
+      const variants = normalizePdfVariants(it.variants);
       const quoteEconomics = inferPdfQuoteRowEconomics(rawText);
+      const variantPrices = variants.map((v) => Number(v.price || 0)).filter((n) => n >= 1000);
       let costPrice = quoteEconomics.matched ? quoteEconomics.unitPrice : normalizePrice(it.costPrice ?? it.price);
+      if (!costPrice && variantPrices.length) costPrice = Math.min(...variantPrices);
       const contextKey = normalizeVietnameseKey([rawText, specs, it.name].join(" "));
-      // Guard for scanned lighting PDFs: OCR often mistakes "Tuổi thọ: 50,000h"
-      // or "25,000h" as the price when the real price column is unclear.
       const priceLooksLikeLifeHours = (costPrice === 50000 || costPrice === 25000) && /tuoi tho/.test(contextKey);
       if (priceLooksLikeLifeHours) costPrice = 0;
       const name = stripLightingVariantFromName(normalizeText(it.name));
+      const variantSku = variants.map((v) => v.sku).filter(Boolean).join(" / ");
       const sanitized = sanitizeCatalogProduct({
         id: uid("imp"),
         name,
-        sku: normalizePdfSku(it.sku),
+        sku: normalizePdfSku(it.sku) || variantSku,
         category: normalizeText(it.category) || "Chung",
         supplier: normalizeText(it.supplier) || supplierGuess,
         unit: normalizeText(it.unit) || "Cái",
         costPrice,
-        // A quotation row's second money cell is Thành tiền, not retail/list price.
         listPrice: quoteEconomics.matched ? 0 : normalizePrice(it.listPrice ?? it.publicPrice ?? it.salePrice),
         minRetailPrice: quoteEconomics.matched ? 0 : normalizePrice(it.minRetailPrice),
         specs,
+        variants,
         image: "",
         _meta: {
           source: {
@@ -1062,10 +990,11 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
             pageWidth: Number(it.sourcePageWidth || it.pageWidth || 0) || null,
             pageHeight: Number(it.sourcePageHeight || it.pageHeight || 0) || null,
           },
+          variants,
           productEvidence: { ...(it.evidence || {}), quoteArithmeticMatched: quoteEconomics.matched },
           quoteEconomics: quoteEconomics.matched ? quoteEconomics : null,
           status: "new",
-          confidence: engine.includes("heuristic") ? 0.62 : 0.74,
+          confidence: engine.includes("heuristic") ? 0.62 : 0.78,
           issues: [],
           engine,
         },
@@ -1074,12 +1003,7 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
         sanitized.costPrice = 0;
         sanitized.price = 0;
         sanitized._meta = sanitized._meta || {};
-        sanitized._meta.issues = [...(sanitized._meta.issues || []), simpleIssue(
-          "pdf_price_looks_like_life_hours",
-          "warning",
-          "Số 25,000/50,000 có vẻ là tuổi thọ, không phải giá bán",
-          "price"
-        )];
+        sanitized._meta.issues = [...(sanitized._meta.issues || []), simpleIssue("pdf_price_looks_like_life_hours", "warning", "Số 25,000/50,000 có vẻ là tuổi thọ, không phải giá bán", "price")];
       }
       return sanitized;
     })
@@ -1126,6 +1050,10 @@ function isVariantPriceRowMerge(oldItem, newItem, opts = {}) {
   return hasVariantMarker;
 }
 
+function mergeVariantArrays(...groups) {
+  return normalizePdfVariants(groups.flatMap((g) => Array.isArray(g) ? g : []));
+}
+
 function mergePdfRowVariants(oldItem, item) {
   const oldPrice = Number(oldItem.costPrice || 0) || 0;
   const newPrice = Number(item.costPrice || 0) || 0;
@@ -1153,6 +1081,10 @@ function mergePdfRowVariants(oldItem, item) {
     listPrice: Math.max(Number(oldItem.listPrice || 0) || 0, Number(item.listPrice || 0) || 0),
     minRetailPrice: 0,
     specs: [oldItem.specs, item.specs, variantSpecs && `Biến thể/giá: ${variantSpecs}`].filter(Boolean).join(" | ").slice(0, 1000),
+    variants: mergeVariantArrays(oldItem.variants, item.variants, [
+      oldItem.sku && oldPrice ? { sku: oldItem.sku, label: "", price: oldPrice } : null,
+      item.sku && newPrice ? { sku: item.sku, label: "", price: newPrice } : null,
+    ].filter(Boolean)),
     image: oldItem.image || item.image || "",
     _meta: {
       ...(oldItem._meta || {}),
@@ -1195,16 +1127,16 @@ function chooseBetterSku(a = "", b = "") {
 
 function resolvedMergedIssues(issues = [], merged = {}) {
   const validPrice = Number(merged.costPrice || 0) >= 1000 && Number(merged.costPrice || 0) <= 1_000_000_000;
-  const strong = !!merged?._meta?.productEvidence?.quoteArithmeticMatched || isHighConfidencePdfHeuristicProduct(merged, merged?._meta?.engine || "pdf-v3-text-heuristic");
-  const hasSku = hasClearSku(merged.sku);
+  const heuristicStrong = !!merged?._meta?.productEvidence?.quoteArithmeticMatched || isHighConfidencePdfHeuristicProduct(merged, merged?._meta?.engine || "pdf-v3-text-heuristic");
+  const visionStrong = assessPdfVisionTrust(merged, merged?._meta?.engine || "").trusted;
+  const strong = heuristicStrong || visionStrong;
+  const hasSku = hasClearSku(merged.sku) || (Array.isArray(merged.variants) && merged.variants.some((v) => hasClearSku(v?.sku)));
   const out = [];
   const seen = new Set();
   for (const it of issues || []) {
     const code = issueCodeValue(it);
     if (validPrice && ["price_unreasonable", "price_parse_failed", "price_recovered"].includes(code)) continue;
-    if (strong && code === "pdf_ocr_uncertain") continue;
-    if (strong && code === "pdf_ai_needs_review") continue;
-    if (strong && code === "pdf_insufficient_product_evidence") continue;
+    if (strong && ["pdf_ocr_uncertain", "pdf_ai_needs_review", "pdf_insufficient_product_evidence", "pdf_scan_low_recall"].includes(code)) continue;
     if (strong && hasSku && code === "non_product_row") continue;
     if (merged.name && code === "missing_product_name") continue;
     const sig = `${code}:${typeof it === "string" ? it : (it?.message || "")}`;
@@ -1264,6 +1196,53 @@ function mergePdfDuplicates(oldItem, item) {
   merged._meta.status = hasError || hasWarn ? "review" : "new";
   merged._meta.confidence = hasError ? 0.42 : hasWarn ? Math.min(Number(merged._meta.confidence || 0.72), 0.64) : Math.max(Number(merged._meta.confidence || 0.78), productEvidence.quoteArithmeticMatched ? 0.9 : 0.78);
   return merged;
+}
+
+
+function finalizePdfTrust(items = [], { expectedRows = 0, failedPages = 0, engine = "" } = {}) {
+  const active = (items || []).filter((it) => it?._meta?.canonicalStatus !== "skipped" && it?._meta?.status !== "skipped");
+  const physicalRows = active.map((it) => Number(it?._meta?.source?.row || 0)).filter((n) => Number.isInteger(n) && n > 0);
+  const uniqueRows = new Set(physicalRows);
+  const missingRows = [];
+  if (expectedRows > 0) {
+    for (let n = 1; n <= expectedRows; n++) if (!uniqueRows.has(n)) missingRows.push(n);
+  }
+  const coverageRatio = expectedRows > 0 ? active.length / expectedRows : 1;
+
+  const finalized = (items || []).map((item) => {
+    if (!item || item?._meta?.canonicalStatus === "skipped" || item?._meta?.status === "skipped") return item;
+    const meta = { ...(item._meta || {}) };
+    const effectiveEngine = meta.engine || engine || "";
+    const trust = assessPdfVisionTrust({ ...item, _meta: meta }, effectiveEngine);
+    let issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
+    const hardBlocking = issues.some((it) => {
+      const code = issueCodeValue(it);
+      const level = String(typeof it === "string" ? "" : (it?.level || "")).toLowerCase();
+      return level === "error" || ["pdf_price_looks_like_life_hours", "missing_product_name", "price_parse_failed", "price_unreasonable", "pdf_ocr_low_quality"].includes(code);
+    });
+
+    if (trust.trusted && !hardBlocking) {
+      issues = issues.filter((it) => !["pdf_ai_needs_review", "pdf_ocr_uncertain", "pdf_scan_low_recall", "pdf_insufficient_product_evidence"].includes(issueCodeValue(it)));
+      meta.canonicalStatus = "auto_approved";
+      meta.status = "new";
+      meta.confidence = Math.max(Number(meta.confidence || 0), 0.94);
+    } else if (issues.some((it) => String(typeof it === "string" ? "warning" : (it?.level || "")).toLowerCase() !== "info")) {
+      meta.canonicalStatus = "need_review";
+      meta.status = "review";
+    }
+
+    meta.issues = issues;
+    meta.visionTrust = trust;
+    meta.pdfDocument = {
+      expectedRows: Number(expectedRows || 0) || null,
+      extractedRows: active.length,
+      coverageRatio,
+      missingRows: missingRows.slice(0, 100),
+      failedPages: Number(failedPages || 0),
+    };
+    return { ...item, _meta: meta };
+  });
+  return { items: finalized, coverageRatio, missingRows };
 }
 
 function skuIdentityKey(value = "") {
@@ -1664,6 +1643,30 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
   return out;
 }
 
+
+async function extractScannedPdfV6({ file, supplierGuess, pageCount, onProgress }) {
+  const expectedRows = getExpectedLumiPdfRows({ fileName: file.name, supplierGuess });
+  if (expectedRows && Number(file?.size || 0) > 0 && Number(file.size) <= PDF_NATIVE_SCAN_MAX_BYTES) {
+    try {
+      onProgress?.({ stage: "native_pdf", message: `Đang đọc PDF scan trực tiếp bằng Claude Document AI (${expectedRows} STT kỳ vọng)...` });
+      const raw = await extractCatalogPdfWithClaude({ file, supplierGuess });
+      let items = normalizePdfItems(raw, supplierGuess, "pdf-v6-native-structured");
+      items = dedupeProducts(items, { fileName: file.name, supplierGuess });
+      const finalized = finalizePdfTrust(items, { expectedRows, failedPages: 0, engine: "pdf-v6-native-structured" });
+      const trusted = finalized.items.filter((it) => it?._meta?.canonicalStatus === "auto_approved").length;
+      if (finalized.items.length >= Math.ceil(expectedRows * 0.96) && trusted >= Math.ceil(finalized.items.length * 0.9)) {
+        onProgress?.({ stage: "done", message: `Native PDF đọc ${finalized.items.length}/${expectedRows} sản phẩm; ${trusted} dòng đủ bằng chứng tự duyệt.`, expectedRows, coverageRatio: finalized.coverageRatio });
+        return finalized.items;
+      }
+      onProgress?.({ stage: "native_pdf_fallback", message: `Native PDF mới chắc ${trusted}/${finalized.items.length} dòng. Chuyển sang đọc ảnh từng trang để kiểm chứng...` });
+    } catch (err) {
+      console.warn("Native PDF structured extraction failed; falling back to page vision", err?.message || err);
+      onProgress?.({ stage: "native_pdf_fallback", message: `Native PDF chưa đủ ổn (${err?.message || "unknown"}). Chuyển sang ảnh từng trang...` });
+    }
+  }
+  return extractCatalogPdfWithClaudeDocumentPages({ file, supplierGuess, pageCount, onProgress });
+}
+
 /**
  * Parse PDF catalog via resilient v3 pipeline.
  * @param {{file:File, supplierGuess:string, onProgress?:(event:Object)=>void, maxPagesPerChunk?:number, maxCharsPerChunk?:number, maxLinesPerChunk?:number}} params
@@ -1687,7 +1690,7 @@ export async function parsePdfCatalogWithPipeline(params) {
       message: `PDF không tách text được (${textPipelineError?.message || "unknown"}). Chuyển sang render ảnh từng trang...`,
     });
     try {
-      return await extractCatalogPdfWithClaudeDocumentPages({
+      return await extractScannedPdfV6({
         file,
         supplierGuess,
         pageCount: null,
@@ -1720,7 +1723,7 @@ export async function parsePdfCatalogWithPipeline(params) {
       route,
     });
     try {
-      return await extractCatalogPdfWithClaudeDocumentPages({
+      return await extractScannedPdfV6({
         file,
         supplierGuess,
         pageCount: extracted.pageCount,
@@ -1801,7 +1804,7 @@ export async function parsePdfCatalogWithPipeline(params) {
       skippedAi,
       route,
     });
-    return finalItems;
+    return finalizePdfTrust(finalItems, { expectedRows: 0, failedPages: failedChunks, engine: "pdf-v3-mixed" }).items;
   }
 
   // Only reach legacy document mode if text extraction worked but produced no usable row.
@@ -1813,7 +1816,8 @@ export async function parsePdfCatalogWithPipeline(params) {
     const legacyItems = await extractCatalogPdfWithClaude({ file, supplierGuess });
     const finalLegacy = sanitizeCatalogProducts(normalizePdfItems(legacyItems, supplierGuess, "pdf-legacy-document-fallback"), { defaultSupplier: supplierGuess });
     if (!finalLegacy.length) throw new Error("legacy không tìm được sản phẩm");
-    return dedupeProducts(finalLegacy, { fileName: file.name, supplierGuess });
+    const dedupedLegacy = dedupeProducts(finalLegacy, { fileName: file.name, supplierGuess });
+    return finalizePdfTrust(dedupedLegacy, { expectedRows: 0, failedPages: 0, engine: "pdf-v6-native-structured" }).items;
   } catch (legacyErr) {
     throw new Error(`PDF text không tìm được sản phẩm có giá hợp lệ, Claude document cũng lỗi: ${legacyErr?.message || legacyErr}`);
   }
@@ -1823,6 +1827,7 @@ export async function parsePdfCatalogWithPipeline(params) {
 export {
   heuristicExtractProductsFromPdfPages,
   normalizePdfItems,
+  finalizePdfTrust,
   dedupeProducts,
   extractMoneyValues,
   pickPriceFields,
