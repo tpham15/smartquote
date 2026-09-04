@@ -184,3 +184,32 @@ export function assessPdfPositiveEvidence(item = {}, engine = "") {
     signals: { validPrice, clearSku: hasSku, productKeyword: hasProductKeyword, grounding: hasGrounding, explicitUnit: hasExplicitUnit, quoteArithmeticMatched, usefulCategory, goodName },
   };
 }
+
+// Phase 14.0E — AI may read a PDF row, but SmartQuote decides whether that
+// row is trustworthy. Row correctness and document recall are separate signals.
+export function assessPdfVisionTrust(item = {}, engine = "") {
+  const meta = item?._meta || {};
+  const source = meta.source || {};
+  const effectiveEngine = String(engine || meta.engine || "");
+  const evidence = assessPdfPositiveEvidence(item, effectiveEngine);
+  const sourcePage = Number(source.page || item.sourcePage || item.page || 0) || 0;
+  const sourceRow = Number(source.row || item.sourceRow || item.stt || item.row || 0) || 0;
+  const pageImageAi = effectiveEngine.startsWith("pdf") && !effectiveEngine.includes("heuristic");
+  const autoApprove =
+    pageImageAi &&
+    sourcePage > 0 &&
+    sourceRow > 0 &&
+    evidence.score >= 6 &&
+    !!evidence.signals?.validPrice &&
+    !!evidence.signals?.goodName &&
+    !!evidence.signals?.clearSku;
+
+  return {
+    ...evidence,
+    autoApproveVision: autoApprove,
+    sourcePage,
+    sourceRow,
+    pageImageAi,
+  };
+}
+
