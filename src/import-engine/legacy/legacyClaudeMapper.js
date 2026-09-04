@@ -13,6 +13,27 @@ export const PDF_CATALOG_OUTPUT_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
+    tableSemantics: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        rowModel: { type: "string", enum: ["single_sku", "product_family_variants", "mixed", "unknown"] },
+        priceColumns: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              label: { type: "string" },
+              role: { type: "string", enum: ["variant_price", "commercial_price", "quote_value", "unknown"] },
+              variantKey: { type: "string" },
+            },
+            required: ["label", "role", "variantKey"],
+          },
+        },
+      },
+      required: ["rowModel", "priceColumns"],
+    },
     products: {
       type: "array",
       items: {
@@ -31,6 +52,8 @@ export const PDF_CATALOG_OUTPUT_SCHEMA = {
           rawText: { type: "string" },
           sourcePage: { type: "integer" },
           sourceRow: { type: "integer" },
+          visibleSkuCount: { type: "integer" },
+          visiblePriceCount: { type: "integer" },
           variants: {
             type: "array",
             items: {
@@ -39,19 +62,20 @@ export const PDF_CATALOG_OUTPUT_SCHEMA = {
               properties: {
                 sku: { type: "string" },
                 label: { type: "string" },
+                variantKey: { type: "string" },
+                priceRole: { type: "string", enum: ["variant_price", "commercial_price", "quote_value", "unknown"] },
                 price: { type: "integer" },
               },
-              required: ["sku", "label", "price"],
+              required: ["sku", "label", "variantKey", "priceRole", "price"],
             },
           },
         },
-        required: ["name", "sku", "category", "supplier", "unit", "costPrice", "listPrice", "minRetailPrice", "specs", "rawText", "sourcePage", "sourceRow", "variants"],
+        required: ["name", "sku", "category", "supplier", "unit", "costPrice", "listPrice", "minRetailPrice", "specs", "rawText", "sourcePage", "sourceRow", "visibleSkuCount", "visiblePriceCount", "variants"],
       },
     },
   },
-  required: ["products"],
+  required: ["tableSemantics", "products"],
 };
-
 
 /**
  * Gọi /api/claude và trả raw text từ Claude, không parse JSON.
@@ -322,16 +346,20 @@ export async function extractCatalogPdfWithClaude({ file, supplierGuess }) {
   const prompt = `Bạn là engine Document AI cho catalog/bảng giá Việt Nam.
 Đọc toàn bộ PDF, bao gồm bảng scan, hình, text và mọi trang.
 
-MỤC TIÊU:
-- Mỗi STT/hàng sản phẩm vật lý = đúng 1 product.
-- Không tạo product từ header, subtotal, footer, điều khoản, tuổi thọ, điện áp hoặc số trong specs.
-- sourcePage là số trang PDF (1-based); sourceRow là STT vật lý nếu nhìn thấy, nếu không thì số thứ tự hàng sản phẩm trên trang.
-- Tên lấy từ cột tên/thiết bị; SKU lấy từ cột mã.
-- costPrice là giá nhập/đại lý/đơn giá tương ứng sản phẩm, không phải Thành tiền và không phải 25,000/50,000 giờ tuổi thọ.
-- Nếu một STT chứa nhiều SKU với giá khác nhau, GIỮ mapping trong variants [{sku,label,price}]. costPrice dùng giá thấp nhất chỉ để tương thích UI hiện tại; không được làm mất giá theo SKU.
-- Nếu SKU hoặc giá không chắc, dùng chuỗi rỗng / 0 thay vì đoán.
-- category lấy từ section gần nhất.
-- Trả đủ mọi dòng sản phẩm nhìn thấy; không giải thích ngoài schema.`;
+MỤC TIÊU — đọc cấu trúc thương mại trước rồi mới đọc sản phẩm:
+1) Đọc HEADER của bảng và điền tableSemantics.
+   - rowModel="product_family_variants" khi MỘT dòng có nhiều SKU bán được và các cột giá là giá của từng cấu hình/SKU (ví dụ On/off, Smart dimmable, Smart Tunable).
+   - role="commercial_price" khi nhiều giá chỉ là tier thương mại của CÙNG một SKU (giá đại lý, giá công bố, MSRP...).
+   - role="quote_value" cho Số lượng/Đơn giá/Thành tiền của báo giá; tuyệt đối không coi Thành tiền là giá variant.
+2) Mỗi STT/hàng vật lý = đúng 1 product family ở output products.
+3) Đếm số SKU và số ô giá nhìn thấy trên từng row vào visibleSkuCount/visiblePriceCount. Nếu visibleSkuCount>=2 thì variants PHẢI giữ đủ one-to-one SKU ↔ cột cấu hình ↔ giá; không được chỉ trả SKU đầu tiên.
+4) Với bảng Lumi kiểu cột On/off / Smart dimmable / Smart Tunable: map SKU hậu tố -O → on_off, -D → smart_dimmable, -T → smart_tunable khi nhìn thấy đúng các mã đó; không suy đoán SKU không có trên file.
+5) Nếu bảng chỉ có 1 SKU + nhiều tier thương mại, KHÔNG tạo variants giả.
+6) sourcePage là trang PDF (1-based); sourceRow là STT vật lý nếu nhìn thấy.
+7) Tên lấy từ cột thiết bị; SKU từ cột mã; costPrice chỉ là field tương thích cho UI cũ và có thể dùng giá variant đầu/nhỏ nhất, nhưng variants mới là source of truth khi row có nhiều SKU.
+8) Không tạo product từ header, subtotal, footer, điều khoản, tuổi thọ, điện áp, CRI/IP/CCT hoặc số trong specs.
+9) Nếu SKU/giá không chắc, dùng "" / 0 thay vì đoán.
+10) Trả đủ mọi dòng sản phẩm; không giải thích ngoài schema.`;
 
   const parsed = await callClaudeStructured({
     model: PDF_MODEL,
@@ -348,5 +376,8 @@ MỤC TIÊU:
       ],
     }],
   });
-  return Array.isArray(parsed?.products) ? parsed.products : [];
+  const semantics = parsed?.tableSemantics || { rowModel: "unknown", priceColumns: [] };
+  return Array.isArray(parsed?.products)
+    ? parsed.products.map((product) => ({ ...product, tableSemantics: semantics }))
+    : [];
 }

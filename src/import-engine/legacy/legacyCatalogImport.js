@@ -3,6 +3,7 @@
 // ============================================================
 import * as XLSX from "xlsx";
 import { parsePdfCatalogWithPipeline } from "../pdf/pdfCatalogPipeline.js";
+import { expandPdfSellableVariants } from "../pdf/pdfVariants.js";
 import { priceUpdatePreviewFromLegacy, productsToImportPreviewResult } from "../previewResult.js";
 import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities } from "../productSanitizer.js";
 import { inferCategory } from "../categoryInference.js";
@@ -224,7 +225,26 @@ export async function parsePdfCatalogWithClaude(file, opts = {}) {
   const cached = getCached?.(hash);
   if (cached) {
     onCacheHit?.();
-    return cached.map(it => ({ ...it, id: uid("imp") }));
+    const hydrated = cached.map(it => ({ ...it, id: uid("imp") }));
+    const sourceKeys = new Set(hydrated.map((it, i) => {
+      const src = it?._meta?.source || {};
+      return `${src.page || "p"}:${src.row || i + 1}`;
+    }));
+    const familyIds = new Set(hydrated.map((it) => it?._meta?.family?.id).filter(Boolean));
+    hydrated.importPreview = productsToImportPreviewResult({
+      products: hydrated,
+      fileName: file.name,
+      engine: hydrated?.[0]?._meta?.engine || "pdf-v2",
+      detectedIndustry: "catalog",
+      importType: "catalog_pdf",
+      summary: {
+        sourceRows: sourceKeys.size,
+        sellableSkus: hydrated.length,
+        variantFamilies: familyIds.size,
+        expandedVariants: hydrated.filter((it) => !!it?._meta?.variant?.sku).length,
+      },
+    });
+    return hydrated;
   }
 
   const quota = getQuota?.() || { pdfCount: 0 };
@@ -233,18 +253,34 @@ export async function parsePdfCatalogWithClaude(file, opts = {}) {
   }
 
   const supplierGuess = file.name.replace(/\.pdf$/i, "").replace(/[_\-]/g, " ").slice(0, 30);
-  const finalItems = await parsePdfCatalogWithPipeline({
+  const sourceItems = await parsePdfCatalogWithPipeline({
     file,
     supplierGuess,
     onProgress,
   });
 
+  // Phase 14.1A: source-row families are NOT necessarily sellable catalog items.
+  // Expand only semantically-proven multi-SKU variant families. Commercial price
+  // tiers for one SKU remain one product.
+  const expanded = expandPdfSellableVariants(sourceItems);
+  const finalItems = expanded.products;
+  const variantWarning = expanded.stats.variantFamilies > 0
+    ? [`PDF có ${expanded.stats.sourceRows} dòng nguồn; nhận diện ${expanded.stats.variantFamilies} family nhiều cấu hình và tạo ${expanded.stats.sellableSkus} SKU bán được, giữ đúng SKU ↔ cấu hình ↔ giá.`]
+    : [];
+
   const importPreview = productsToImportPreviewResult({
     products: finalItems,
     fileName: file.name,
-    engine: finalItems?.[0]?._meta?.engine || "pdf-v2",
+    engine: sourceItems?.[0]?._meta?.engine || finalItems?.[0]?._meta?.engine || "pdf-v2",
     detectedIndustry: "catalog",
     importType: "catalog_pdf",
+    warnings: variantWarning,
+    summary: {
+      sourceRows: expanded.stats.sourceRows,
+      sellableSkus: expanded.stats.sellableSkus,
+      variantFamilies: expanded.stats.variantFamilies,
+      expandedVariants: expanded.stats.expandedVariants,
+    },
   });
   finalItems.forEach((item, index) => {
     item._meta = { ...(item._meta || {}), importId: importPreview.importId, lineId: importPreview.lines[index]?.lineId };

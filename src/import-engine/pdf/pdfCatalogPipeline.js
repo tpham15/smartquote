@@ -14,6 +14,7 @@ import { callClaudeText, callClaudeStructured, PDF_CATALOG_OUTPUT_SCHEMA, extrac
 import { sanitizeCatalogProduct, sanitizeCatalogProducts } from "../productSanitizer.js";
 import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
 import { assessPdfPositiveEvidence, assessPdfVisionTrust, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
+import { normalizeSellableVariants, normalizePdfTableSemantics } from "./pdfVariants.js";
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
 import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 
@@ -552,9 +553,12 @@ NCC: ${supplierGuess || "Chung"}
 - Mỗi STT/hàng sản phẩm = đúng 1 product; giữ sourcePage=${pageNum} và sourceRow=STT vật lý nếu nhìn thấy.
 - Bỏ header, subtotal, footer, điều khoản, logo, con dấu và dòng không phải sản phẩm.
 - name lấy từ cột tên/thiết bị; sku lấy từ cột mã. Không biến specs thành tên.
-- costPrice là giá sản phẩm/đơn giá, KHÔNG phải Thành tiền, tuổi thọ 25,000/50,000h, điện áp, kích thước, CRI/IP/CCT.
+- Đọc HEADER trước và điền tableSemantics: phân biệt variant_price với commercial_price và quote_value.
+- costPrice là field tương thích, KHÔNG phải Thành tiền, tuổi thọ 25,000/50,000h, điện áp, kích thước, CRI/IP/CCT.
 - Nếu không chắc SKU hay giá: dùng "" hoặc 0, tuyệt đối không đoán.
-- Nếu một STT có nhiều SKU/giá, vẫn là MỘT product và variants phải giữ chính xác từng {sku,label,price}. costPrice dùng giá thấp nhất chỉ để tương thích UI.
+- Đếm đúng visibleSkuCount và visiblePriceCount trên row. Nếu visibleSkuCount>=2 và các cột giá là cấu hình (On/off / Smart dimmable / Smart Tunable...), variants phải có đủ one-to-one mapping [{sku,label,variantKey,priceRole:"variant_price",price}]; không chỉ trả SKU đầu tiên.
+- Nếu chỉ MỘT SKU có nhiều tier như giá đại lý/giá công bố/MSRP thì KHÔNG tạo variants; đó là commercial_price.
+- Với Lumi, chỉ khi nhìn thấy đúng mã: -O ↔ On/off, -D ↔ Smart dimmable, -T ↔ Smart Tunable.
 - category lấy từ section gần nhất; specs giữ thông số hữu ích ngắn gọn.
 - ${recoveryMode ? "Recovery: ưu tiên không bỏ sót row; vẫn xuất row tên rõ dù SKU/giá chưa chắc." : "Ưu tiên độ chính xác và đủ hàng."}
 ${expectedRows ? `- File này có chỉ dấu kỳ vọng khoảng ${expectedRows} STT toàn tài liệu; không tự tạo thêm row để đủ số.` : ""}
@@ -699,7 +703,10 @@ async function parseDocumentPageWithClaude({ file, image, supplierGuess, pageNum
       ],
     }],
   });
-  return Array.isArray(parsed?.products) ? parsed.products : [];
+  const semantics = parsed?.tableSemantics || { rowModel: "unknown", priceColumns: [] };
+  return Array.isArray(parsed?.products)
+    ? parsed.products.map((product) => ({ ...product, tableSemantics: semantics }))
+    : [];
 }
 
 async function collectDocumentPageRows({ file, renderer, supplierGuess, totalPages, onProgress, recoveryMode = false }) {
@@ -932,20 +939,8 @@ async function parseTextChunkWithClaude(params, depth = 0) {
   }
 }
 
-function normalizePdfVariants(values = []) {
-  const out = [];
-  const seen = new Set();
-  for (const raw of Array.isArray(values) ? values : []) {
-    const sku = normalizePdfSku(raw?.sku || "");
-    const label = normalizeText(raw?.label || "");
-    const price = normalizePrice(raw?.price || 0);
-    if (!sku && !price) continue;
-    const k = `${sku.toUpperCase()}|${price}|${label.toLowerCase()}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push({ sku, label, price });
-  }
-  return out.slice(0, 16);
+function normalizePdfVariants(values = [], tableSemantics = {}) {
+  return normalizeSellableVariants(values, tableSemantics).slice(0, 16);
 }
 
 function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
@@ -956,7 +951,10 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
       if (!structural.catalogEligible) return null;
       const sourceRow = Number(it.sourceRow || it.stt || it.row || extractSourceRowNumber(rawText) || 0) || null;
       const specs = normalizeText(it.specs);
-      const variants = normalizePdfVariants(it.variants);
+      const tableSemantics = normalizePdfTableSemantics(it.tableSemantics || it._tableSemantics || {});
+      const variants = normalizePdfVariants(it.variants, tableSemantics);
+      const visibleSkuCount = Math.max(0, Number(it.visibleSkuCount || 0) || 0);
+      const visiblePriceCount = Math.max(0, Number(it.visiblePriceCount || 0) || 0);
       const quoteEconomics = inferPdfQuoteRowEconomics(rawText);
       const variantPrices = variants.map((v) => Number(v.price || 0)).filter((n) => n >= 1000);
       let costPrice = quoteEconomics.matched ? quoteEconomics.unitPrice : normalizePrice(it.costPrice ?? it.price);
@@ -991,6 +989,8 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
             pageHeight: Number(it.sourcePageHeight || it.pageHeight || 0) || null,
           },
           variants,
+          tableSemantics,
+          variantBinding: { visibleSkuCount, visiblePriceCount },
           productEvidence: { ...(it.evidence || {}), quoteArithmeticMatched: quoteEconomics.matched },
           quoteEconomics: quoteEconomics.matched ? quoteEconomics : null,
           status: "new",
@@ -999,6 +999,16 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
           engine,
         },
       }, { defaultSupplier: supplierGuess });
+      const validBoundVariants = variants.filter((v) => hasClearSku(v?.sku) && Number(v?.price || 0) >= 1000);
+      if (visibleSkuCount >= 2 && validBoundVariants.length < visibleSkuCount) {
+        sanitized._meta = sanitized._meta || {};
+        sanitized._meta.issues = [...(sanitized._meta.issues || []), simpleIssue(
+          "pdf_variant_binding_incomplete",
+          "warning",
+          `Dòng nguồn có ${visibleSkuCount} SKU nhưng mới ghép chắc ${validBoundVariants.length} SKU ↔ giá`,
+          "sku"
+        )];
+      }
       if (priceLooksLikeLifeHours) {
         sanitized.costPrice = 0;
         sanitized.price = 0;
@@ -1065,7 +1075,7 @@ function mergePdfRowVariants(oldItem, item) {
     issues.push(simpleIssue(
       "pdf_row_variants_collapsed",
       "info",
-      "PDF có nhiều SKU/giá trong cùng một STT; SmartQuote gộp thành một sản phẩm và dùng giá thấp nhất rõ ràng",
+      "PDF có nhiều SKU/giá trong cùng một STT; giữ family+variants để Phase 14.1A tách đúng từng SKU bán được",
       "price"
     ));
   }
@@ -1218,7 +1228,7 @@ function finalizePdfTrust(items = [], { expectedRows = 0, failedPages = 0, engin
     const hardBlocking = issues.some((it) => {
       const code = issueCodeValue(it);
       const level = String(typeof it === "string" ? "" : (it?.level || "")).toLowerCase();
-      return level === "error" || ["pdf_price_looks_like_life_hours", "missing_product_name", "price_parse_failed", "price_unreasonable", "pdf_ocr_low_quality"].includes(code);
+      return level === "error" || ["pdf_price_looks_like_life_hours", "missing_product_name", "price_parse_failed", "price_unreasonable", "pdf_ocr_low_quality", "pdf_variant_binding_incomplete"].includes(code);
     });
 
     if (trust.trusted && !hardBlocking) {
