@@ -1,4 +1,5 @@
 import { chooseComponentCandidate, shouldAutoAddComponent } from "./packTemplates.js";
+import { buildQuoteCompletenessAssessment, getAcceptedCompletenessRecommendations } from "./quoteCompleteness.js";
 
 // BOM Phase 6 — Quote Composer A/B/C + Pack Template lines
 // Builds deterministic quote scenarios from parsed BOM lines, selected solution packs,
@@ -180,6 +181,45 @@ function addPackTemplateLines({ roomMap, solutionPacks, productsById, packSelect
   return { addedCount, addedTotal, addedCost, addedRoles };
 }
 
+function addCompletenessRecommendationLines({
+  roomMap,
+  assessment,
+  decisions,
+  productsById,
+  existingProductIds,
+}) {
+  let addedCount = 0;
+  let addedTotal = 0;
+  let addedCost = 0;
+  const addedLabels = [];
+  const skippedBecauseDuplicate = [];
+  const accepted = getAcceptedCompletenessRecommendations(assessment, decisions);
+
+  for (const rec of accepted) {
+    const product = productsById.get(rec.productId);
+    if (!product) continue;
+    if (existingProductIds.has(product.id)) {
+      skippedBecauseDuplicate.push(rec.label);
+      continue;
+    }
+    existingProductIds.add(product.id);
+    const qty = Math.max(1, Number(rec.qty) || 1);
+    const roomName = `Bổ sung · ${rec.scopeLabel || "Độ đầy đủ hệ thống"}`;
+    const note = `SmartQuote Completeness · ${rec.label}${rec.rationale ? ` · ${rec.rationale}` : ""}${rec.qtyNote ? ` · ${rec.qtyNote}` : ""}`;
+    addLine(roomMap, roomName, product, { qty }, null, {
+      qty,
+      note,
+      source: "quote_completeness",
+    });
+    addedCount += 1;
+    addedTotal += priceOf(product) * qty;
+    addedCost += costOf(product) * qty;
+    addedLabels.push(`${rec.label}: ${product.name || product.sku || "Sản phẩm"}`);
+  }
+
+  return { addedCount, addedTotal, addedCost, addedLabels, skippedBecauseDuplicate };
+}
+
 export function buildBomQuoteVariants({
   bomPreview,
   products = [],
@@ -188,10 +228,19 @@ export function buildBomQuoteVariants({
   packSelections = {},
   grouping = "scope",
   laborPercent = 0,
+  completenessDecisions = {},
 } = {}) {
   const productsById = new Map((products || []).map((p) => [p.id, p]));
   const solutionPacks = bomPreview?.solutionPacks || [];
   const lines = (bomPreview?.lines || []).filter((line) => !ignoredMap[line.id] && resolutionMap[line.id] !== "__none__");
+  const completenessAssessment = buildQuoteCompletenessAssessment({
+    bomPreview,
+    products,
+    resolutionMap,
+    ignoredMap,
+    packSelections,
+    decisions: completenessDecisions,
+  });
 
   return DEFAULT_VARIANTS.map((variant) => {
     const roomMap = new Map();
@@ -245,6 +294,21 @@ export function buildBomQuoteVariants({
       autoPicked += templateAdds.addedCount;
     }
 
+    const completenessAdds = addCompletenessRecommendationLines({
+      roomMap,
+      assessment: completenessAssessment,
+      decisions: completenessDecisions,
+      productsById,
+      existingProductIds,
+    });
+    if (completenessAdds.addedCount) {
+      deviceTotal += completenessAdds.addedTotal;
+      costTotal += completenessAdds.addedCost;
+      itemCount += completenessAdds.addedCount;
+      qtyTotal += completenessAdds.addedCount;
+      autoPicked += completenessAdds.addedCount;
+    }
+
     const laborTotal = Math.round((deviceTotal * (Number(laborPercent) || 0)) / 100);
     const grandTotal = deviceTotal + laborTotal;
     const grossProfit = Math.max(0, deviceTotal - costTotal);
@@ -264,6 +328,11 @@ export function buildBomQuoteVariants({
       matchedBomLineCount,
       packTemplateLineCount: templateAdds.addedCount,
       packTemplateSample: templateAdds.addedRoles.slice(0, 5),
+      completenessLineCount: completenessAdds.addedCount,
+      completenessSample: completenessAdds.addedLabels.slice(0, 5),
+      completenessRequiredOpen: completenessAssessment.counts.required,
+      completenessRecommendedOpen: completenessAssessment.counts.recommended,
+      completenessReady: completenessAssessment.ready,
       deviceTotal,
       costTotal,
       laborTotal,

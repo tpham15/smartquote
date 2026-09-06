@@ -6,6 +6,8 @@ import { parseKtsBomExcel, parseTakeoffMatrixFile, guessProductForColumn } from 
 import { parseBomPreviewFile } from "./import-engine/bom/bomPreviewParser.js";
 import { saveBomMatchLearning } from "./import-engine/bom/bomMatcher.js";
 import { buildBomQuoteVariants, quoteVariantToRooms } from "./import-engine/bom/bomQuoteComposer.js";
+import { buildQuoteCompletenessAssessment, getCompletenessRecommendationProductId } from "./import-engine/bom/quoteCompleteness.js";
+import { rememberQuoteCompletenessDecision } from "./import-engine/bom/quoteCompletenessLearning.js";
 import { mapBomRowsWithClaude, mapTakeoffColumnsWithClaude, autoMapCatalogColumnsWithClaude } from "./import-engine/legacy/legacyClaudeMapper.js";
 import { parsePdfCatalogWithClaude, parseSupplierPriceFile, guessCatalogColumnsByName, buildCatalogPreview, readCatalogRowsForManualMapping } from "./import-engine/legacy/legacyCatalogImport.js";
 import { sanitizeCatalogProducts, isUnsafeImportedProduct, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
@@ -3704,6 +3706,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
   const [bomQuoteGrouping, setBomQuoteGrouping] = useState("scope"); // "scope" | "area" | "pack"
   const [bomPackSelections, setBomPackSelections] = useState({});
   const [bomQuoteVariantId, setBomQuoteVariantId] = useState("standard");
+  const [bomCompletenessDecisions, setBomCompletenessDecisions] = useState({});
   const [bomShowSupporting, setBomShowSupporting] = useState(false);
   const [bomPilotTableLimit, setBomPilotTableLimit] = useState(80);
   const fileRef = useRef();
@@ -3859,6 +3862,85 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
     setBomPilotTableLimit(80);
   };
 
+  const getBomCompletenessProductId = (recommendation) => {
+    return getCompletenessRecommendationProductId(recommendation, bomCompletenessDecisions);
+  };
+
+  const setBomCompletenessProduct = (recommendation, productId) => {
+    if (!recommendation?.id) return;
+    setBomCompletenessDecisions((prev) => ({
+      ...prev,
+      [recommendation.id]: {
+        ...(prev[recommendation.id] || {}),
+        productId: productId || "",
+      },
+    }));
+  };
+
+  const addBomCompletenessRecommendation = (recommendation) => {
+    if (!recommendation?.id) return;
+    const productId = getBomCompletenessProductId(recommendation);
+    if (!productId) {
+      notify.warning("Chưa có sản phẩm catalog phù hợp. Hãy chọn một sản phẩm trước khi thêm.");
+      return;
+    }
+    setBomCompletenessDecisions((prev) => ({
+      ...prev,
+      [recommendation.id]: {
+        ...(prev[recommendation.id] || {}),
+        action: "add",
+        productId,
+      },
+    }));
+  };
+
+  const skipBomCompletenessRecommendation = (recommendation) => {
+    if (!recommendation?.id) return;
+    setBomCompletenessDecisions((prev) => ({
+      ...prev,
+      [recommendation.id]: {
+        ...(prev[recommendation.id] || {}),
+        action: "skip",
+      },
+    }));
+  };
+
+  const resetBomCompletenessRecommendation = (recommendation) => {
+    if (!recommendation?.id) return;
+    setBomCompletenessDecisions((prev) => ({
+      ...prev,
+      [recommendation.id]: {
+        ...(prev[recommendation.id] || {}),
+        action: "",
+      },
+    }));
+  };
+
+  const alwaysAddBomCompletenessRecommendation = (recommendation) => {
+    if (!recommendation?.id) return;
+    const productId = getBomCompletenessProductId(recommendation);
+    if (!productId) {
+      notify.warning("Hãy chọn sản phẩm catalog trước khi đặt quy tắc Luôn thêm.");
+      return;
+    }
+    rememberQuoteCompletenessDecision({
+      ruleId: recommendation.ruleId,
+      familyKey: recommendation.familyKey,
+      action: "always_add",
+      productId,
+      label: recommendation.label,
+    });
+    setBomCompletenessDecisions((prev) => ({
+      ...prev,
+      [recommendation.id]: {
+        ...(prev[recommendation.id] || {}),
+        action: "add",
+        productId,
+      },
+    }));
+    notify.success(`Đã học: từ lần sau SmartQuote sẽ tự thêm “${recommendation.label}” cho hệ này nếu còn thiếu.`);
+  };
+
   const createQuoteFromBom = () => {
     if (!bomPreview) return;
     const variants = buildBomQuoteVariants({
@@ -3869,6 +3951,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
       packSelections: bomPackSelections,
       grouping: bomQuoteGrouping,
       laborPercent: company?.laborPercent || 0,
+      completenessDecisions: bomCompletenessDecisions,
     });
     const selected = variants.find((v) => v.id === bomQuoteVariantId) || variants.find((v) => v.id === "standard") || variants[0];
     if (selected?.id && selected.id !== "standard" && !guardCapability(cloud, "quote_variants_abc", onUpgrade)) return;
@@ -3908,6 +3991,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
       setBomPackSelections(buildInitialBomPackSelections(result));
       setBomQuoteGrouping("scope");
       setBomQuoteVariantId("standard");
+      setBomCompletenessDecisions({});
       setBomShowSupporting(false);
       setBomPilotTableLimit(80);
       const unresolvedCount = result.lines.filter((line) => !line.resolvedProductId && !line.suggestedMatch?.productId).length;
@@ -4240,6 +4324,14 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
               return true;
             });
             const groupedAreas = bomPreview.areas.length ? bomPreview.areas.join(" · ") : "Chưa phân khu";
+            const completenessAssessment = buildQuoteCompletenessAssessment({
+              bomPreview,
+              products,
+              resolutionMap: bomResolutions,
+              ignoredMap: bomIgnored,
+              packSelections: bomPackSelections,
+              decisions: bomCompletenessDecisions,
+            });
             const quoteVariants = buildBomQuoteVariants({
               bomPreview,
               products,
@@ -4248,6 +4340,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
               packSelections: bomPackSelections,
               grouping: bomQuoteGrouping,
               laborPercent: company?.laborPercent || 0,
+              completenessDecisions: bomCompletenessDecisions,
             });
             const selectedQuoteVariant = quoteVariants.find((v) => v.id === bomQuoteVariantId) || quoteVariants.find((v) => v.id === "standard") || quoteVariants[0];
             return (
@@ -4328,6 +4421,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                           <span>{variant.itemCount} dòng</span>
                           <span>{variant.coverage}% coverage</span>
                           <span>{variant.packTemplateLineCount || 0} template</span>
+                          <span>{variant.completenessLineCount || 0} bổ sung</span>
                           <span>margin {variant.marginPercent}%</span>
                         </div>
                         {variant.unmatchedCount > 0 && <div className="bom-variant-warn">Còn {variant.unmatchedCount} dòng chưa match</div>}
@@ -4339,11 +4433,93 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                       SmartQuote đã bổ sung {selectedQuoteVariant.packTemplateLineCount} dòng từ template cấu hình. Ví dụ: {selectedQuoteVariant.packTemplateSample?.slice(0, 3).join(" · ") || "—"}.
                     </div>
                   )}
+                  {selectedQuoteVariant?.completenessLineCount > 0 && (
+                    <div className="bom-variant-note bom-completeness-note">
+                      Phase 15 sẽ bổ sung {selectedQuoteVariant.completenessLineCount} hạng mục đã duyệt: {selectedQuoteVariant.completenessSample?.slice(0, 3).join(" · ") || "—"}.
+                    </div>
+                  )}
                   {selectedQuoteVariant?.unmatchedCount > 0 && (
                     <div className="bom-variant-note">
                       Phương án đang chọn còn {selectedQuoteVariant.unmatchedCount} dòng chưa lên báo giá. Ví dụ: {selectedQuoteVariant.unmatchedSample?.slice(0, 3).join(" · ") || "—"}.
                     </div>
                   )}
+                </div>
+
+                <div className="bom-completeness-section">
+                  <div className="bom-scope-header">
+                    <div>
+                      <strong>Kiểm tra độ đầy đủ báo giá</strong>
+                      <span>SmartQuote kiểm tra các phụ kiện/thiết bị thường bị bỏ sót. Không tự thêm chi phí nếu bạn chưa duyệt, trừ quy tắc “Luôn thêm” mà công ty đã dạy.</span>
+                    </div>
+                    <div className="bom-completeness-summary">
+                      <b className={completenessAssessment.counts.required ? "danger" : "ok"}>{completenessAssessment.counts.required} bắt buộc</b>
+                      <b>{completenessAssessment.counts.recommended} nên có</b>
+                      <b>{completenessAssessment.counts.optional} tuỳ chọn</b>
+                    </div>
+                  </div>
+
+                  {completenessAssessment.recommendations.length === 0 ? (
+                    <div className="bom-completeness-empty">✓ Chưa phát hiện hạng mục hệ thống nào bị thiếu theo bộ rule hiện tại.</div>
+                  ) : (
+                    <div className="bom-completeness-list">
+                      {completenessAssessment.recommendations.slice(0, 12).map((rec) => {
+                        const selectedProductId = getBomCompletenessProductId(rec);
+                        const decision = bomCompletenessDecisions[rec.id] || {};
+                        const action = decision.action || rec.action || "";
+                        const levelLabel = rec.level === "required" ? "Bắt buộc" : rec.level === "optional" ? "Tuỳ chọn" : "Nên có";
+                        return (
+                          <div key={rec.id} className={`bom-completeness-card level-${rec.level} action-${action || "open"}`}>
+                            <div className="bom-completeness-head">
+                              <div>
+                                <span className={`bom-completeness-level ${rec.level}`}>{levelLabel}</span>
+                                {rec.learned && <span className="bom-completeness-learned">Đã học</span>}
+                                <strong>{rec.label}</strong>
+                                <small>{rec.scopeLabel}</small>
+                              </div>
+                              <div className="bom-completeness-status">
+                                {action === "add" ? "✓ Sẽ thêm" : action === "skip" ? "Đã bỏ qua" : rec.canAdd ? "Chờ duyệt" : "Chưa có catalog"}
+                              </div>
+                            </div>
+                            <div className="bom-completeness-reason">{rec.rationale}</div>
+                            {rec.qtyNote && <div className="bom-completeness-qty">SL gợi ý: {rec.qty} · {rec.qtyNote}</div>}
+                            {!rec.qtyNote && <div className="bom-completeness-qty">SL gợi ý: {rec.qty}</div>}
+                            <div className="bom-completeness-picker">
+                              <SearchSelect
+                                products={products}
+                                value={selectedProductId || ""}
+                                onChange={(pid) => setBomCompletenessProduct(rec, pid)}
+                                placeholder="Chọn sản phẩm/phụ kiện catalog..."
+                                hasValue={!!selectedProductId}
+                              />
+                              {rec.candidates?.length > 0 && (
+                                <div className="bom-completeness-candidates">
+                                  {rec.candidates.slice(0, 3).map((c) => (
+                                    <button key={c.productId} className={selectedProductId === c.productId ? "selected" : ""} onClick={() => setBomCompletenessProduct(rec, c.productId)}>
+                                      {c.productName} <span>{Math.round((c.score || 0) * 100)}%</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="bom-completeness-actions">
+                              {action ? (
+                                <button className="btn-mini" onClick={() => resetBomCompletenessRecommendation(rec)}>Đổi quyết định</button>
+                              ) : (
+                                <>
+                                  <button className="btn-mini" disabled={!selectedProductId} onClick={() => addBomCompletenessRecommendation(rec)}>+ Thêm</button>
+                                  <button className="btn-mini" onClick={() => skipBomCompletenessRecommendation(rec)}>Bỏ qua</button>
+                                  <button className="btn-mini" disabled={!selectedProductId} onClick={() => alwaysAddBomCompletenessRecommendation(rec)}>Luôn thêm cho hệ này</button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="bom-completeness-footnote">
+                    Phase 15 phân biệt <strong>Bắt buộc</strong> / <strong>Nên có</strong> / <strong>Tuỳ chọn</strong>. Ví dụ hệ camera có thể gợi ý NVR, HDD, switch PoE, tủ đầu ghi/rack và UPS; chỉ hạng mục bạn duyệt mới đi vào báo giá.
+                  </div>
                 </div>
 
                 {scopes.length > 0 && (
@@ -9363,6 +9539,36 @@ details summary::-webkit-details-marker{color:var(--brand);}
 
 
 /* BOM Phase 5 — quote composer A/B/C */
+.bom-completeness-section{border:1px solid color-mix(in srgb,var(--brand) 28%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--brand) 7%,var(--card)),var(--card));border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:11px;margin-top:2px;}
+.bom-completeness-summary{display:flex;gap:7px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
+.bom-completeness-summary b{font-size:11px;font-weight:700;padding:5px 8px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--card);}
+.bom-completeness-summary b.danger{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 35%,var(--line));}
+.bom-completeness-summary b.ok{color:var(--pos);}
+.bom-completeness-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:9px;}
+.bom-completeness-card{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.bom-completeness-card.level-required{border-left:3px solid var(--neg);}
+.bom-completeness-card.level-recommended{border-left:3px solid var(--warn,#d9a51a);}
+.bom-completeness-card.level-optional{border-left:3px solid var(--muted);}
+.bom-completeness-card.action-add{border-color:color-mix(in srgb,var(--pos) 45%,var(--line));background:color-mix(in srgb,var(--pos) 5%,var(--surface));}
+.bom-completeness-card.action-skip{opacity:.65;}
+.bom-completeness-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.bom-completeness-head>div:first-child{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0;}
+.bom-completeness-head strong{font-size:13px;}
+.bom-completeness-head small{width:100%;color:var(--muted);font-size:11px;}
+.bom-completeness-level,.bom-completeness-learned{font-size:10px;font-weight:800;padding:3px 6px;border-radius:999px;border:1px solid var(--line);text-transform:uppercase;letter-spacing:.03em;}
+.bom-completeness-level.required{color:var(--neg);}.bom-completeness-level.recommended{color:var(--warn,#d9a51a);}.bom-completeness-level.optional{color:var(--muted);}.bom-completeness-learned{color:var(--brand);}
+.bom-completeness-status{font-size:11px;color:var(--muted);white-space:nowrap;}
+.bom-completeness-reason{font-size:12px;line-height:1.45;color:var(--text);}
+.bom-completeness-qty{font-size:11px;color:var(--muted);}
+.bom-completeness-picker{display:flex;flex-direction:column;gap:6px;}
+.bom-completeness-candidates{display:flex;gap:5px;flex-wrap:wrap;}
+.bom-completeness-candidates button{font-size:10px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--muted);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bom-completeness-candidates button.selected{border-color:var(--brand);color:var(--brand);}
+.bom-completeness-candidates span{opacity:.7;}
+.bom-completeness-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.bom-completeness-empty{border:1px dashed color-mix(in srgb,var(--pos) 40%,var(--line));border-radius:10px;padding:12px;color:var(--pos);font-size:12px;}
+.bom-completeness-footnote{font-size:11px;color:var(--muted);line-height:1.45;}
+.bom-completeness-note{border-color:color-mix(in srgb,var(--pos) 35%,var(--line))!important;}
 .bom-quote-composer{border:1px solid var(--amber-line);background:linear-gradient(180deg,var(--amber-bg),var(--card));border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:11px;}
 .bom-variant-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
 .bom-variant-card{border:1px solid var(--amber-line);background:var(--card);border-radius:13px;padding:12px;text-align:left;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.16s;min-height:150px;}
