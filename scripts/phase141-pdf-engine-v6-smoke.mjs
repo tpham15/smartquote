@@ -32,7 +32,7 @@ assert.match(mapper, /output_config/);
 assert.match(api, /claude-sonnet-5/);
 assert.match(api, /output_config/);
 assert.match(api, /3800000/);
-assert.match(app, /v14_(?:1_pdf_engine_v6|1a_semantic_variant_binding_v1|2_universal_document_ir_v1)/);
+assert.match(app, /v14_(?:1_pdf_engine_v6|1a_semantic_variant_binding_v1|2_universal_document_ir_v1|2_1_structured_schema_runtime_v1|2_2_compact_ir_band_recovery_v1)/);
 
 console.log("✓ Phase 14.1 PDF Engine v6 smoke PASS");
 console.log("  Sonnet 5 + Structured Outputs");

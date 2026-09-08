@@ -185,9 +185,6 @@ export function assessPdfPositiveEvidence(item = {}, engine = "") {
   };
 }
 
-// Phase 14.0E — AI may read a PDF row, but SmartQuote decides whether that
-// row is trustworthy. Row correctness and document recall are separate signals.
-
 export function assessPdfVisionTrust(item = {}, engine = "") {
   const meta = item?._meta || {};
   const source = meta.source || {};
@@ -208,7 +205,7 @@ export function assessPdfVisionTrust(item = {}, engine = "") {
   const nameConfidence = Number(fieldEvidence?.name?.confidence ?? meta?.productEvidence?.fieldConfidence?.name ?? 0) || 0;
   const skuConfidence = Number(fieldEvidence?.sku?.confidence ?? meta?.productEvidence?.fieldConfidence?.sku ?? 0) || 0;
   const priceConfidence = Number(fieldEvidence?.price?.confidence ?? meta?.productEvidence?.fieldConfidence?.price ?? 0) || 0;
-  const layoutEngine = String(engine || meta.engine || '').includes('layout-ir');
+  const layoutEngine = /layout-ir|column-v2/.test(String(engine || meta.engine || ''));
   // Older PDF engines did not emit field confidence. For v7 layout IR, require
   // explicit confidence so auto-approval is evidence-based, not just AI-shaped.
   const fieldConfidenceStrong = !layoutEngine || (

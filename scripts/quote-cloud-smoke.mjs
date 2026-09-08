@@ -26,8 +26,12 @@ assert.equal(quote.customer.name, 'Khách A');
 assert.equal(quote.customer.quoteNumber, 'BG-001');
 assert.equal(quote.rooms.length, 1);
 
+// Trial quote quota is unlimited in the current Phase 10 plan source.
 assert.equal(canUseFeature({ dealer: { plan: 'trial', subscription_status: 'trialing', trial_ends_at: '2999-01-01' }, usage: { quotes_per_month: 4 } }, 'quotes_per_month').ok, true);
-assert.equal(canUseFeature({ dealer: { plan: 'trial', subscription_status: 'trialing', trial_ends_at: '2999-01-01' }, usage: { quotes_per_month: 5 } }, 'quotes_per_month').ok, false);
+assert.equal(canUseFeature({ dealer: { plan: 'trial', subscription_status: 'trialing', trial_ends_at: '2999-01-01' }, usage: { quotes_per_month: 9999 } }, 'quotes_per_month').ok, true);
+// Keep a finite-plan boundary assertion so quota enforcement is still covered.
+assert.equal(canUseFeature({ dealer: { plan: 'starter', subscription_status: 'active' }, usage: { quotes_per_month: 29 } }, 'quotes_per_month').ok, true);
+assert.equal(canUseFeature({ dealer: { plan: 'starter', subscription_status: 'active' }, usage: { quotes_per_month: 30 } }, 'quotes_per_month').ok, false);
 assert.equal(canUseFeature({ dealer: { plan: 'pro', subscription_status: 'active' }, usage: { quotes_per_month: 9999 } }, 'quotes_per_month').ok, true);
 
 console.log('quote cloud smoke ok');

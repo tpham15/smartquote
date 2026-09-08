@@ -27,9 +27,9 @@ const rows = [
   // Numeric-looking text inside specs must never override the explicitly mapped unit-price cell.
   row(24, { 0: "Phòng khách", 2: "Bộ phát wifi chuyên dụng ốp trần", 3: "WiFi 6, tốc độ tối đa 1.267Gbps, MU-MIMO", 5: "RG-AP 2200F", 6: "RUIJIE", 7: "Cái", 8: 1, 9: 1440000, 10: 1440000 }),
   row(38, { 0: "VII/ Giải pháp chiếu sáng đèn Lumi lighting", 10: 39528000 }),
-  // Section drift: Tên hàng hoá chứa SKU, Mã thiết bị lại chứa warranty.
+  // Section drift: Tên hàng hoá chứa SKU; cột Mã có thể là warranty hoặc lặp lại chính SKU.
   row(39, { 0: "Phòng giặt", 2: "LM-D9-90-110-W4-2", 3: "Đèn Downlight âm trần 9W - 110° Tính năng On/Off Nhiệt độ màu: 4000K CRI >90", 5: "BH 36 tháng", 6: "Lumi", 7: "Cái", 8: 5, 9: 216000, 10: 1080000 }),
-  row(40, { 0: "Phòng bếp", 2: "LM-ST12-75-55-40CrBTC-O1", 3: "Đèn Spotlight âm trần 12W - 55°, chỉnh hướng Tính năng On/Off Nhiệt độ màu: 4000K", 5: "BH 36 tháng", 6: "Lumi", 7: "Cái", 8: 4, 9: 702000, 10: 2808000 }),
+  row(40, { 0: "Phòng bếp", 2: "LM-ST12-75-55-40CrBTC-O1", 3: "Đèn Spotlight âm trần 12W - 55°, chỉnh hướng Tính năng On/Off Nhiệt độ màu: 4000K", 5: "LM-ST12-75-55-40CrBTC-O1", 6: "Lumi", 7: "Cái", 8: 4, 9: 702000, 10: 2808000 }),
   row(41, { 0: "Phòng khách", 2: "LM-ST7-55-24-CrBTC-T1", 3: "Đèn Spotlight âm trần 7W - 24°, chỉnh hướng Tính năng Smart Tunable White Nhiệt độ màu", 5: "BH 36 tháng", 6: "Lumi", 7: "Cái", 8: 1, 9: 1080000, 10: 1080000 }),
   row(42, { 0: "Phòng khách", 2: "LM-ST12-75-55-CrBTC-T1", 3: "Đèn Spotlight âm trần 12W - 55°, chỉnh hướng Tính năng Smart Tunable White Nhiệt độ màu", 5: "BH 36 tháng", 6: "Lumi", 7: "Cái", 8: 6, 9: 1242000, 10: 7452000 }),
   row(43, { 0: "Ban công", 2: "LM-CS10-36W4-1", 3: "Đèn spotlight vuông ốp nổi 10W - 36° Tính năng On/Off Nhiệt độ màu: 4000K", 5: "BH 36 tháng", 6: "Lumi", 7: "Cái", 8: 1, 9: 1134000, 10: 1134000 }),

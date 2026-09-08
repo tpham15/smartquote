@@ -54,7 +54,7 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
     const rawSku = get("sku");
     const rawName = get("name");
     if (opts.quoteTable && (isLikelyOldQuoteSectionRow(rawName) || isLikelyOldQuoteSectionRow(rawSku))) return null;
-    const schemaRecovery = opts.quoteTable && isWarrantyPseudoSku(rawSku)
+    const schemaRecovery = opts.quoteTable
       ? recoverQuoteSectionSchemaIdentity({ name: rawName, sku: rawSku, specs: get("specs") })
       : { name: rawName, sku: rawSku, specs: get("specs"), recovered: false, warranty: "" };
     if (opts.quoteTable && isWarrantyPseudoSku(rawSku) && !schemaRecovery.recovered) return null;

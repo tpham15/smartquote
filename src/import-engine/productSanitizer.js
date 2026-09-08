@@ -614,13 +614,20 @@ export function sanitizeCatalogProduct(product, opts = {}) {
   issues.push(...split.issues);
 
   const priceRawText = [p.costPrice, p.price, p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" ");
-  const price = normalizePriceWithIssues(p.costPrice ?? p.price, priceRawText);
+  // P1.3: an explicit ambiguous-price decision from the geometry engine is
+  // stronger than generic text recovery. Never resurrect a guessed price from
+  // the same row after the column model deliberately refused to choose one.
+  const suppressAmbiguousPdfPriceRecovery = !!p._meta?.productEvidence?.priceColumnUncertain
+    || (String(p._meta?.engine || "").includes("column-v2") && p._meta?.source?.priceRole === "unknown");
+  const price = suppressAmbiguousPdfPriceRecovery
+    ? { costPrice: parseSafePrice(p.costPrice || 0) || 0, issues: [] }
+    : normalizePriceWithIssues(p.costPrice ?? p.price, priceRawText);
   p.costPrice = price.costPrice;
   issues.push(...price.issues);
 
   const hasExplicitListPrice = hasMeaningfulPriceInput(p.listPrice) || hasMeaningfulPriceInput(p.publicPrice);
   const listTextForRecovery = [p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" ");
-  const mayInferListPrice = /giá\s*(công\s*bố|cong\s*bo|niêm\s*yết|niem\s*yet|bán\s*lẻ|ban\s*le|giá\s*bán|gia\s*ban|giá\s*lẻ|gia\s*le)/i.test(listTextForRecovery);
+  const mayInferListPrice = !suppressAmbiguousPdfPriceRecovery && /giá\s*(công\s*bố|cong\s*bo|niêm\s*yết|niem\s*yet|bán\s*lẻ|ban\s*le|giá\s*bán|gia\s*ban|giá\s*lẻ|gia\s*le)/i.test(listTextForRecovery);
   const listPrice = hasExplicitListPrice || mayInferListPrice
     ? normalizePriceWithIssues(p.listPrice ?? p.publicPrice, [p.listPrice, p.publicPrice, listTextForRecovery].filter(Boolean).join(" "))
     : { costPrice: 0, issues: [] };

@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "sq-pilot-commercial-golden-v1",
+  "version": "0.1.0",
+  "purpose": "Frozen commercial truth for assisted-pilot quote regression. No customer source documents are embedded here.",
+  "scenarios": [
+    {
+      "id": "happy_markup_fixed_mix",
+      "description": "Resolved BOM with markup + fixed products reaches immutable Final and preserves totals after catalog repricing.",
+      "products": [
+        {"id":"p_markup","name":"Thiết bị A","sku":"A-100","unit":"Cái","costPrice":1000000,"priceMode":"markup"},
+        {"id":"p_fixed","name":"Thiết bị B","sku":"B-200","unit":"Cái","costPrice":500000,"listPrice":800000,"priceMode":"fixed"}
+      ],
+      "bomPreview": {
+        "fileName":"golden-happy.xlsx",
+        "lines":[
+          {"id":"l1","name":"Thiết bị A","model":"A-100","qty":2,"unit":"Cái","scopeId":"scope_main","matchSuggestions":[{"productId":"p_markup","score":0.99}]},
+          {"id":"l2","name":"Thiết bị B","model":"B-200","qty":3,"unit":"Cái","scopeId":"scope_main","matchSuggestions":[{"productId":"p_fixed","score":0.99}]}
+        ],
+        "scopes":[{"id":"scope_main","label":"Thiết bị"}],
+        "solutionPacks":[]
+      },
+      "resolutionMap":{"l1":"p_markup","l2":"p_fixed"},
+      "defaultMarkupFactor":1.2,
+      "laborPercent":10,
+      "customer":{"name":"Golden Customer"},
+      "vatPercent":8,
+      "mutatedCatalog": {
+        "p_markup":{"id":"p_markup","name":"Thiết bị A NEW","sku":"A-100","unit":"Cái","costPrice":1400000,"priceMode":"markup"},
+        "p_fixed":{"id":"p_fixed","name":"Thiết bị B NEW","sku":"B-200","unit":"Cái","costPrice":600000,"listPrice":1000000,"priceMode":"fixed"}
+      },
+      "expected": {
+        "shouldReachQuote":true,
+        "shouldFinalize":true,
+        "unmatchedCount":0,
+        "pricingNeedsReviewCount":0,
+        "completenessRequiredOpen":0,
+        "deviceTotal":4800000,
+        "costTotal":3500000,
+        "laborTotal":480000,
+        "grandTotal":5280000,
+        "marginPercent":27,
+        "snapshotSaleTotal":4800000,
+        "snapshotCostTotal":3500000,
+        "revisionSaleTotal":6360000
+      }
+    },
+    {
+      "id":"unresolved_bom_blocks",
+      "description":"A BOM core line without an explicit product resolution must block quote creation rather than disappear.",
+      "products":[{"id":"p1","name":"Thiết bị 1","sku":"P-1","unit":"Cái","costPrice":700000,"listPrice":1000000,"priceMode":"fixed"}],
+      "bomPreview":{"fileName":"golden-unresolved.xlsx","lines":[
+        {"id":"l1","name":"Thiết bị 1","model":"P-1","qty":1,"unit":"Cái","scopeId":"s1","matchSuggestions":[{"productId":"p1","score":0.99}]},
+        {"id":"l2","name":"Thiết bị chưa rõ","model":"UNKNOWN-X","qty":2,"unit":"Cái","scopeId":"s1","matchSuggestions":[]}
+      ],"scopes":[{"id":"s1","label":"Thiết bị"}],"solutionPacks":[]},
+      "resolutionMap":{"l1":"p1"},
+      "defaultMarkupFactor":1.2,
+      "laborPercent":0,
+      "customer":{"name":"Golden Customer"},
+      "vatPercent":8,
+      "expected":{"shouldReachQuote":false,"blockReason":"unmatched","unmatchedCount":1}
+    },
+    {
+      "id":"cost_only_x1_blocks",
+      "description":"A cost-only product at markup factor x1 must be visibly blocked before quote creation.",
+      "products":[{"id":"p1","name":"Thiết bị cost-only","sku":"COST-1","unit":"Cái","costPrice":1000000,"priceMode":"markup"}],
+      "bomPreview":{"fileName":"golden-x1.xlsx","lines":[{"id":"l1","name":"Thiết bị cost-only","model":"COST-1","qty":1,"unit":"Cái","scopeId":"s1","matchSuggestions":[{"productId":"p1","score":0.99}]}],"scopes":[{"id":"s1","label":"Thiết bị"}],"solutionPacks":[]},
+      "resolutionMap":{"l1":"p1"},
+      "defaultMarkupFactor":1,
+      "laborPercent":0,
+      "customer":{"name":"Golden Customer"},
+      "vatPercent":8,
+      "expected":{"shouldReachQuote":false,"blockReason":"pricing_review","unmatchedCount":0,"pricingNeedsReviewCount":1}
+    },
+    {
+      "id":"below_cost_blocks_final",
+      "description":"A fixed selling price below true cost can exist as Draft but must fail the Final Quote Gate.",
+      "products":[{"id":"p1","name":"Thiết bị bán lỗ","sku":"LOSS-1","unit":"Cái","costPrice":1000000,"listPrice":900000,"priceMode":"fixed"}],
+      "bomPreview":{"fileName":"golden-loss.xlsx","lines":[{"id":"l1","name":"Thiết bị bán lỗ","model":"LOSS-1","qty":1,"unit":"Cái","scopeId":"s1","matchSuggestions":[{"productId":"p1","score":0.99}]}],"scopes":[{"id":"s1","label":"Thiết bị"}],"solutionPacks":[]},
+      "resolutionMap":{"l1":"p1"},
+      "defaultMarkupFactor":1.2,
+      "laborPercent":0,
+      "customer":{"name":"Golden Customer"},
+      "vatPercent":8,
+      "expected":{"shouldReachQuote":true,"shouldFinalize":false,"unmatchedCount":0,"pricingNeedsReviewCount":0,"atOrBelowCostCount":1,"negativeMarginCount":1,"finalBlocker":"margin"}
+    },
+    {
+      "id":"required_completeness_blocks",
+      "description":"A camera BOM missing a required NVR must require Add/Skip before quote creation.",
+      "products":[
+        {"id":"pcam","name":"Camera IP 4MP","sku":"CAM-4MP","unit":"Cái","costPrice":500000,"listPrice":800000,"priceMode":"fixed","category":"Camera"},
+        {"id":"pnvr","name":"NVR 16 kênh","sku":"NVR-16","unit":"Cái","costPrice":2500000,"listPrice":3500000,"priceMode":"fixed","category":"Camera"}
+      ],
+      "bomPreview":{"fileName":"golden-camera.xlsx","lines":[{"id":"l1","name":"Camera IP 4MP","model":"CAM-4MP","qty":8,"unit":"Cái","scopeId":"cam_scope","solutionKey":"camera_security","solutionLabel":"Camera an ninh","matchSuggestions":[{"productId":"pcam","score":0.99}]}],"scopes":[{"id":"cam_scope","label":"Camera an ninh","solutionKey":"camera_security"}],"solutionPacks":[]},
+      "resolutionMap":{"l1":"pcam"},
+      "defaultMarkupFactor":1.2,
+      "laborPercent":0,
+      "customer":{"name":"Golden Customer"},
+      "vatPercent":8,
+      "expected":{"shouldReachQuote":false,"blockReason":"required_completeness","unmatchedCount":0,"pricingNeedsReviewCount":0,"completenessRequiredOpen":1}
+    }
+  ]
+}

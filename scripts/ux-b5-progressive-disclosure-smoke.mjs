@@ -21,11 +21,13 @@ assertIncludes('quoteManageOpen &&', 'quote management collapsed body');
 assertIncludes('⋯ Quản lý', 'quote management overflow trigger');
 assertIncludes('Lưu bản sao', 'copy quote still available in management panel');
 
-// B5.3 / Pilot export hierarchy — Excel quote export is primary; PDF/Save are secondary.
-assertIncludes('<button className="btn-export-primary" disabled={exporting} onClick={exportExcel}>', 'primary quote export button');
-assertIncludes('{exporting ? "Đang tạo…" : "Xuất báo giá"}', 'primary quote export label');
-assertIncludes('<button className="btn-ghost" onClick={exportPDF}>Xuất PDF</button>', 'secondary PDF button');
-assertIncludes('onClick={() => saveCurrentQuote()}', 'secondary save action');
+// B5.3 / Pilot P1.1 hierarchy — Draft must Final first; only Final exposes primary Excel export.
+assertIncludes('Final & khóa báo giá', 'Draft primary Final action');
+assertIncludes('disabled={exporting || !finalQuoteGate.ready} onClick={exportExcel}', 'Final-only primary Excel export');
+assertIncludes('`Xuất báo giá · Rev ${quoteRevision}`', 'revision-aware primary export label');
+assertIncludes('disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>', 'Final-only secondary PDF button');
+assertIncludes('Lưu Draft', 'secondary Draft save action');
+assertIncludes('Tạo Rev {quoteRevision + 1}', 'Final revision action');
 assertNotIncludes('<button className="btn-pdf" onClick={exportPDF}>Xuất PDF</button>', 'PDF as primary action');
 assertNotIncludes('Lưu thay đổi', 'verbose primary save label in top action row');
 

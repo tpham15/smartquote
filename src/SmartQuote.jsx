@@ -39,12 +39,30 @@ import {
 import { applyCommercialValidation } from "./import-engine/businessValidator.js";
 import { recordCorrectionEvent, getCorrectionTelemetryStats, buildCorrectionEvidenceExport, markCorrectionEvidenceExported } from "./import-engine/correctionTelemetry.js";
 import { calculateQuoteTotals, normalizePercent } from "./quoteMath.js";
+import {
+  chooseDefaultMarkupFactor,
+  productDisplayBasePrice,
+  quoteLineSalePrice,
+  buildQuoteSnapshotRooms,
+  buildQuoteProductMap,
+  assessQuoteCommercialSafety,
+} from "./quote/quoteCommercialSafety.js";
+import {
+  QUOTE_LIFECYCLE_DRAFT,
+  QUOTE_LIFECYCLE_FINAL,
+  normalizeQuoteWorkflow,
+  buildQuoteWorkflow,
+  makeQuoteNumber,
+  buildFinalQuoteGate,
+  buildRevisionRooms,
+  snapshotQuoteCompany,
+} from "./quote/quoteLifecycle.js";
 
 // ============================================================
 // SmartQuote — App báo giá smarthome
 // Giải quyết: giá nhà cung cấp đổi liên tục, nhập tay mất thời gian,
-// báo giá theo phòng/gói. Sửa giá 1 nơi (catalog) → mọi báo giá dùng giá mới.
-// Dữ liệu giữ trong state; dùng Xuất/Nhập JSON để lưu lâu dài & sao lưu.
+// báo giá theo phòng/gói. Catalog đổi giá áp cho báo giá mới; báo giá đã lưu giữ snapshot lịch sử.
+// Dữ liệu catalog giữ trong state/cloud; báo giá đã lưu giữ snapshot sản phẩm/giá để không bị đổi theo catalog sau này.
 // ============================================================
 
 const VND = (n) =>
@@ -528,6 +546,14 @@ const buildDefaultCompany = () => ({
   defaultExcelQuoteTemplateId: "",
 });
 
+const sanitizeCompanyClientSecrets = (value = {}) => ({
+  ...(value && typeof value === "object" ? value : {}),
+  // Legacy browser-side search credentials are intentionally discarded in Pilot P0.
+  // Provider secrets belong only in server environment variables.
+  googleApiKey: "",
+  googleCx: "",
+});
+
 const buildDefaultMarkups = () => [
   { id: uid("mk"), label: "Mặc định", value: 1 },
 ];
@@ -572,7 +598,7 @@ function buildNormalizedCloudSnapshot(state = {}) {
   const company = state.company && typeof state.company === "object" && Object.keys(state.company).length
     ? {
         ...buildDefaultCompany(),
-        ...state.company,
+        ...sanitizeCompanyClientSecrets(state.company),
         quoteTemplate: normalizeQuoteTemplateConfig(state.company.quoteTemplate || {}),
         excelQuoteTemplates: normalizeExcelQuoteTemplates(state.company.excelQuoteTemplates),
       }
@@ -1026,7 +1052,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
   const [products, setProducts] = useState(() => readLocalState(cloud, "products", () => SEED_PRODUCTS));
   const [templates, setTemplates] = useState(() => readLocalState(cloud, "templates", buildSeedTemplates));
   const [solutionFamilies, setSolutionFamilies] = useState(() => readLocalState(cloud, "solutionFamilies", buildSeedSolutionFamilies));
-  const [company, setCompany] = useState(() => readLocalState(cloud, "company", buildDefaultCompany));
+  const [company, setCompany] = useState(() => sanitizeCompanyClientSecrets(readLocalState(cloud, "company", buildDefaultCompany)));
 
   // Các mức hệ số áp cho giá gốc → giá bán
   const [markups, setMarkups] = useState(() => readLocalState(cloud, "markups", buildDefaultMarkups));
@@ -1391,7 +1417,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
               if (d.products) setProducts(d.products);
               if (d.templates) setTemplates(d.templates);
               if (d.solutionFamilies) setSolutionFamilies(normalizeSolutionFamilies(d.solutionFamilies));
-              if (d.company) setCompany(d.company);
+              if (d.company) setCompany(sanitizeCompanyClientSecrets(d.company));
               if (d.markups) setMarkups(d.markups);
               if (d.suppliers) setSuppliersList(d.suppliers);
               if (d.nameMap) setNameMap(d.nameMap);
@@ -1944,7 +1970,7 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
 // ============================================================
 // TAB 1 — Tạo báo giá
 // ============================================================
-function QuoteBuilder({ products, setProducts, productById, templates, solutionFamilies = [], company, markups, rooms, setRooms, defaultRooms, customer, setCustomer, activeQuoteId, setActiveQuoteId, cloud, onUpgrade, quoteTemplateConfig, createRequest = 0 }) {
+function QuoteBuilder({ products, setProducts, productById: catalogProductById, templates, solutionFamilies = [], company, markups, rooms, setRooms, defaultRooms, customer, setCustomer, activeQuoteId, setActiveQuoteId, cloud, onUpgrade, quoteTemplateConfig, createRequest = 0 }) {
   const [pickerRoomId, setPickerRoomId] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [editingLine, setEditingLine] = useState(null); // {roomId, line} đang đổi thiết bị
@@ -1954,8 +1980,27 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
   const [quoteListOpen, setQuoteListOpen] = useState(false);
   const [quoteManageOpen, setQuoteManageOpen] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("draft");
+  const [quoteLifecycle, setQuoteLifecycle] = useState(QUOTE_LIFECYCLE_DRAFT);
+  const [quoteRevision, setQuoteRevision] = useState(1);
+  const [quoteParentQuoteId, setQuoteParentQuoteId] = useState(null);
+  const [quoteRootQuoteId, setQuoteRootQuoteId] = useState(null);
+  const [quoteFinalizedAt, setQuoteFinalizedAt] = useState(null);
+  const [quoteCompanySnapshot, setQuoteCompanySnapshot] = useState(null);
   const [solutionModalOpen, setSolutionModalOpen] = useState(false);
   const lastCreateRequestRef = useRef(createRequest);
+  // Saved quotes carry immutable product/price snapshots. While such a quote is open,
+  // the snapshot overlays the live catalog so supplier price changes cannot rewrite history.
+  const productById = useMemo(() => buildQuoteProductMap(catalogProductById, rooms), [catalogProductById, rooms]);
+  const defaultMarkupFactor = useMemo(() => chooseDefaultMarkupFactor(markups), [markups]);
+  const isFinalQuote = quoteLifecycle === QUOTE_LIFECYCLE_FINAL;
+  const effectiveQuoteCompany = useMemo(() => (isFinalQuote && quoteCompanySnapshot
+    ? { ...company, ...quoteCompanySnapshot }
+    : company), [company, isFinalQuote, quoteCompanySnapshot]);
+  const ensureDraftEditable = () => {
+    if (!isFinalQuote) return true;
+    notify.warning("Báo giá Final đã khóa nội dung. Hãy tạo revision mới trước khi chỉnh sửa.");
+    return false;
+  };
   const excelQuoteTemplates = useMemo(() => normalizeExcelQuoteTemplates(company?.excelQuoteTemplates), [company?.excelQuoteTemplates]);
   const defaultExcelTemplateId = company?.defaultExcelQuoteTemplateId
     || excelQuoteTemplates.find((t) => t.isActive)?.id
@@ -1972,26 +2017,15 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
     if (!selectedStillExists) setSelectedExcelTemplateId(defaultExcelTemplateId);
   }, [selectedExcelTemplateId, defaultExcelTemplateId, excelQuoteTemplates]);
 
-  // Giá niêm yết gốc của 1 thiết bị (chưa nhân hệ số):
-  // - Lumi: costPrice (giá niêm yết)
-  // - Cổng (fixed): listPrice (giá bán lẻ cố định)
-  const listPriceOf = (p) => {
-    if (!p) return 0;
-    return p.priceMode === "fixed" ? (p.listPrice || 0) : (p.costPrice || 0);
-  };
-
-  // Giá bán 1 dòng = giá niêm yết × hệ số riêng của dòng (factor). Mặc định factor = 1.
-  // Hàng cổng (fixed) luôn giữ giá bán lẻ, không nhân (factor ép = 1).
-  const lineSalePrice = (p, line) => {
-    if (!p) return 0;
-    const base = listPriceOf(p);
-    if (p.priceMode === "fixed") return base;
-    const f = line?.factor || 1;
-    return Math.round((base * f) / 1000) * 1000;
-  };
+  // Giá hiển thị gốc và giá bán dùng chung một pure pricing helper để
+  // margin, export và snapshot không lệch nhau. salePriceSnapshot luôn thắng
+  // khi mở lại báo giá đã lưu.
+  const listPriceOf = (p) => productDisplayBasePrice(p);
+  const lineSalePrice = (p, line) => quoteLineSalePrice(p, line);
 
   // Tạo thiết bị mới ngay tại chỗ (từ ô tìm trong báo giá) + thêm luôn vào phòng đang chọn
   const createProductAndAdd = (roomId, draft) => {
+    if (!ensureDraftEditable()) return;
     if (!guardProductCount(cloud, products.length + 1, onUpgrade)) return;
     const newProduct = {
       id: uid("p"),
@@ -2006,15 +2040,16 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
       image: draft.image?.trim() || "",
     };
     setProducts((ps) => [...ps, newProduct]); // lưu vào danh mục để lần sau dùng lại
-    addProductToRoom(roomId, newProduct.id);  // thêm ngay vào báo giá
+    addProductToRoom(roomId, newProduct.id, newProduct);  // thêm ngay vào báo giá
   };
 
   // Đổi thiết bị của 1 dòng (vd Luto → Lumes), giữ nguyên số lượng và hệ số
   const swapLineProduct = (roomId, lineId, newProductId) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) =>
       r.map((room) =>
         room.id === roomId
-          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, productId: newProductId } : l)) }
+          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, productId: newProductId, productSnapshot: undefined, salePriceSnapshot: undefined, costPriceSnapshot: undefined, snapshotVersion: undefined, factor: (catalogProductById?.[newProductId]?.priceMode === "fixed" ? 1 : defaultMarkupFactor) } : l)) }
           : room
       )
     );
@@ -2022,17 +2057,20 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
   };
 
   // Đặt hệ số riêng cho 1 dòng
-  const setLineFactor = (roomId, lineId, factor) =>
+  const setLineFactor = (roomId, lineId, factor) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) =>
       r.map((room) =>
         room.id === roomId
-          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, factor } : l)) }
+          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, factor, salePriceSnapshot: undefined } : l)) }
           : room
       )
     );
+  };
 
   // Cập nhật ghi chú phân bổ tầng cho 1 dòng (vd "Tầng 1: 10, Tầng 2: 7")
-  const setLineNote = (roomId, lineId, note) =>
+  const setLineNote = (roomId, lineId, note) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) =>
       r.map((room) =>
         room.id === roomId
@@ -2040,15 +2078,19 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
           : room
       )
     );
+  };
 
   const addRoom = () => {
+    if (!ensureDraftEditable()) return;
     const idx = rooms.length + 1;
     const name = `Phòng ${idx}`;
     setRooms((r) => [...r, { id: uid("room"), name, lines: [] }]);
   };
-  const removeRoom = (roomId) => setRooms((r) => r.filter((x) => x.id !== roomId));
-  const renameRoom = (roomId, name) =>
+  const removeRoom = (roomId) => { if (ensureDraftEditable()) setRooms((r) => r.filter((x) => x.id !== roomId)); };
+  const renameRoom = (roomId, name) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) => r.map((x) => (x.id === roomId ? { ...x, name } : x)));
+  };
 
   // Tạo báo giá mới: reset về phòng mặc định
   const newQuote = async () => {
@@ -2059,6 +2101,14 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
     setCustomer({ name: "", phone: "", address: "", project: "" });
     setActiveQuoteId(null);
     setQuoteStatus("draft");
+    setQuoteLifecycle(QUOTE_LIFECYCLE_DRAFT);
+    setQuoteRevision(1);
+    setQuoteParentQuoteId(null);
+    setQuoteRootQuoteId(null);
+    setQuoteFinalizedAt(null);
+    setQuoteCompanySnapshot(null);
+    setPickerRoomId(null);
+    setEditingLine(null);
   };
 
   useEffect(() => {
@@ -2068,6 +2118,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
   }, [createRequest]);
 
   const applyTemplate = (roomId, tplId) => {
+    if (!ensureDraftEditable()) return;
     const tpl = templates.find((t) => t.id === tplId);
     if (!tpl) return;
     setRooms((r) =>
@@ -2077,35 +2128,55 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         tpl.items.forEach((it) => {
           const existing = lines.find((l) => l.productId === it.productId);
           if (existing) existing.qty += it.qty;
-          else lines.push({ id: uid("ln"), productId: it.productId, qty: it.qty, note: "" });
+          else {
+            const p = productById[it.productId];
+            lines.push({ id: uid("ln"), productId: it.productId, qty: it.qty, note: "", factor: p?.priceMode === "fixed" ? 1 : defaultMarkupFactor });
+          }
         });
         return { ...room, lines };
       })
     );
   };
 
-  const addProductToRoom = (roomId, productId) => {
+  const addProductToRoom = (roomId, productId, productOverride = null) => {
+    if (!ensureDraftEditable()) return;
+    const selectedProduct = productOverride || productById[productId] || catalogProductById?.[productId];
+    const initialFactor = selectedProduct?.priceMode === "fixed" ? 1 : defaultMarkupFactor;
     setRooms((r) =>
       r.map((room) => {
         if (room.id !== roomId) return room;
-        const existing = room.lines.find((l) => l.productId === productId);
+        const existing = room.lines.find((l) => l.productId === productId && !l.productSnapshot);
         if (existing)
-          return { ...room, lines: room.lines.map((l) => (l.productId === productId ? { ...l, qty: l.qty + 1 } : l)) };
-        return { ...room, lines: [...room.lines, { id: uid("ln"), productId, qty: 1, note: "" }] };
+          return { ...room, lines: room.lines.map((l) => (l.id === existing.id ? { ...l, qty: l.qty + 1 } : l)) };
+        return { ...room, lines: [...room.lines, { id: uid("ln"), productId, qty: 1, note: "", factor: initialFactor }] };
       })
     );
   };
 
-  const applySolutionFamily = (family, mode = "append") => {
+  const applySolutionFamily = async (family, mode = "append") => {
+    if (!ensureDraftEditable()) return;
     const { room, resolved } = makeSolutionFamilyRoom(family, products);
-    if (!room.lines.length) {
+    const pricedRoom = {
+      ...room,
+      lines: (room.lines || []).map((line) => {
+        const p = productById[line.productId] || catalogProductById?.[line.productId];
+        return { ...line, factor: Number(line.factor) > 0 ? Number(line.factor) : (p?.priceMode === "fixed" ? 1 : defaultMarkupFactor) };
+      }),
+    };
+    if (!pricedRoom.lines.length) {
       notify.warning("Bộ giải pháp này chưa match được sản phẩm nào trong danh mục. Hãy cấu hình brand/sản phẩm hoặc import catalog trước.");
       return;
     }
+    if (resolved.missing > 0 && !(await confirmAction({
+      title: "Bộ giải pháp chưa đầy đủ",
+      message: `Còn ${resolved.missing} nhóm chưa có sản phẩm catalog. SmartQuote sẽ chỉ tạo báo giá nháp với ${resolved.matched} nhóm đã match. Bạn có muốn tiếp tục để bổ sung thủ công không?`,
+      confirmLabel: "Tạo nháp để bổ sung",
+      tone: "warning",
+    }))) return;
     setRooms((prev) => {
-      if (mode === "replace") return [room];
-      if (prev.length === 1 && (!prev[0].lines || prev[0].lines.length === 0)) return [room];
-      return [...prev, room];
+      if (mode === "replace") return [pricedRoom];
+      if (prev.length === 1 && (!prev[0].lines || prev[0].lines.length === 0)) return [pricedRoom];
+      return [...prev, pricedRoom];
     });
     setActiveQuoteId(null);
     setSolutionModalOpen(false);
@@ -2114,7 +2185,8 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
     }
   };
 
-  const setQty = (roomId, lineId, qty) =>
+  const setQty = (roomId, lineId, qty) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) =>
       r.map((room) =>
         room.id === roomId
@@ -2122,14 +2194,18 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
           : room
       )
     );
+  };
 
-  const removeLine = (roomId, lineId) =>
+  const removeLine = (roomId, lineId) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) =>
       r.map((room) => (room.id === roomId ? { ...room, lines: room.lines.filter((l) => l.id !== lineId) } : room))
     );
+  };
 
   // Di chuyển dòng lên (-1) hoặc xuống (+1) trong danh sách
-  const moveLine = (roomId, lineId, dir) =>
+  const moveLine = (roomId, lineId, dir) => {
+    if (!ensureDraftEditable()) return;
     setRooms((r) =>
       r.map((room) => {
         if (room.id !== roomId) return room;
@@ -2141,6 +2217,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         return { ...room, lines };
       })
     );
+  };
 
   // ---- Tính toán tổng tiền ----
   // VAT mặc định lấy từ Cài đặt công ty, nhưng mỗi báo giá có thể override độc lập.
@@ -2162,25 +2239,22 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         pointCount += l.qty;
       });
     });
-    const totals = calculateQuoteTotals({ deviceTotal, laborPercent: company.laborPercent, vatPercent });
+    const totals = calculateQuoteTotals({ deviceTotal, laborPercent: effectiveQuoteCompany?.laborPercent, vatPercent });
     return { ...totals, pointCount };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms, productById, company.laborPercent, vatPercent]);
+  }, [rooms, productById, effectiveQuoteCompany?.laborPercent, vatPercent]);
 
-  const grossMarginPct = useMemo(() => {
-    let baseTotal = 0;
-    rooms.forEach((room) => {
-      room.lines.forEach((l) => {
-        const p = productById[l.productId];
-        if (!p) return;
-        baseTotal += listPriceOf(p) * l.qty;
-      });
-    });
-    if (!calc.deviceTotal || calc.deviceTotal <= 0) return 0;
-    return Math.max(0, Math.round(((calc.deviceTotal - baseTotal) / calc.deviceTotal) * 100));
-  }, [rooms, productById, calc.deviceTotal]);
+  const commercialAssessment = useMemo(() => assessQuoteCommercialSafety({ rooms, productById }), [rooms, productById]);
+  const grossMarginPct = commercialAssessment.grossMarginPct == null ? null : Math.round(commercialAssessment.grossMarginPct);
+  const snapshotPreviewRooms = useMemo(() => buildQuoteSnapshotRooms(rooms, productById), [rooms, productById]);
+  const finalQuoteGate = useMemo(() => buildFinalQuoteGate({
+    commercialAssessment,
+    customer,
+    vatPercent,
+    snapshotRooms: snapshotPreviewRooms,
+  }), [commercialAssessment, customer, vatPercent, snapshotPreviewRooms]);
 
-  const currentQuoteTitle = activeQuoteId ? `Đang mở báo giá cloud` : "Báo giá chưa lưu";
+  const currentQuoteTitle = `${isFinalQuote ? "FINAL" : "DRAFT"} · Rev ${quoteRevision}${activeQuoteId ? ` · ${activeQuoteId.slice(0, 8)}` : " · chưa lưu"}`;
 
   const reloadQuotes = async () => {
     if (!cloud?.enabled || !cloud.dealerId) return;
@@ -2198,6 +2272,12 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
 
   useEffect(() => {
     setQuoteStatus("draft");
+    setQuoteLifecycle(QUOTE_LIFECYCLE_DRAFT);
+    setQuoteRevision(1);
+    setQuoteParentQuoteId(null);
+    setQuoteRootQuoteId(null);
+    setQuoteFinalizedAt(null);
+    setQuoteCompanySnapshot(null);
     if (!cloud?.enabled || !cloud.dealerId) {
       setQuoteList([]);
       setQuoteListOpen(false);
@@ -2207,16 +2287,37 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloud?.enabled, cloud?.dealerId]);
 
-  const buildQuoteSnapshot = ({ asCopy = false } = {}) => ({
-    id: asCopy ? null : activeQuoteId,
-    customer: {
-      ...customer,
-      quoteNumber: asCopy && customer.quoteNumber ? `${customer.quoteNumber}-COPY` : (customer.quoteNumber || ""),
-    },
-    rooms,
-    calc,
-    status: quoteStatus || "draft",
-  });
+  const buildQuoteSnapshot = ({
+    asCopy = false,
+    roomsOverride = null,
+    customerOverride = null,
+    lifecycleOverride = null,
+    workflowOverride = null,
+    idOverride = undefined,
+  } = {}) => {
+    const sourceCustomer = customerOverride || customer;
+    const sourceRooms = roomsOverride || rooms;
+    const lifecycle = lifecycleOverride || (asCopy ? QUOTE_LIFECYCLE_DRAFT : quoteLifecycle);
+    const workflow = workflowOverride || buildQuoteWorkflow({
+      lifecycle,
+      revision: asCopy ? 1 : quoteRevision,
+      parentQuoteId: asCopy ? null : quoteParentQuoteId,
+      rootQuoteId: asCopy ? null : quoteRootQuoteId,
+      finalizedAt: lifecycle === QUOTE_LIFECYCLE_FINAL ? quoteFinalizedAt : null,
+      companySnapshot: lifecycle === QUOTE_LIFECYCLE_FINAL ? quoteCompanySnapshot : null,
+    });
+    return {
+      id: idOverride !== undefined ? idOverride : (asCopy ? null : activeQuoteId),
+      customer: {
+        ...sourceCustomer,
+        quoteNumber: asCopy && sourceCustomer.quoteNumber ? `${sourceCustomer.quoteNumber}-COPY` : (sourceCustomer.quoteNumber || ""),
+      },
+      rooms: buildQuoteSnapshotRooms(sourceRooms, buildQuoteProductMap(catalogProductById, sourceRooms)),
+      calc: { ...calc, grossMarginPct, commercialAssessment, workflow },
+      status: asCopy ? "draft" : (quoteStatus || "draft"),
+      snapshotVersion: 1,
+    };
+  };
 
   const openQuoteRecord = async (quote) => {
     if (!quote) return;
@@ -2232,12 +2333,153 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
       customerId: quote.customer?.customerId || quote.customer_id || null,
       vatPercent: quote.customer?.vatPercent ?? quote.calc?.vatPercent ?? company?.vatPercent ?? 8,
     });
+    const workflow = normalizeQuoteWorkflow(quote.calc, quote.status);
     setRooms(Array.isArray(quote.rooms) && quote.rooms.length ? quote.rooms : defaultRooms());
     setQuoteStatus(quote.status || "draft");
+    setQuoteLifecycle(workflow.lifecycle);
+    setQuoteRevision(workflow.revision);
+    setQuoteParentQuoteId(workflow.parentQuoteId);
+    setQuoteRootQuoteId(workflow.rootQuoteId);
+    setQuoteFinalizedAt(workflow.finalizedAt);
+    setQuoteCompanySnapshot(workflow.companySnapshot);
+    setPickerRoomId(null);
+    setEditingLine(null);
     setQuoteListOpen(false);
   };
 
+  const confirmCommercialWarnings = async (actionLabel = "tiếp tục") => {
+    if (commercialAssessment.hardErrorCount > 0) {
+      notify.warning(`Không thể ${actionLabel}: còn ${commercialAssessment.missingProductCount} dòng mất sản phẩm và ${commercialAssessment.missingSalePriceCount} dòng chưa có giá bán.`);
+      return false;
+    }
+    if (commercialAssessment.atOrBelowCostCount > 0 || commercialAssessment.unknownCostCount > 0) {
+      const parts = [];
+      if (commercialAssessment.atOrBelowCostCount > 0) parts.push(`${commercialAssessment.atOrBelowCostCount} dòng đang bán bằng hoặc thấp hơn giá vốn`);
+      if (commercialAssessment.negativeMarginCount > 0) parts.push(`${commercialAssessment.negativeMarginCount} dòng đang bán lỗ`);
+      if (commercialAssessment.unknownCostCount > 0) parts.push(`${commercialAssessment.unknownCostCount} dòng chưa có giá vốn để tính margin`);
+      return confirmAction({
+        title: "Xác nhận giá bán / biên lợi nhuận",
+        message: `${parts.join("; ")}. SmartQuote không tự sửa giá. Hãy xác nhận bạn đã kiểm tra trước khi ${actionLabel}.`,
+        confirmLabel: "Tôi đã kiểm tra",
+        tone: commercialAssessment.negativeMarginCount ? "danger" : "default",
+      });
+    }
+    return true;
+  };
+
+  const finalizeCurrentQuote = async () => {
+    if (isFinalQuote) {
+      notify.info(`Báo giá này đã Final · Rev ${quoteRevision}. Muốn thay đổi nội dung, hãy tạo revision mới.`);
+      return;
+    }
+    if (calc.pointCount === 0) {
+      notify.warning("Chưa có thiết bị nào để Final báo giá.");
+      return;
+    }
+    const finalCustomer = {
+      ...customer,
+      quoteNumber: String(customer?.quoteNumber || "").trim() || makeQuoteNumber(),
+      vatPercent,
+    };
+    const frozenRooms = buildQuoteSnapshotRooms(rooms, productById);
+    const gate = buildFinalQuoteGate({
+      commercialAssessment,
+      customer: finalCustomer,
+      vatPercent,
+      snapshotRooms: frozenRooms,
+    });
+    if (!gate.ready) {
+      notify.warning(`Chưa Ready to send: ${gate.blockers.map((item) => item.label).join("; ")}.`);
+      return;
+    }
+    const finalizedAt = new Date().toISOString();
+    const companySnapshot = snapshotQuoteCompany(company);
+    const workflow = buildQuoteWorkflow({
+      lifecycle: QUOTE_LIFECYCLE_FINAL,
+      revision: quoteRevision,
+      parentQuoteId: quoteParentQuoteId,
+      rootQuoteId: quoteRootQuoteId || quoteParentQuoteId || null,
+      finalizedAt,
+      companySnapshot,
+    });
+
+    let savedId = activeQuoteId;
+    if (cloud?.enabled && cloud.dealerId) {
+      const isNewQuote = !activeQuoteId;
+      if (isNewQuote && !guardFeature(cloud, "quotes_per_month", 1, onUpgrade)) return;
+      setQuoteSaving(true);
+      try {
+        savedId = await saveCloudQuote(cloud.dealerId, buildQuoteSnapshot({
+          roomsOverride: frozenRooms,
+          customerOverride: finalCustomer,
+          lifecycleOverride: QUOTE_LIFECYCLE_FINAL,
+          workflowOverride: workflow,
+        }));
+        await Promise.all([reloadQuotes(), cloud?.refreshBilling?.()]);
+      } catch (error) {
+        console.error(error);
+        notify.error(error.message || "Không lưu được bản Final. Báo giá vẫn ở Draft.");
+        return;
+      } finally {
+        setQuoteSaving(false);
+      }
+    }
+
+    setRooms(frozenRooms);
+    setCustomer(finalCustomer);
+    setActiveQuoteId(savedId || null);
+    setQuoteLifecycle(QUOTE_LIFECYCLE_FINAL);
+    setQuoteFinalizedAt(finalizedAt);
+    setQuoteCompanySnapshot(companySnapshot);
+    setPickerRoomId(null);
+    setEditingLine(null);
+    setSolutionModalOpen(false);
+    notify.success(cloud?.enabled ? `Đã Final Rev ${quoteRevision} và khóa nội dung.` : `Đã Final Rev ${quoteRevision} trong phiên này. Nội dung đã khóa.`);
+  };
+
+  const createRevisionFromFinal = async () => {
+    if (!isFinalQuote) {
+      notify.info("Báo giá đang là Draft; hãy chỉnh trực tiếp hoặc Final trước khi tạo revision.");
+      return;
+    }
+    if (!(await confirmAction({
+      title: `Tạo revision ${quoteRevision + 1}?`,
+      message: `Rev ${quoteRevision} sẽ được giữ nguyên. Revision mới sẽ dùng catalog/giá hiện tại nơi sản phẩm vẫn còn trong danh mục.`,
+      confirmLabel: `Tạo Rev ${quoteRevision + 1}`,
+    }))) return;
+    const previousId = activeQuoteId;
+    const nextRooms = buildRevisionRooms(rooms, catalogProductById, defaultMarkupFactor);
+    setRooms(nextRooms);
+    setActiveQuoteId(null);
+    setQuoteLifecycle(QUOTE_LIFECYCLE_DRAFT);
+    setQuoteRevision((value) => Math.max(1, Number(value) || 1) + 1);
+    setQuoteParentQuoteId(previousId || quoteParentQuoteId || null);
+    setQuoteRootQuoteId(quoteRootQuoteId || previousId || quoteParentQuoteId || null);
+    setQuoteFinalizedAt(null);
+    setQuoteCompanySnapshot(null);
+    setQuoteStatus("draft");
+    setPickerRoomId(null);
+    setEditingLine(null);
+    notify.success(`Đã tạo Draft Rev ${quoteRevision + 1}. Bản Final trước không bị thay đổi.`);
+  };
+
+  const requireFinalForExport = (label = "xuất báo giá") => {
+    if (!isFinalQuote) {
+      notify.warning(`Không thể ${label}: báo giá đang là Draft. Hãy hoàn tất Final Quote Gate trước.`);
+      return false;
+    }
+    if (!finalQuoteGate.ready) {
+      notify.warning(`Không thể ${label}: bản Final hiện không còn đạt gate (${finalQuoteGate.blockers.map((item) => item.label).join("; ")}).`);
+      return false;
+    }
+    return true;
+  };
+
   const saveCurrentQuote = async ({ asCopy = false } = {}) => {
+    if (asCopy && isFinalQuote) {
+      notify.info("Báo giá Final không dùng 'Lưu bản sao'. Hãy tạo revision để giữ chuỗi lịch sử rõ ràng.");
+      return;
+    }
     if (!cloud?.enabled || !cloud.dealerId) {
       notify.warning("Lưu báo giá cloud chỉ khả dụng khi đăng nhập SmartQuote Cloud.");
       return;
@@ -2247,6 +2489,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
       return;
     }
     const isNewQuote = asCopy || !activeQuoteId;
+    if ((quoteStatus === "sent" || quoteStatus === "won") && !(await confirmCommercialWarnings("lưu báo giá đã gửi/chốt"))) return;
     if (isNewQuote && !guardFeature(cloud, "quotes_per_month", 1, onUpgrade)) return;
     setQuoteSaving(true);
     try {
@@ -2277,6 +2520,12 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         setRooms(defaultRooms());
         setCustomer({ name: "", phone: "", address: "", project: "" });
         setQuoteStatus("draft");
+        setQuoteLifecycle(QUOTE_LIFECYCLE_DRAFT);
+        setQuoteRevision(1);
+        setQuoteParentQuoteId(null);
+        setQuoteRootQuoteId(null);
+        setQuoteFinalizedAt(null);
+        setQuoteCompanySnapshot(null);
       }
       await reloadQuotes();
     } catch (error) {
@@ -2294,13 +2543,14 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
       notify.warning("Chưa có thiết bị nào để xuất báo giá.");
       return;
     }
+    if (!requireFinalForExport("xuất báo giá")) return;
     if (!guardFeature(cloud, "excel_export", 1, onUpgrade)) return;
     setExporting(true);
     try {
       if (activeExcelTemplate) {
         await exportQuoteExcelWithTemplate({
           template: activeExcelTemplate,
-          company,
+          company: effectiveQuoteCompany,
           customer,
           rooms,
           productById,
@@ -2308,7 +2558,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
           calc,
         });
       } else {
-        await exportQuoteExcel({ company, customer, rooms, productById, lineSalePrice, calc });
+        await exportQuoteExcel({ company: effectiveQuoteCompany, customer, rooms, productById, lineSalePrice, calc });
       }
       cloud?.refreshBilling?.();
     } catch (e) {
@@ -2321,14 +2571,15 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
     }
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (calc.pointCount === 0) {
       notify.warning("Chưa có thiết bị nào để xuất báo giá.");
       return;
     }
+    if (!requireFinalForExport("xuất PDF")) return;
     const brandCapability = canAccessCapability(cloud?.billing, "branded_pdf");
     const html = buildQuotePrintHTML({
-      company, customer, rooms, productById, lineSalePrice, calc, quoteTemplateConfig,
+      company: effectiveQuoteCompany, customer, rooms, productById, lineSalePrice, calc, quoteTemplateConfig,
       watermark: cloud?.enabled && !brandCapability.ok,
     });
     const w = window.open("", "_blank");
@@ -2352,7 +2603,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
             <div className="quote-manage-head">
               <div>
                 <h2>Quản lý báo giá</h2>
-                <p>{currentQuoteTitle}{activeQuoteId ? ` · ${activeQuoteId.slice(0, 8)}` : ""}</p>
+                <p>{currentQuoteTitle}</p>
               </div>
               <button
                 className="btn-ghost quote-manage-toggle"
@@ -2365,19 +2616,27 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
             {quoteManageOpen && (
               <div className="quote-manage-body">
                 <div className="quote-manage-actions">
+                  <div className={`quote-lifecycle-pill ${isFinalQuote ? "final" : "draft"}`}>
+                    {isFinalQuote ? "FINAL" : "DRAFT"} · Rev {quoteRevision}
+                  </div>
                   <label className="quote-status-field">
-                    <span>Trạng thái</span>
-                    <select className="quote-status-select" value={quoteStatus} onChange={(e) => setQuoteStatus(e.target.value)}>
-                      <option value="draft">Nháp</option>
+                    <span>Tiến độ bán hàng</span>
+                    <select className="quote-status-select" disabled={!isFinalQuote} value={quoteStatus} onChange={(e) => setQuoteStatus(e.target.value)}>
+                      <option value="draft">Chưa gửi</option>
                       <option value="sent">Đã gửi</option>
                       <option value="won">Đã chốt</option>
                       <option value="lost">Thua</option>
                     </select>
                   </label>
+                  {isFinalQuote ? (
+                    <button className="btn-primary" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
+                  ) : (
+                    <button className="btn-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={finalizeCurrentQuote}>Final báo giá</button>
+                  )}
                   <button className="btn-ghost" onClick={() => { setQuoteListOpen(!quoteListOpen); if (!quoteListOpen) reloadQuotes(); }}>
                     {quoteListOpen ? "Ẩn báo giá cũ" : "Mở báo giá cũ"}
                   </button>
-                  <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0} onClick={() => saveCurrentQuote({ asCopy: true })}>Lưu bản sao</button>
+                  <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0 || isFinalQuote} onClick={() => saveCurrentQuote({ asCopy: true })}>Lưu bản sao Draft</button>
                 </div>
                 <div className="quote-cloud-meta">
                   <span>Quota báo giá tháng này: {formatLimit(cloud?.billing?.usage?.quotes_per_month || 0)} / {formatLimit(billingLimit(cloud?.billing, "quotes_per_month"))}</span>
@@ -2402,12 +2661,12 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         <section className="card">
           <h2>Thông tin khách hàng</h2>
           <div className="field-grid">
-            <Field label="Tên khách hàng / Công trình" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-            <Field label="Số điện thoại" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
-            <Field label="Tên công trình" value={customer.project} onChange={(v) => setCustomer({ ...customer, project: v })} />
-            <Field label="Địa điểm" value={customer.address} onChange={(v) => setCustomer({ ...customer, address: v })} />
-            <Field label="Số báo giá" value={customer.quoteNumber || ""} onChange={(v) => setCustomer({ ...customer, quoteNumber: v })} />
-            <Field label="Hạng mục" value={customer.category || ""} onChange={(v) => setCustomer({ ...customer, category: v })} />
+            <Field disabled={isFinalQuote} label="Tên khách hàng / Công trình" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
+            <Field disabled={isFinalQuote} label="Số điện thoại" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
+            <Field disabled={isFinalQuote} label="Tên công trình" value={customer.project} onChange={(v) => setCustomer({ ...customer, project: v })} />
+            <Field disabled={isFinalQuote} label="Địa điểm" value={customer.address} onChange={(v) => setCustomer({ ...customer, address: v })} />
+            <Field disabled={isFinalQuote} label="Số báo giá" value={customer.quoteNumber || ""} onChange={(v) => setCustomer({ ...customer, quoteNumber: v })} />
+            <Field disabled={isFinalQuote} label="Hạng mục" value={customer.category || ""} onChange={(v) => setCustomer({ ...customer, category: v })} />
           </div>
         </section>
 
@@ -2415,26 +2674,27 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         {rooms.map((room) => (
           <section className="card room-card" key={room.id}>
             <div className="room-head">
-              <textarea className="room-name" rows={2} value={room.name} onChange={(e) => renameRoom(room.id, e.target.value)} />
+              <textarea className="room-name" rows={2} disabled={isFinalQuote} value={room.name} onChange={(e) => renameRoom(room.id, e.target.value)} />
               <div className="room-head-actions">
                 <select
                   className="tpl-select"
                   value=""
+                  disabled={isFinalQuote}
                   onChange={(e) => { if (e.target.value) { applyTemplate(room.id, e.target.value); e.target.value = ""; } }}
                 >
                   <option value="">+ Thêm gói…</option>
                   {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
-                <button className="btn-ghost" onClick={() => setPickerRoomId(pickerRoomId === room.id ? null : room.id)}>
+                <button className="btn-ghost" disabled={isFinalQuote} onClick={() => setPickerRoomId(pickerRoomId === room.id ? null : room.id)}>
                   + Thêm thiết bị
                 </button>
                 {rooms.length > 1 && (
-                  <button className="btn-ghost danger" onClick={() => removeRoom(room.id)}>Xóa</button>
+                  <button className="btn-ghost danger" disabled={isFinalQuote} onClick={() => removeRoom(room.id)}>Xóa</button>
                 )}
               </div>
             </div>
 
-            {pickerRoomId === room.id && (
+            {!isFinalQuote && pickerRoomId === room.id && (
               <ProductPicker
                 products={products}
                 priceOf={listPriceOf}
@@ -2474,6 +2734,15 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                     const updatePrice = (num) => {
                       if (!num || num <= 0) return;
                       setProducts((ps) => ps.map((x) => x.id === p.id ? { ...x, costPrice: num } : x));
+                      setRooms((currentRooms) => currentRooms.map((rr) => rr.id !== room.id ? rr : {
+                        ...rr,
+                        lines: rr.lines.map((ll) => ll.id !== l.id ? ll : {
+                          ...ll,
+                          productSnapshot: ll.productSnapshot ? { ...ll.productSnapshot, costPrice: num } : ll.productSnapshot,
+                          costPriceSnapshot: num,
+                          salePriceSnapshot: undefined,
+                        }),
+                      }));
                     };
 
                     return (
@@ -2485,13 +2754,13 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                               <button
                                 className="move-btn"
                                 title="Lên"
-                                disabled={lineIdx === 0}
+                                disabled={isFinalQuote || lineIdx === 0}
                                 onClick={() => moveLine(room.id, l.id, -1)}
                               >▲</button>
                               <button
                                 className="move-btn"
                                 title="Xuống"
-                                disabled={lineIdx === room.lines.length - 1}
+                                disabled={isFinalQuote || lineIdx === room.lines.length - 1}
                                 onClick={() => moveLine(room.id, l.id, 1)}
                               >▼</button>
                             </div>
@@ -2501,6 +2770,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                           <textarea
                             className="note-input"
                             value={l.note || ""}
+                            disabled={isFinalQuote}
                             onChange={(e) => setLineNote(room.id, l.id, e.target.value)}
                             rows={2}
                           />
@@ -2515,6 +2785,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                               <input
                                 type="text" inputMode="numeric"
                                 className="price-inline-input"
+                                disabled={isFinalQuote}
                                 onChange={(e) => {
                                   const n = parseInt(e.target.value.replace(/\D/g,""),10);
                                   if(n>0) updatePrice(n);
@@ -2532,13 +2803,13 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                           {!isFixed && f !== 1 && <span className="muted hs-inline-note">×{f}</span>}
                         </td>
                         <td className="num qty-col">
-                          <input type="text" inputMode="numeric" className="qty-input" value={l.qty}
+                          <input type="text" inputMode="numeric" className="qty-input" value={l.qty} disabled={isFinalQuote}
                             onChange={(e) => setQty(room.id, l.id, parseInt(e.target.value.replace(/\D/g, "")) || 0)} />
                         </td>
                         <td className="num strong">{VND(sp * l.qty)}</td>
                         <td className="ln-actions">
-                          <button className="ln-edit" title="Đổi thiết bị" onClick={() => setEditingLine({ roomId: room.id, line: l })}>✎</button>
-                          <button className="x-btn" onClick={() => removeLine(room.id, l.id)}>×</button>
+                          <button className="ln-edit" disabled={isFinalQuote} title="Đổi thiết bị" onClick={() => setEditingLine({ roomId: room.id, line: l })}>✎</button>
+                          <button className="x-btn" disabled={isFinalQuote} onClick={() => removeLine(room.id, l.id)}>×</button>
                         </td>
                       </tr>
                     );
@@ -2550,8 +2821,8 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
         ))}
 
         <div className="quote-actions-bottom">
-          <button className="btn-solution-family" onClick={() => setSolutionModalOpen(true)}>⚡ Tạo từ bộ giải pháp</button>
-          <button className="btn-add-room" onClick={addRoom}>+ Thêm phòng</button>
+          <button className="btn-solution-family" disabled={isFinalQuote} onClick={() => setSolutionModalOpen(true)}>⚡ Tạo từ bộ giải pháp</button>
+          <button className="btn-add-room" disabled={isFinalQuote} onClick={addRoom}>+ Thêm phòng</button>
           <button className="btn-ghost" onClick={newQuote}>⟳ Báo giá mới</button>
         </div>
       </div>
@@ -2562,10 +2833,37 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
           <div className="s-body">
             <div className="s-lbl">Tổng báo giá</div>
             <div className="s-total num">{VND(calc.grand).replace("đ", "")}<small>đ</small></div>
-            <div className="s-margin">▲ Lãi gộp {grossMarginPct}%</div>
+            <div className={`s-margin ${grossMarginPct != null && grossMarginPct < 0 ? "danger" : ""}`}>
+              {grossMarginPct == null ? `Lãi gộp — · thiếu giá vốn ${commercialAssessment.unknownCostCount} dòng` : `${grossMarginPct < 0 ? "▼" : "▲"} Lãi gộp ${grossMarginPct}%`}
+            </div>
+            <div className={`quote-final-gate ${isFinalQuote ? "final" : (finalQuoteGate.ready ? "ready" : "blocked")}`}>
+              <div className="quote-final-gate-head">
+                <div>
+                  <strong>{isFinalQuote ? `FINAL · Rev ${quoteRevision}` : (finalQuoteGate.ready ? "Ready to Final" : "Draft · Chưa Ready to send")}</strong>
+                  <span>{isFinalQuote ? "Nội dung đã khóa. Muốn sửa phải tạo revision mới." : (finalQuoteGate.ready ? "Tất cả commercial gate đã đạt." : `${finalQuoteGate.blockerCount} gate cần xử lý trước khi xuất.`)}</span>
+                </div>
+                <b>{finalQuoteGate.checks.filter((item) => item.pass).length}/{finalQuoteGate.checks.length}</b>
+              </div>
+              <div className="quote-final-gate-checks">
+                {finalQuoteGate.checks.map((item) => (
+                  <div key={item.id} className={item.pass ? "pass" : "fail"}>
+                    <span>{item.pass ? "✓" : "!"}</span>
+                    <div><strong>{item.label}</strong><small>{item.detail}</small></div>
+                  </div>
+                ))}
+              </div>
+              {quoteFinalizedAt && isFinalQuote && <div className="quote-finalized-at">Final: {new Date(quoteFinalizedAt).toLocaleString("vi-VN")}</div>}
+            </div>
+            {(commercialAssessment.hardErrorCount > 0 || commercialAssessment.atOrBelowCostCount > 0) && (
+              <div className="quote-commercial-warning">
+                {commercialAssessment.hardErrorCount > 0
+                  ? `⚠ ${commercialAssessment.hardErrorCount} dòng chưa đủ sản phẩm/giá bán — không thể final/export.`
+                  : `⚠ ${commercialAssessment.atOrBelowCostCount} dòng bán bằng hoặc dưới giá vốn — cần xác nhận trước khi export.`}
+              </div>
+            )}
             <div className="s-rows">
               <Row label={`Tiền hàng (${calc.pointCount} thiết bị)`} value={VND(calc.deviceTotal)} />
-              <Row label={`Nhân công, lập trình (${company.laborPercent}%)`} value={VND(calc.laborTotal)} />
+              <Row label={`Nhân công, lập trình (${effectiveQuoteCompany?.laborPercent || 0}%)`} value={VND(calc.laborTotal)} />
               <div className="s-row vat-summary-row">
                 <span className="vat-summary-label">
                   VAT
@@ -2576,6 +2874,7 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
                       max="100"
                       step="0.1"
                       value={vatPercent}
+                      disabled={isFinalQuote}
                       aria-label="VAT báo giá (%)"
                       onChange={(e) => {
                         const next = Math.max(0, Math.min(100, Number(e.target.value) || 0));
@@ -2590,14 +2889,29 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
               <div className="s-row big"><span>Tổng cộng</span><b className="num">{VND(calc.grand)}</b></div>
             </div>
             <div className="s-actions">
-              <button className="btn-export-primary" disabled={exporting} onClick={exportExcel}>
-                {exporting ? "Đang tạo…" : "Xuất báo giá"}
-              </button>
+              {isFinalQuote ? (
+                <button className="btn-export-primary" disabled={exporting || !finalQuoteGate.ready} onClick={exportExcel}>
+                  {exporting ? "Đang tạo…" : `Xuất báo giá · Rev ${quoteRevision}`}
+                </button>
+              ) : (
+                <button className="btn-export-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={finalizeCurrentQuote}>
+                  {finalQuoteGate.ready ? "Final & khóa báo giá" : `Hoàn tất ${finalQuoteGate.blockerCount} gate để Final`}
+                </button>
+              )}
               <div className="row2">
-                <button className="btn-ghost" onClick={exportPDF}>Xuất PDF</button>
-                {cloud?.enabled && (
+                {isFinalQuote ? (
+                  <>
+                    <button className="btn-ghost" disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>
+                    <button className="btn-ghost" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
+                  </>
+                ) : (
+                  <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0} onClick={() => saveCurrentQuote()}>
+                    {quoteSaving ? "Đang lưu…" : "Lưu Draft"}
+                  </button>
+                )}
+                {cloud?.enabled && isFinalQuote && (
                   <button className="btn-ghost" disabled={quoteSaving} onClick={() => saveCurrentQuote()}>
-                    {quoteSaving ? "Đang lưu…" : "Lưu"}
+                    {quoteSaving ? "Đang lưu…" : "Lưu trạng thái"}
                   </button>
                 )}
               </div>
@@ -2612,13 +2926,13 @@ function QuoteBuilder({ products, setProducts, productById, templates, solutionF
               )}
             </div>
             <p className="side-note">
-              Mặc định xuất <strong>Excel</strong>{activeExcelTemplate ? <> theo mẫu <strong>{activeExcelTemplate.name}</strong></> : <> theo mẫu SmartQuote mặc định</>}. PDF là lựa chọn phụ và đang dùng mẫu <strong>{getQuoteTemplateLabel(quoteTemplateConfig?.presetId)}</strong>. Máy tính tiền — người duyệt trước khi gửi khách.
+              Chỉ <strong>Final Quote</strong> mới được xuất gửi khách. Mặc định xuất <strong>Excel</strong>{activeExcelTemplate ? <> theo mẫu <strong>{activeExcelTemplate.name}</strong></> : <> theo mẫu SmartQuote mặc định</>}; PDF là lựa chọn phụ với mẫu <strong>{getQuoteTemplateLabel(quoteTemplateConfig?.presetId)}</strong>.
             </p>
           </div>
         </div>
       </aside>
 
-      {solutionModalOpen && (
+      {!isFinalQuote && solutionModalOpen && (
         <SolutionFamilyApplyModal
           products={products}
           solutionFamilies={solutionFamilies}
@@ -3373,7 +3687,7 @@ function SearchSelect({ products, value, onChange, placeholder = "Tìm thiết b
     </div>
   );
 }
-function AIReader({ products, setProducts, company, onCreateQuote, cloud, onUpgrade, embedded = false, ktsFileRef = null, onBack = null }) {
+function AIReader({ products, setProducts, company, markups = [], onCreateQuote, cloud, onUpgrade, embedded = false, ktsFileRef = null, onBack = null }) {
   const [step, setStep] = useState("upload"); // upload | parsing | review | done
   const [rows, setRows] = useState([]); // {section, name, unit, qty}
   const [mapped, setMapped] = useState([]); // {row, product, qty, confidence, section}
@@ -3383,6 +3697,7 @@ function AIReader({ products, setProducts, company, onCreateQuote, cloud, onUpgr
   const [manualMap, setManualMap] = useState({}); // rowIdx → productId
   const [sectionMap, setSectionMap] = useState({}); // rowIdx → solution name
   const fileRef = useRef();
+  const defaultMarkupFactor = useMemo(() => chooseDefaultMarkupFactor(markups), [markups]);
 
   // Đọc file Excel KTS → danh sách rows có số lượng (legacy module)
   const handleBomFile = async (e) => {
@@ -3471,6 +3786,11 @@ function AIReader({ products, setProducts, company, onCreateQuote, cloud, onUpgr
 
   // Tạo báo giá từ kết quả đã review
   const buildQuote = () => {
+    const unresolvedForQuote = unmatched.filter((r) => !manualMap[r.idx]);
+    if (unresolvedForQuote.length > 0) {
+      notify.warning(`Còn ${unresolvedForQuote.length} dòng cần chọn sản phẩm. SmartQuote không tạo báo giá nếu phải âm thầm bỏ dòng.`);
+      return;
+    }
     const solutionOrder = [
       "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
       "II./ Hệ thống cảm biến",
@@ -3486,7 +3806,10 @@ function AIReader({ products, setProducts, company, onCreateQuote, cloud, onUpgr
       // Gộp dòng trùng productId
       const existing = roomMap[solutionName].find((l) => l.productId === productId);
       if (existing) { existing.qty += qty; }
-      else roomMap[solutionName].push({ id: uid("ln"), productId, qty, note: note || "" });
+      else {
+        const p = products.find((x) => x.id === productId);
+        roomMap[solutionName].push({ id: uid("ln"), productId, qty, note: note || "", factor: p?.priceMode === "fixed" ? 1 : defaultMarkupFactor });
+      }
     };
 
     // Thêm các dòng đã map
@@ -3707,6 +4030,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
   const [bomPackSelections, setBomPackSelections] = useState({});
   const [bomQuoteVariantId, setBomQuoteVariantId] = useState("standard");
   const [bomCompletenessDecisions, setBomCompletenessDecisions] = useState({});
+  const [bomQuoteFactor, setBomQuoteFactor] = useState(() => chooseDefaultMarkupFactor(markups));
   const [bomShowSupporting, setBomShowSupporting] = useState(false);
   const [bomPilotTableLimit, setBomPilotTableLimit] = useState(80);
   const fileRef = useRef();
@@ -3952,9 +4276,27 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
       grouping: bomQuoteGrouping,
       laborPercent: company?.laborPercent || 0,
       completenessDecisions: bomCompletenessDecisions,
+      defaultMarkupFactor: bomQuoteFactor,
     });
     const selected = variants.find((v) => v.id === bomQuoteVariantId) || variants.find((v) => v.id === "standard") || variants[0];
     if (selected?.id && selected.id !== "standard" && !guardCapability(cloud, "quote_variants_abc", onUpgrade)) return;
+    const unresolvedCore = (bomPreview.lines || []).filter((line) => !bomIgnored[line.id] && !isSupportingBomLine(line) && !getBomProductId(line));
+    if (unresolvedCore.length > 0) {
+      notify.warning(`Còn ${unresolvedCore.length} dòng BOM chính chưa được Resolve hoặc Bỏ qua. SmartQuote không tạo báo giá thiếu dòng.`);
+      setBomFilter("unresolved");
+      return;
+    }
+    const completenessGate = buildQuoteCompletenessAssessment({
+      bomPreview, products, resolutionMap: bomResolutions, ignoredMap: bomIgnored, packSelections: bomPackSelections, decisions: bomCompletenessDecisions,
+    });
+    if (completenessGate.counts.required > 0) {
+      notify.warning(`Còn ${completenessGate.counts.required} hạng mục bắt buộc chưa quyết định. Hãy Thêm hoặc Bỏ qua có chủ ý trước khi tạo báo giá.`);
+      return;
+    }
+    if (selected?.pricingNeedsReviewCount > 0) {
+      notify.warning(`Có ${selected.pricingNeedsReviewCount} dòng giá vốn chưa có hệ số giá bán > 1. Hãy chọn/nhập hệ số giá bán trước khi tạo báo giá.`);
+      return;
+    }
     if (!selected?.ready) {
       notify.warning("Chưa có dòng BOM nào đủ match để tạo báo giá. Hãy chọn sản phẩm catalog cho ít nhất một dòng.");
       return;
@@ -4030,7 +4372,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
 
       // Bước 2: AI map các cột chưa ghép được (hoặc ghép không chắc)
       const unmapped = result.columns.filter((col) => !initMap[col]);
-      if (unmapped.length > 0 && company?.googleApiKey) {
+      if (unmapped.length > 0) {
         if (!guardCapability(cloud, "ai_import", onUpgrade) || !guardFeature(cloud, "ai_claude_request", 1, onUpgrade)) {
           setAiStatus("error");
         } else {
@@ -4073,10 +4415,14 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
   const setColMap = (col, productId) => setMapping((m) => ({ ...m, [col]: productId }));
 
   const mappedCount = parsed ? parsed.columns.filter((c) => mapping[c]).length : 0;
-  const unmappedCols = parsed ? parsed.columns.filter((c) => !mapping[c]) : [];
+  const unmappedCols = parsed ? parsed.columns.filter((c) => !mapping[c] && parsed.floors.some((f) => Number(f.qtys?.[c] || 0) > 0)) : [];
 
   const buildQuote = () => {
     if (!parsed) return;
+    if (unmappedCols.length > 0) {
+      notify.warning(`Còn ${unmappedCols.length} cột có số lượng nhưng chưa ghép catalog. SmartQuote không tạo báo giá nếu phải âm thầm bỏ dòng.`);
+      return;
+    }
     const newNameMap = { ...nameMap };
     parsed.columns.forEach((col) => {
       const pid = mapping[col];
@@ -4184,7 +4530,8 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
       if (totalQty <= 0) return;
 
       const note = noteLines.join("\n");
-      const line = { id: uid("ln"), productId: pid, qty: totalQty, note };
+      const factor = p?.priceMode === "fixed" ? 1 : chooseDefaultMarkupFactor(markups);
+      const line = { id: uid("ln"), productId: pid, qty: totalQty, note, factor };
       addToSolution(resolveSolution(colIdx, p), line);
     });
 
@@ -4341,6 +4688,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
               grouping: bomQuoteGrouping,
               laborPercent: company?.laborPercent || 0,
               completenessDecisions: bomCompletenessDecisions,
+              defaultMarkupFactor: bomQuoteFactor,
             });
             const selectedQuoteVariant = quoteVariants.find((v) => v.id === bomQuoteVariantId) || quoteVariants.find((v) => v.id === "standard") || quoteVariants[0];
             return (
@@ -4360,7 +4708,11 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                       <button className={bomQuoteGrouping === "pack" ? "active" : ""} onClick={() => setBomQuoteGrouping("pack")}>Theo phương án</button>
                       <button className={bomQuoteGrouping === "area" ? "active" : ""} onClick={() => setBomQuoteGrouping("area")}>Theo khu vực</button>
                     </div>
-                    <button className="btn-primary" style={{ width: "auto" }} disabled={!selectedQuoteVariant?.ready} onClick={createQuoteFromBom}>
+                    <label className="bom-price-factor" title="Áp cho sản phẩm dùng giá vốn/markup; sản phẩm fixed giữ nguyên giá niêm yết">
+                      <span>Hệ số giá bán</span>
+                      <input type="number" min="1" step="0.05" value={bomQuoteFactor} onChange={(e) => setBomQuoteFactor(Math.max(1, Number(e.target.value) || 1))} />
+                    </label>
+                    <button className="btn-primary" style={{ width: "auto" }} disabled={!selectedQuoteVariant?.ready || coreUnresolvedLines.length > 0 || completenessAssessment.counts.required > 0 || (selectedQuoteVariant?.pricingNeedsReviewCount || 0) > 0} onClick={createQuoteFromBom}>
                       Tạo PA {selectedQuoteVariant?.shortLabel || "B"}: {selectedQuoteVariant?.label || "Tiêu chuẩn"} →
                     </button>
                   </div>
@@ -4422,9 +4774,10 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                           <span>{variant.coverage}% coverage</span>
                           <span>{variant.packTemplateLineCount || 0} template</span>
                           <span>{variant.completenessLineCount || 0} bổ sung</span>
-                          <span>margin {variant.marginPercent}%</span>
+                          <span>margin {variant.marginPercent == null ? "—" : `${variant.marginPercent}%`}</span>
                         </div>
                         {variant.unmatchedCount > 0 && <div className="bom-variant-warn">Còn {variant.unmatchedCount} dòng chưa match</div>}
+                        {variant.pricingNeedsReviewCount > 0 && <div className="bom-variant-warn">{variant.pricingNeedsReviewCount} dòng chưa có markup an toàn (×{variant.defaultMarkupFactor})</div>}
                       </button>
                     ))}
                   </div>
@@ -4441,6 +4794,11 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                   {selectedQuoteVariant?.unmatchedCount > 0 && (
                     <div className="bom-variant-note">
                       Phương án đang chọn còn {selectedQuoteVariant.unmatchedCount} dòng chưa lên báo giá. Ví dụ: {selectedQuoteVariant.unmatchedSample?.slice(0, 3).join(" · ") || "—"}.
+                    </div>
+                  )}
+                  {selectedQuoteVariant?.pricingNeedsReviewCount > 0 && (
+                    <div className="bom-variant-note bom-pricing-note">
+                      Chưa thể tạo báo giá: {selectedQuoteVariant.pricingNeedsReviewCount} dòng đang dùng giá vốn với hệ số ×{bomQuoteFactor}. Nhập hệ số &gt; 1 hoặc cấu hình mức giá bán của công ty.
                     </div>
                   )}
                 </div>
@@ -4818,7 +5176,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
               </p>
             )}
 
-            <button className="btn-primary" style={{ marginTop: 14, width: "auto" }} onClick={buildQuote}>
+            <button className="btn-primary" style={{ marginTop: 14, width: "auto" }} disabled={unmappedCols.length > 0} onClick={buildQuote}>
               Tạo báo giá →
             </button>
           </section>
@@ -4854,6 +5212,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
           products={products}
           setProducts={() => {}}
           company={company}
+          markups={markups}
           cloud={cloud}
           onUpgrade={onUpgrade}
           embedded={true}
@@ -4876,7 +5235,8 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
 // Phase 14.0 — source grounding viewer. Uses the original local PDF file and
 // additive pdfjs coordinates from /api/pdf-extract; no new document graph.
 // ============================================================
-function pdfEvidencePriceBBox(source = {}, value = 0) {
+function pdfEvidencePriceBBox(source = {}, value = 0, preferredBBox = null) {
+  if (preferredBBox && typeof preferredBBox === "object") return preferredBBox;
   const target = String(Math.round(Number(value || 0))).replace(/\D/g, "");
   if (!target || !Array.isArray(source.parts)) return source.bbox || null;
   const part = source.parts.find((p) => {
@@ -4892,7 +5252,7 @@ function pdfEvidencePriceBBox(source = {}, value = 0) {
   };
 }
 
-function PdfGroundingViewer({ file, source, value, onClose }) {
+function PdfGroundingViewer({ file, source, value, fieldEvidence, onClose }) {
   const canvasRef = useRef(null);
   const [renderState, setRenderState] = useState({ loading: true, error: "", width: 0, height: 0, scale: 1, baseHeight: 0 });
   const pageNum = Number(source?.page || 1) || 1;
@@ -4909,12 +5269,8 @@ function PdfGroundingViewer({ file, source, value, onClose }) {
         setRenderState((s) => ({ ...s, loading: true, error: "" }));
         const data = new Uint8Array(await file.arrayBuffer());
         const pdfjsPilot = await import("pdfjs-dist/legacy/build/pdf.mjs");
-
-        if (!pdfjsPilot.GlobalWorkerOptions.workerSrc) {
-          pdfjsPilot.GlobalWorkerOptions.workerSrc = pdfJsWorkerUrl;
-        }
-
-        const task = pdfjsPilot.getDocument({ data, isEvalSupported: false, useSystemFonts: true });
+        if (!pdfjsPilot.GlobalWorkerOptions.workerSrc) pdfjsPilot.GlobalWorkerOptions.workerSrc = pdfJsWorkerUrl;
+        const task = pdfjsPilot.getDocument({ data,  isEvalSupported: false, useSystemFonts: true });
         doc = await task.promise;
         const page = await doc.getPage(Math.min(Math.max(1, pageNum), doc.numPages));
         const base = page.getViewport({ scale: 1 });
@@ -4937,7 +5293,7 @@ function PdfGroundingViewer({ file, source, value, onClose }) {
     return () => { cancelled = true; try { doc?.destroy?.(); } catch {} };
   }, [file, pageNum]);
 
-  const bbox = pdfEvidencePriceBBox(source, value);
+  const bbox = pdfEvidencePriceBBox(source, value, fieldEvidence?.price?.bbox || source?.fieldBboxes?.unitPrice || null);
   const pageWidth = Number(source?.pageWidth || 0) || (renderState.width ? renderState.width / renderState.scale : 0);
   const pageHeight = Number(source?.pageHeight || 0) || renderState.baseHeight;
   const sx = pageWidth > 0 ? renderState.width / pageWidth : renderState.scale;
@@ -5017,7 +5373,45 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const imgFilesInputRef = useRef(null);
   const imgFolderInputRef = useRef(null);
   const products_ref = useRef(products);
+  const importRunRef = useRef(0);
   useEffect(() => { products_ref.current = products; }, [products]);
+
+  // Mỗi nguồn import có một session id riêng. Nếu user chọn file mới khi PDF/AI cũ
+  // vẫn đang chạy, kết quả cũ tuyệt đối không được ghi đè preview của file mới.
+  const isCurrentImportRun = (runId) => runId === importRunRef.current;
+  const resetImportUiForNewSource = (sourceFile = null) => {
+    setFile(sourceFile);
+    setParsed([]);
+    setImportResult(null);
+    setRawRows([]);
+    setHeaders([]);
+    setColMap({});
+    setManualStartRow(1);
+    setManualEndRow("");
+    setEditingIndex(null);
+    setEditingDraft(null);
+    setPreviewFilter("all");
+    setHighlightedPreviewIndex(null);
+    setGroundingIndex(null);
+    setPriceColumnConfirmed(false);
+    setTemplateNotice("");
+    setLearningNotice("");
+    setAiStatus("");
+    setBatchLog([]);
+    setCacheHits(0);
+  };
+  const beginImportRun = (sourceFile = null) => {
+    const runId = importRunRef.current + 1;
+    importRunRef.current = runId;
+    resetImportUiForNewSource(sourceFile);
+    return runId;
+  };
+  const cancelImportRun = () => {
+    importRunRef.current += 1;
+    resetImportUiForNewSource(null);
+    setBatchMode(false);
+    setStep("drop");
+  };
 
   // ── LỚP 3: CACHE — không gọi AI lại cho file giống nhau ──
   const PDF_CACHE_SCHEMA = "v14_2_2_compact_ir_band_recovery_v1";
@@ -5246,6 +5640,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       return;
     }
 
+    const runId = beginImportRun({ name: fileList.length === 1 ? fileList[0].name : `${fileList.length} files` });
     setStep("mapping");
     setBatchMode(true);
     const fileLog = [];
@@ -5276,6 +5671,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
           catalog: products_ref.current || [],
           aiExtract,
         });
+        if (!isCurrentImportRun(runId)) return;
         const learned = applyLearningIfAllowed(products, { fileName: `${excelFiles.length} Excel files` });
         totalLearningHits += learned.hits || 0;
         allProducts = allProducts.concat(sanitizeImportedProducts(learned.products, { fileName: `${excelFiles.length} Excel files` }));
@@ -5286,6 +5682,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
         setBatchLog([...fileLog]);
         if (preview) filePreviews.push(preview);
       } catch (e) {
+        if (!isCurrentImportRun(runId)) return;
         fileLog.push(`✗ Lỗi đọc Excel: ${e.message}`);
         setBatchLog([...fileLog]);
       }
@@ -5293,20 +5690,25 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
     // 2) PDF qua AI (giữ flow cũ: cache + quota)
     for (let i = 0; i < pdfFiles.length; i++) {
+      if (!isCurrentImportRun(runId)) return;
       const f = pdfFiles[i];
       setAiStatus(`Đang đọc PDF ${i + 1}/${pdfFiles.length}: ${f.name}...`);
       try {
-        const items = await parsePDFToProducts(f);
+        const items = await parsePDFToProducts(f, runId);
+        if (!isCurrentImportRun(runId)) return;
         const learnedPdf = applyLearningIfAllowed(items, { fileName: f.name });
         totalLearningHits += learnedPdf.hits || 0;
         allProducts = allProducts.concat(sanitizeImportedProducts(learnedPdf.products, { fileName: f.name }));
         if (items.importPreview) filePreviews.push(items.importPreview);
         fileLog.push(`✓ ${f.name}: ${items.length} SP (AI)`);
       } catch (err) {
+        if (!isCurrentImportRun(runId)) return;
         fileLog.push(`✗ ${f.name}: ${err.message}`);
       }
-      setBatchLog([...fileLog]);
+      if (isCurrentImportRun(runId)) setBatchLog([...fileLog]);
     }
+
+    if (!isCurrentImportRun(runId)) return;
 
     // Khử trùng theo SKU (giữ bản cuối)
     const seen = {};
@@ -5342,15 +5744,18 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   };
 
   // Parse PDF → mảng sản phẩm (pipeline v2: text extraction → chunk AI → legacy fallback)
-  const parsePDFToProducts = async (f) => {
+  const parsePDFToProducts = async (f, runId = importRunRef.current) => {
     return parsePdfCatalogWithClaude(f, {
       getCached,
       setCached,
       getQuota,
       incQuota,
       quotaLimit: PDF_QUOTA_LIMIT,
-      onCacheHit: () => setCacheHits(h => h + 1),
+      onCacheHit: () => {
+        if (isCurrentImportRun(runId)) setCacheHits(h => h + 1);
+      },
       onProgress: (event) => {
+        if (!isCurrentImportRun(runId)) return;
         if (event?.message) {
           setAiStatus(event.message);
           setBatchLog(prev => {
@@ -5366,13 +5771,17 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     if (!f) return;
     try { assertSmartQuoteUploadFile(f, { allow: ["excel", "pdf"] }); }
     catch (error) { notify.error(error.message); return; }
-    setFile(f);
+
+    // Khóa preview vào đúng file được chọn. Một PDF cũ chạy chậm không được phép
+    // hoàn tất sau rồi ghi đè kết quả Excel/PDF mới.
+    const runId = beginImportRun(f);
     const ext = f.name.split(".").pop().toLowerCase();
-    if (ext === "pdf") await handlePDF(f);
-    else await handleExcel(f);
+    if (ext === "pdf") await handlePDF(f, runId);
+    else await handleExcel(f, runId);
   };
 
-  const handleExcel = async (f) => {
+  const handleExcel = async (f, runId = importRunRef.current) => {
+    if (!isCurrentImportRun(runId)) return;
     setStep("mapping");
     setBatchMode(true);
     setBatchLog([`Đang đọc ${f.name} (engine v2)...`]);
@@ -5380,6 +5789,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       const { result, preview, products: items } = await importFileForUI(f, {
         catalog: products_ref.current || [],
       });
+      if (!isCurrentImportRun(runId)) return;
       if (!items.length) {
         setAiStatus("Không trích được sản phẩm nào.");
         setBatchLog([`✗ ${f.name}: không có sản phẩm`]);
@@ -5391,6 +5801,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       const cleanItems = cleanItemsSplit.active;
       const upstreamSkipped = Number(preview?.summary?.skipped || 0);
       const totalSkipped = upstreamSkipped + cleanItemsSplit.skippedCount;
+      if (!isCurrentImportRun(runId)) return;
       setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
       refreshLearningStats();
       setParsed(cleanItems);
@@ -5415,19 +5826,22 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       setStep("preview");
       cloud?.refreshBilling?.();
     } catch (e) {
+      if (!isCurrentImportRun(runId)) return;
       setAiStatus("Lỗi đọc file: " + e.message);
       setBatchLog([`✗ ${f.name}: ${e.message}`]);
     }
   };
 
-  const handlePDF = async (f) => {
+  const handlePDF = async (f, runId = importRunRef.current) => {
+    if (!isCurrentImportRun(runId)) return;
     if (!guardCapability(cloud, "ai_import", onUpgrade) || !guardFeature(cloud, "pdf_extract", 1, onUpgrade)) return;
     setAiStatus("🤖 AI đang đọc PDF — trích xuất tất cả sản phẩm...");
     setStep("mapping");
     setBatchMode(true);
     setBatchLog([`Đang xử lý: ${f.name}`]);
     try {
-      const items = await parsePDFToProducts(f);
+      const items = await parsePDFToProducts(f, runId);
+      if (!isCurrentImportRun(runId)) return;
       if (!items.length) {
         setAiStatus("Không tìm thấy sản phẩm nào trong PDF.");
         setBatchLog([`✗ ${f.name}: không có sản phẩm`]);
@@ -5439,6 +5853,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       const cleanItems = cleanItemsSplit.active;
       const upstreamSkipped = Number(items.importPreview?.summary?.skipped || 0);
       const totalSkipped = upstreamSkipped + cleanItemsSplit.skippedCount;
+      if (!isCurrentImportRun(runId)) return;
       setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
       refreshLearningStats();
       setParsed(cleanItems);
@@ -5455,6 +5870,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       setStep("preview");
       cloud?.refreshBilling?.();
     } catch (e) {
+      if (!isCurrentImportRun(runId)) return;
       setAiStatus("Lỗi đọc PDF: " + e.message);
       setBatchLog([`✗ ${f.name}: ${e.message}`]);
     }
@@ -5470,6 +5886,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     if (!/^https?:\/\//i.test(normalizedUrl)) normalizedUrl = `https://${normalizedUrl}`;
     if (!guardFeature(cloud, "web_scrape", 1, onUpgrade)) return;
 
+    const runId = beginImportRun({ name: normalizedUrl });
     setWebImporting(true);
     setWebStatus("");
     setAiStatus("Đang cào danh sách sản phẩm từ web...");
@@ -5484,6 +5901,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
         body: JSON.stringify({ url: normalizedUrl, supplier: webSupplier, limit: 300, crawl: true, maxPages: 32 }),
       });
       const payload = await response.json().catch(() => ({}));
+      if (!isCurrentImportRun(runId)) return;
       if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
 
       const webProducts = webScrapeItemsToProducts(payload, {
@@ -5500,6 +5918,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
       const learned = applyLearningIfAllowed(webProducts, { fileName: payload.sourceUrl || normalizedUrl, detectedIndustry: "web_catalog" });
       const cleanItems = sanitizeImportedProducts(learned.products, { defaultSupplier: webSupplier || payload.siteName || payload.hostname || "Web", fileName: payload.sourceUrl || normalizedUrl });
+      if (!isCurrentImportRun(runId)) return;
       setFile({ name: payload.sourceUrl || normalizedUrl });
       setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
       refreshLearningStats();
@@ -5522,12 +5941,13 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       setStep("preview");
       cloud?.refreshBilling?.();
     } catch (e) {
+      if (!isCurrentImportRun(runId)) return;
       setAiStatus("Lỗi cào web: " + e.message);
       setBatchLog([`✗ ${normalizedUrl}: ${e.message}`]);
       setWebStatus("Lỗi cào web: " + e.message);
       setStep("drop");
     } finally {
-      setWebImporting(false);
+      if (isCurrentImportRun(runId)) setWebImporting(false);
     }
   };
 
@@ -6336,7 +6756,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
             )}
 
             <div className="ci-footer">
-              <button className="btn-ghost" onClick={() => { setStep("drop"); setFile(null); }}>← Chọn file khác</button>
+              <button className="btn-ghost" onClick={cancelImportRun}>← Chọn file khác</button>
               <div className="ci-footer-actions">
                 <button className="btn-ghost" type="button" onClick={saveCurrentMappingTemplate}>💾 Lưu template mapping</button>
                 <button className="btn-primary" style={{ width: "auto" }} onClick={buildPreview}
@@ -6375,6 +6795,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <div className={`ci-import-hero ${tone}`}>
                   <div className="ci-import-hero-main">
                     <div className="ci-import-hero-kicker">Preview import</div>
+                    <div className="ci-import-source">📄 {importResult?.fileName || file?.name || "Nguồn import"}{importResult?.engine ? ` · ${importResult.engine}` : ""}</div>
                     <h3>{title}</h3>
                     <p>
                       <strong>{readyCount}</strong> sản phẩm sẵn sàng nhập · <strong>{c.warningOnly}</strong> cần xem lại · <strong>{skippedCount}</strong> dòng đã bỏ qua
@@ -6477,7 +6898,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
               const groundingLine = getLineForProductIndex(groundingIndex, groundingProduct);
               const groundingSource = groundingLine?.source || groundingProduct?._meta?.source || {};
               if (groundingSource?.page) {
-                return <PdfGroundingViewer file={file} source={groundingSource} value={groundingProduct.costPrice} onClose={() => setGroundingIndex(null)} />;
+                return <PdfGroundingViewer file={file} source={groundingSource} value={groundingProduct.costPrice} fieldEvidence={groundingProduct?._meta?.fieldEvidence || {}} onClose={() => setGroundingIndex(null)} />;
               }
               return (
                 <div className="ci-grounding-panel text-only">
@@ -6842,69 +7263,42 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
   };
 
   const autoFetchImages = async () => {
-    const apiKey = company?.googleApiKey?.trim();
-    if (!apiKey) {
-      notify.warning("Chưa có Serper API Key.\nVào tab Cài đặt → mục Tìm ảnh tự động để điền.");
-      return;
-    }
     const targets = products.filter((p) => !p.image);
     if (targets.length === 0) { notify.success("Tất cả thiết bị đã có ảnh rồi!"); return; }
-
-    // Test kết nối
-    setAutoImg({ running: true, done: 0, total: targets.length, errors: 0, log: "Đang kiểm tra kết nối API…" });
-    try {
-      const testRes = await fetch("https://google.serper.dev/images", {
-        method: "POST",
-        headers: { "X-API-KEY": apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ q: "test", num: 1 }),
-      });
-      const testData = await testRes.json();
-      if (!testRes.ok) {
-        setAutoImg({ running: false, done: 0, total: 0, errors: 1,
-          log: `❌ Lỗi API (${testRes.status}): ${testData.message || "Kiểm tra lại API Key"}` });
-        return;
-      }
-    } catch (e) {
-      setAutoImg({ running: false, done: 0, total: 0, errors: 1,
-        log: `❌ Không kết nối được: ${e.message}` });
-      return;
-    }
-
-    if (!(await confirmAction({ title: "Tìm ảnh tự động?", message: `Kết nối API thành công. SmartQuote sẽ tìm ảnh cho ${targets.length} sản phẩm và sử dụng quota API của bạn.`, confirmLabel: "Bắt đầu tìm" }))) {
-      setAutoImg({ running: false, done: 0, total: 0, errors: 0, log: "" });
-      return;
-    }
+    if (!guardFeature(cloud, "product_enrich", 1, onUpgrade)) return;
+    if (!(await confirmAction({
+      title: "Tìm ảnh tự động?",
+      message: `SmartQuote sẽ dùng dịch vụ tìm kiếm đã cấu hình trên server để tìm ảnh cho ${targets.length} sản phẩm. Không cần nhập API key trên trình duyệt.`,
+      confirmLabel: "Bắt đầu tìm",
+    }))) return;
 
     setAutoImg({ running: true, done: 0, total: targets.length, errors: 0, log: "Đang tìm ảnh…" });
     let done = 0, errors = 0;
-
     for (const p of targets) {
       const query = `${p.name} ${p.sku || ""}`.replace(/[()]/g, " ").trim();
       try {
-        const res = await fetch("https://google.serper.dev/images", {
+        const res = await smartQuoteFetch("/api/product-enrich", {
           method: "POST",
-          headers: { "X-API-KEY": apiKey, "Content-Type": "application/json" },
-          body: JSON.stringify({ q: query, num: 1 }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, supplier: p.supplier || "", category: p.category || "", limit: 3 }),
         });
-        const data = await res.json();
-        const rawUrl = data?.images?.[0]?.imageUrl;
-        // Bỏ qua Google thumbnail (encrypted-tbn) — không load được cross-origin
-        const imgUrl = rawUrl && !rawUrl.includes("encrypted-tbn") && !rawUrl.includes("gstatic.com/images?q=tbn")
-          ? rawUrl : null;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        const rawUrl = (data.candidates || []).map((c) => c.imageUrl).find(Boolean);
+        const imgUrl = rawUrl && !rawUrl.includes("encrypted-tbn") && !rawUrl.includes("gstatic.com/images?q=tbn") ? rawUrl : null;
         if (imgUrl) {
           setProducts((ps) => ps.map((x) => x.id === p.id ? { ...x, image: imgUrl } : x));
-          done++;
-        } else {
-          errors++;
-        }
-      } catch {
-        errors++;
+          done += 1;
+        } else errors += 1;
+      } catch (error) {
+        console.warn("Tìm ảnh lỗi:", error);
+        errors += 1;
       }
       setAutoImg({ running: true, done, total: targets.length, errors, log: `Đang tìm: ${p.name}…` });
       await new Promise((r) => setTimeout(r, 200));
     }
-    setAutoImg({ running: false, done, total: targets.length, errors,
-      log: `✓ Hoàn tất! Tìm được ${done} ảnh, ${errors} thiết bị không tìm thấy ảnh.` });
+    cloud?.refreshBilling?.();
+    setAutoImg({ running: false, done, total: targets.length, errors, log: `✓ Hoàn tất! Tìm được ${done} ảnh, ${errors} thiết bị chưa tìm thấy ảnh.` });
   };
   const handleExcelFile = async (e) => {
     const file = e.target.files?.[0];
@@ -7297,7 +7691,6 @@ function ProductEnrichmentModal({ products, setProducts, company, cloud, onUpgra
   const [preferredSite, setPreferredSite] = useState(company?.website || "");
   const [supplier, setSupplier] = useState("");
   const [category, setCategory] = useState("Nội thất");
-  const [serperKey, setSerperKey] = useState(company?.googleApiKey || "");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [candidates, setCandidates] = useState([]);
@@ -7363,7 +7756,6 @@ function ProductEnrichmentModal({ products, setProducts, company, cloud, onUpgra
           preferredSites,
           supplier: supplier.trim(),
           category: category.trim(),
-          serperApiKey: serperKey.trim(),
           limit: 10,
         }),
       });
@@ -7444,10 +7836,6 @@ function ProductEnrichmentModal({ products, setProducts, company, cloud, onUpgra
           <label className="field">
             <span>Nhóm</span>
             <input value={category} onChange={(e) => setCategory(e.target.value)} />
-          </label>
-          <label className="field full">
-            <span>Serper API Key</span>
-            <input value={serperKey} onChange={(e) => setSerperKey(e.target.value)} placeholder="Để trống nếu server đã cấu hình SERPER_API_KEY" />
           </label>
         </div>
 
@@ -8349,24 +8737,12 @@ function Settings({ company, setCompany, markups, setMarkups, data, onImport }) 
       <section className="section-card">
         <div className="section-card-head">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <span>Tìm ảnh tự động (Serper.dev)</span>
+          <span>Tìm ảnh / enrich sản phẩm</span>
         </div>
         <div className="section-card-body">
-          <p className="tab-intro" style={{ margin: "0 0 10px" }}>
-            2.500 lượt miễn phí — không cần billing. Sau khi điền key, vào tab <strong>Danh mục</strong> → bấm <strong>"Tự động tìm ảnh"</strong>.
+          <p className="tab-intro" style={{ margin: 0 }}>
+            Production dùng API key do quản trị viên cấu hình ở server. Người dùng pilot không cần và không nên nhập secret của nhà cung cấp trên trình duyệt.
           </p>
-          <div className="field-grid">
-            <Field label="Serper API Key" value={company.googleApiKey || ""} onChange={(v) => set("googleApiKey", v)} full />
-          </div>
-          <details style={{ marginTop: 10 }}>
-            <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--brand)", fontWeight: 600 }}>Cách lấy key (1 phút)</summary>
-            <div className="api-guide">
-              <ol>
-                <li>Vào <a href="https://serper.dev" target="_blank" rel="noreferrer">serper.dev</a> → đăng ký Gmail</li>
-                <li>Dashboard → copy <strong>API Key</strong> → dán vào ô trên</li>
-              </ol>
-            </div>
-          </details>
         </div>
       </section>
 
@@ -8419,14 +8795,51 @@ function Settings({ company, setCompany, markups, setMarkups, data, onImport }) 
 }
 
 // ============================================================
+// Quote cloud list — lifecycle aware (Pilot P1.1)
+// ============================================================
+function QuoteListPanel({ quotes = [], loading = false, activeQuoteId = null, onOpen, onRefresh, onDelete }) {
+  return (
+    <div className="quote-list-panel">
+      <div className="quote-list-head">
+        <strong>Báo giá gần đây</strong>
+        <button className="btn-ghost" disabled={loading} onClick={onRefresh}>{loading ? "Đang tải…" : "Làm mới"}</button>
+      </div>
+      <div className="quote-list-items">
+        {loading && quotes.length === 0 ? (
+          <div className="empty-hint">Đang tải báo giá…</div>
+        ) : quotes.length === 0 ? (
+          <div className="empty-hint">Chưa có báo giá cloud.</div>
+        ) : quotes.map((quote) => {
+          const workflow = normalizeQuoteWorkflow(quote.calc, quote.status);
+          const isFinal = workflow.lifecycle === QUOTE_LIFECYCLE_FINAL;
+          const customerLabel = quote.customer?.name || quote.customer_name || "Chưa đặt tên";
+          const quoteNumber = quote.customer?.quoteNumber || quote.quote_number || quote.id?.slice(0, 8) || "—";
+          const total = Number(quote.calc?.grand || quote.total || 0);
+          return (
+            <div key={quote.id} className={`quote-list-item ${activeQuoteId === quote.id ? "active" : ""}`}>
+              <button className="quote-list-main" onClick={() => onOpen?.(quote)}>
+                <div className="quote-list-title"><strong>{quoteNumber}</strong><span className={isFinal ? "final" : "draft"}>{isFinal ? "FINAL" : "DRAFT"} · R{workflow.revision}</span></div>
+                <div className="quote-list-sub"><span>{customerLabel}</span><span>{quote.project_name || quote.customer?.project || ""}</span></div>
+                <div className="quote-list-total"><span>{quote.status === "sent" ? "Đã gửi" : quote.status === "won" ? "Đã chốt" : quote.status === "lost" ? "Thua" : "Chưa gửi"}</span><strong>{VND(total)}</strong></div>
+              </button>
+              <button className="x-btn" title="Xóa báo giá" onClick={() => onDelete?.(quote)}>×</button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Thành phần dùng chung
 // ============================================================
-function Field({ label, value, onChange, placeholder, full, list }) {
+function Field({ label, value, onChange, placeholder, full, list, disabled = false }) {
   const listId = list ? uid("dl") : undefined;
   return (
     <label className={`field ${full ? "full" : ""}`}>
       <span>{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} list={listId} />
+      <input value={value} disabled={disabled} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} list={listId} />
       {list && (
         <datalist id={listId}>
           {list.map((o) => <option key={o} value={o} />)}
@@ -8951,6 +9364,9 @@ const CSS = `
 .quote-manage-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px;}
 .quote-status-field{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted);font-weight:700;}
 .quote-status-field .quote-status-select{min-width:110px;}
+.quote-lifecycle-pill{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:900;letter-spacing:.04em;border:1px solid var(--line);}
+.quote-lifecycle-pill.draft{color:var(--amber);background:var(--amber-bg);border-color:var(--amber-line);}
+.quote-lifecycle-pill.final{color:var(--pos);background:var(--green-bg);border-color:color-mix(in srgb,var(--pos) 35%,var(--line));}
 .hs-inline-note{display:block;font-size:10.5px;line-height:1.2;margin-top:2px;}
 .line-detail-factor{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;margin:0 0 12px;}
 .line-detail-factor label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;font-weight:700;color:var(--text);}
@@ -9266,6 +9682,24 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .settings-actions{display:flex;gap:10px;flex-wrap:wrap;}
 .settings-actions .btn-primary{width:auto;}
 .markup-box{background:var(--warn-bg);border:1px solid var(--amber-line);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+.quote-final-gate{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);display:flex;flex-direction:column;gap:8px;}
+.quote-final-gate.ready{border-color:color-mix(in srgb,var(--pos) 38%,var(--line));background:var(--green-bg);}
+.quote-final-gate.final{border-color:color-mix(in srgb,var(--pos) 50%,var(--line));background:color-mix(in srgb,var(--pos) 7%,var(--card));}
+.quote-final-gate.blocked{border-color:var(--amber-line);background:var(--amber-bg);}
+.quote-final-gate-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.quote-final-gate-head strong{display:block;font-size:12.5px;color:var(--ink);}
+.quote-final-gate-head span{display:block;font-size:10.5px;color:var(--muted);line-height:1.35;margin-top:2px;}
+.quote-final-gate-head>b{font-size:11px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 7px;white-space:nowrap;}
+.quote-final-gate-checks{display:grid;grid-template-columns:1fr;gap:4px;}
+.quote-final-gate-checks>div{display:grid;grid-template-columns:18px 1fr;gap:6px;align-items:start;padding:4px 0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);}
+.quote-final-gate-checks>div>span{width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;}
+.quote-final-gate-checks .pass>span{background:var(--green-bg);color:var(--pos);}
+.quote-final-gate-checks .fail>span{background:var(--red-bg);color:var(--neg);}
+.quote-final-gate-checks strong{display:block;font-size:10.5px;color:var(--ink);}
+.quote-final-gate-checks small{display:block;font-size:9.5px;color:var(--muted);margin-top:1px;}
+.quote-finalized-at{font-size:9.5px;color:var(--muted);text-align:right;}
+.quote-commercial-warning{margin:8px 0 10px;padding:8px 10px;border:1px solid var(--amber-line);background:var(--amber-bg);color:var(--amber);border-radius:8px;font-size:12px;line-height:1.45;font-weight:700;}
+.s-margin.danger{color:var(--neg)!important;}
 .markup-label{font-size:12px;font-weight:600;color:var(--warn);margin-bottom:6px;}
 .markup-select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;color:var(--brand);cursor:pointer;background:var(--surface);}
 .markup-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
@@ -9339,6 +9773,7 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .ci-import-hero.warn{background:linear-gradient(180deg,var(--c-warn-bg),var(--card));border-color:var(--c-warn-line);}
 .ci-import-hero.danger{background:linear-gradient(180deg,var(--c-danger-bg),var(--card));border-color:var(--line);}
 .ci-import-hero-kicker{text-transform:uppercase;letter-spacing:.05em;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:3px;}
+.ci-import-source{font-size:12px;font-weight:700;color:var(--text2);margin:0 0 5px;max-width:720px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ci-import-hero h3{font-size:var(--fs-xl);line-height:1.25;margin:0 0 6px;color:var(--ink);}
 .ci-import-hero p{margin:0;font-size:var(--fs-sm);color:var(--text2);line-height:1.55;}
 .ci-import-hero-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
@@ -9569,6 +10004,9 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .bom-completeness-empty{border:1px dashed color-mix(in srgb,var(--pos) 40%,var(--line));border-radius:10px;padding:12px;color:var(--pos);font-size:12px;}
 .bom-completeness-footnote{font-size:11px;color:var(--muted);line-height:1.45;}
 .bom-completeness-note{border-color:color-mix(in srgb,var(--pos) 35%,var(--line))!important;}
+.bom-price-factor{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--muted);}
+.bom-price-factor input{width:70px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);text-align:center;}
+.bom-pricing-note{border-color:var(--amber-line)!important;background:var(--amber-bg)!important;color:var(--amber)!important;}
 .bom-quote-composer{border:1px solid var(--amber-line);background:linear-gradient(180deg,var(--amber-bg),var(--card));border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:11px;}
 .bom-variant-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
 .bom-variant-card{border:1px solid var(--amber-line);background:var(--card);border-radius:13px;padding:12px;text-align:left;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.16s;min-height:150px;}
@@ -9633,6 +10071,8 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .quote-list-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}
 .quote-list-title strong{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .quote-list-title span{font-size:11px;font-weight:900;color:var(--brand);background:var(--primary-soft);border-radius:999px;padding:3px 7px;white-space:nowrap;}
+.quote-list-title span.final{color:var(--pos);background:var(--green-bg);}
+.quote-list-title span.draft{color:var(--amber);background:var(--amber-bg);}
 .quote-list-sub{display:flex;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-bottom:5px;}
 .quote-list-total{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);}
 .quote-list-total strong{font-size:13px;color:var(--ink);}

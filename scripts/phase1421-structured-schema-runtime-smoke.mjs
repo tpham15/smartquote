@@ -17,7 +17,7 @@ assert.match(mapper, /retrying once as plain JSON/);
 assert.match(pipe, /failedPageNumbers = new Set/);
 assert.match(pipe, /Math\.min\(failedPages, totalPages\)/);
 assert.match(pipe, /Chi tiết:/);
-assert.match(smart, /v14_2_1_structured_schema_runtime_v1/);
+assert.match(smart, /v14_2_(?:1_structured_schema_runtime_v1|2_compact_ir_band_recovery_v1)/);
 
 console.log('✓ Phase 14.2.1 Structured Schema Runtime smoke PASS');
 console.log('  - unsupported raw JSON-Schema constraints removed before Claude');

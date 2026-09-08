@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sq-pilot-extraction-golden-ref-v1",
+  "dataset": {
+    "id": "smartquote-vietnam-docbench",
+    "version": "0.1.0",
+    "benchmarkPolicy": "sq-docbench-policy-v1",
+    "manifestSha256": "55c89d74aff86dd484f48e2fc355f58d5d9a462f132856e5e1f8ee2487bae110",
+    "documents": 5,
+    "productRows": 156,
+    "nonProductTraps": 23,
+    "inputKinds": {"scan_pdf":1,"digital_pdf":2,"xlsx":2},
+    "documentTypes": {"supplier_price_list":2,"old_quotation":2,"bom":1}
+  },
+  "note": "P1.2 reuses the already two-pass-reviewed Phase 13 private corpus. Source documents and ground truth remain private and gitignored."
+}

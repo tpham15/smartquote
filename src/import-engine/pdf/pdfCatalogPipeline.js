@@ -16,6 +16,7 @@ import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
 import { assessPdfPositiveEvidence, assessPdfVisionTrust, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
 import { normalizeSellableVariants, normalizePdfTableSemantics } from "./pdfVariants.js";
 import { PDF_PAGE_DOCUMENT_IR_SCHEMA, PDF_ROW_RECOVERY_SCHEMA, normalizePdfDocumentIR, assembleProductsFromPdfDocumentIR, mergeRecoveredPdfRow } from "./pdfDocumentFramework.js";
+import { inferTableRegions, inferColumnModel, assignCellsToColumnModel, fieldForRole, parsePdfColumnMoney } from "./pdfColumnModel.js";
 import { getPdfTemplateHint, rememberPdfTemplate } from "./pdfTemplateMemory.js";
 import { smartQuoteFetch } from '../../supabase/apiFetch.js';
 import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
@@ -597,11 +598,7 @@ async function createPdfVisionRenderer(file) {
   }
   const data = new Uint8Array(await file.arrayBuffer());
   const pdfjsVision = await import("pdfjs-dist/legacy/build/pdf.mjs");
-
-  if (!pdfjsVision.GlobalWorkerOptions.workerSrc) {
-    pdfjsVision.GlobalWorkerOptions.workerSrc = pdfJsWorkerUrl;
-  }
-
+  if (!pdfjsVision.GlobalWorkerOptions.workerSrc) pdfjsVision.GlobalWorkerOptions.workerSrc = pdfJsWorkerUrl;
   const task = pdfjsVision.getDocument({
     data,
     isEvalSupported: false,
@@ -1105,8 +1102,13 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
       const visibleSkuCount = Math.max(0, Number(it.visibleSkuCount || 0) || 0);
       const visiblePriceCount = Math.max(0, Number(it.visiblePriceCount || 0) || 0);
       const quoteEconomics = inferPdfQuoteRowEconomics(rawText);
+      const columnAuthoritative = String(engine || "").includes("column-v2");
       const variantPrices = variants.map((v) => Number(v.price || 0)).filter((n) => n >= 1000);
-      let costPrice = quoteEconomics.matched ? quoteEconomics.unitPrice : normalizePrice(it.costPrice ?? it.price);
+      // P1.3: once geometry has identified a price column (or explicitly marked it
+      // ambiguous), whole-row arithmetic must not override that decision.
+      let costPrice = columnAuthoritative
+        ? normalizePrice(it.costPrice ?? it.price)
+        : (quoteEconomics.matched ? quoteEconomics.unitPrice : normalizePrice(it.costPrice ?? it.price));
       if (!costPrice && variantPrices.length) costPrice = Math.min(...variantPrices);
       const contextKey = normalizeVietnameseKey([rawText, specs, it.name].join(" "));
       const priceLooksLikeLifeHours = (costPrice === 50000 || costPrice === 25000) && /tuoi tho/.test(contextKey);
@@ -1121,8 +1123,8 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
         supplier: normalizeText(it.supplier) || supplierGuess,
         unit: normalizeText(it.unit) || "Cái",
         costPrice,
-        listPrice: quoteEconomics.matched ? 0 : normalizePrice(it.listPrice ?? it.publicPrice ?? it.salePrice),
-        minRetailPrice: quoteEconomics.matched ? 0 : normalizePrice(it.minRetailPrice),
+        listPrice: (!columnAuthoritative && quoteEconomics.matched) ? 0 : normalizePrice(it.listPrice ?? it.publicPrice ?? it.salePrice),
+        minRetailPrice: (!columnAuthoritative && quoteEconomics.matched) ? 0 : normalizePrice(it.minRetailPrice),
         specs,
         variants,
         image: "",
@@ -1139,16 +1141,23 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
             layoutGrounded: !!(it.layoutGrounded || it?.evidence?.layoutGrounded),
             layoutRowIndex: Number(it.layoutRowIndex || it?.evidence?.layoutRowIndex || 0) || null,
             rowSourceKind: normalizeText(it.rowSourceKind || it?.evidence?.rowSourceKind || ""),
+            fieldBboxes: it.fieldBboxes || it?.evidence?.fieldBboxes || null,
+            priceRole: normalizeText(it.priceRole || it?.evidence?.priceRole || ""),
           },
           variants,
           tableSemantics,
           variantBinding: { visibleSkuCount, visiblePriceCount },
           fieldEvidence: it.fieldEvidence || it?.evidence?.fieldEvidence || {},
-          productEvidence: { ...(it.evidence || {}), quoteArithmeticMatched: quoteEconomics.matched },
-          quoteEconomics: quoteEconomics.matched ? quoteEconomics : null,
+          productEvidence: {
+            ...(it.evidence || {}),
+            quoteArithmeticMatched: !!it?.evidence?.quoteArithmeticMatched || (!columnAuthoritative && quoteEconomics.matched),
+          },
+          quoteEconomics: columnAuthoritative
+            ? (it?.evidence?.quoteArithmeticMatched ? { matched: true, quantity: Number(it.quoteQuantity || 0), unitPrice: Number(it.costPrice || 0), lineTotal: Number(it.quoteLineTotal || 0), source: "column_model" } : null)
+            : (quoteEconomics.matched ? quoteEconomics : null),
           status: "new",
           confidence: engine.includes("heuristic") ? 0.62 : 0.78,
-          issues: [],
+          issues: Array.isArray(it.issues) ? [...it.issues] : [],
           engine,
         },
       }, { defaultSupplier: supplierGuess });
@@ -1657,6 +1666,165 @@ function buildSpecsFromLine(line, prices) {
 }
 
 
+
+function columnPriceValue(field = {}) {
+  const value = parsePdfColumnMoney(field?.text || "");
+  return value >= 1000 && value <= 1_000_000_000 ? value : 0;
+}
+
+function columnSmallInteger(field = {}) {
+  const raw = normalizeText(field?.text || "").replace(/[^\d]/g, "");
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 0 && n <= 100000 ? n : 0;
+}
+
+function columnIssue(code, message, field = "price") {
+  return simpleIssue(code, "warning", message, field);
+}
+
+function columnRegionCategory(page = {}, region = {}) {
+  const rows = Array.isArray(page?.rows) ? page.rows : [];
+  for (let i = Number(region.startRowIndex || 0) - 1; i >= Math.max(0, Number(region.startRowIndex || 0) - 8); i--) {
+    const candidate = normalizeText(rows[i]?.text || "");
+    if (!candidate) continue;
+    if (isLikelySectionLine(candidate)) return candidate.replace(/^bảng giá\s*/i, "").slice(0, 90) || "Chung";
+    if (extractMoneyValues(candidate).length) break;
+  }
+  return "Chung";
+}
+
+function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") {
+  const items = [];
+  const handledRows = new Set();
+  const regions = inferTableRegions(pages);
+  const models = [];
+
+  for (const region of regions) {
+    const model = inferColumnModel(region);
+    if (!model) continue;
+    models.push(model);
+    const page = (pages || []).find((p) => Number(p?.page || 0) === Number(region.page || 0));
+    if (!page || !Array.isArray(page.rows)) continue;
+    const regionCategory = columnRegionCategory(page, region);
+
+    for (const rowRef of region.rows || []) {
+      const rowIndex = Number(rowRef.rowIndex);
+      const row = page.rows[rowIndex];
+      if (!row) continue;
+      const assigned = assignCellsToColumnModel(row, model);
+      if (!assigned.length) continue;
+      if (assigned.some((a) => a.cell?.headerRole)) continue;
+
+      const nameField = fieldForRole(row, model, "name");
+      const skuField = fieldForRole(row, model, "sku");
+      const supplierField = fieldForRole(row, model, "supplier");
+      const unitField = fieldForRole(row, model, "unit");
+      const qtyField = fieldForRole(row, model, "qty");
+      const unitPriceField = fieldForRole(row, model, "unitPrice");
+      const listPriceField = fieldForRole(row, model, "listPrice");
+      const totalField = fieldForRole(row, model, "total");
+      const specsField = fieldForRole(row, model, "specs");
+      const unknownPrices = assigned.filter((a) => a.column?.role === "unknownPrice");
+
+      const sku = normalizePdfSku(skuField.text) || extractSkuFromPdfLine(row.text || "");
+      let name = normalizeText(nameField.text);
+      if (!name) name = cleanHeuristicName(row.text || "", sku);
+      if ((!name || name.length < 3) && sku) name = `${sku}`;
+      if (!name || name.length < 3) continue;
+
+      const unitPrice = columnPriceValue(unitPriceField);
+      const listPrice = columnPriceValue(listPriceField);
+      const lineTotal = columnPriceValue(totalField);
+      const qty = columnSmallInteger(qtyField);
+      const issues = [];
+      let priceRole = unitPrice ? "dealer" : "unknown";
+      let costPrice = unitPrice;
+      if (model.ambiguousPrice && !unitPrice) {
+        issues.push(columnIssue(
+          "price_column_uncertain",
+          "PDF có nhiều cột giá nhưng không đủ bằng chứng để xác định giá thương mại — vui lòng chọn/kiểm tra cột giá",
+          "price",
+        ));
+        priceRole = "unknown";
+        costPrice = 0;
+      }
+      // A single unknown price cell may still be displayed as evidence, but is never silently promoted to cost.
+      const unknownPriceBbox = unknownPrices.length === 1 ? unknownPrices[0].cell?.bbox || null : null;
+      const priceBBox = unitPriceField.bbox || unknownPriceBbox || null;
+      const arithmeticMatched = !!(unitPrice && qty > 0 && lineTotal > 0 && Math.abs(unitPrice * qty - lineTotal) <= Math.max(2, lineTotal * 0.002));
+      const rowBBox = row.bbox || null;
+      const fieldBboxes = {
+        name: nameField.bbox || null,
+        sku: skuField.bbox || null,
+        supplier: supplierField.bbox || null,
+        unit: unitField.bbox || null,
+        quantity: qtyField.bbox || null,
+        unitPrice: priceBBox,
+        listPrice: listPriceField.bbox || null,
+        total: totalField.bbox || null,
+        specs: specsField.bbox || null,
+      };
+      const identityConfidence = Math.max(Number(nameField.confidence || 0), Number(skuField.confidence || 0), 0.74);
+      const priceConfidence = unitPrice ? Math.max(Number(unitPriceField.confidence || 0), 0.78) : 0;
+      const rawText = normalizeText(row.text || "");
+
+      items.push({
+        name,
+        sku,
+        category: regionCategory,
+        supplier: normalizeText(supplierField.text) || supplierGuess,
+        unit: normalizeText(unitField.text) || "Cái",
+        costPrice,
+        listPrice,
+        minRetailPrice: 0,
+        specs: normalizeText(specsField.text) || buildSpecsFromLine(rawText, extractMoneyValues(rawText)),
+        rawText: rawText.slice(0, 300),
+        sourcePage: page.page,
+        sourceRow: rowIndex + 1,
+        sourceBBox: rowBBox,
+        sourceParts: Array.isArray(row.parts) ? row.parts : [],
+        sourcePageWidth: page.pageWidth || null,
+        sourcePageHeight: page.pageHeight || null,
+        quoteQuantity: qty,
+        quoteLineTotal: lineTotal,
+        priceRole,
+        fieldBboxes,
+        fieldEvidence: {
+          name: { confidence: nameField.text ? Math.max(Number(nameField.confidence || 0), 0.78) : identityConfidence, bbox: nameField.bbox || rowBBox },
+          sku: { confidence: sku ? Math.max(Number(skuField.confidence || 0), skuField.text ? 0.78 : 0.7) : 0, bbox: skuField.bbox || null },
+          price: { confidence: priceConfidence, bbox: priceBBox, priceRole },
+          unit: { confidence: unitField.text ? Math.max(Number(unitField.confidence || 0), 0.76) : 0, bbox: unitField.bbox || null },
+          quantity: { confidence: qty ? Math.max(Number(qtyField.confidence || 0), 0.76) : 0, bbox: qtyField.bbox || null },
+        },
+        issues,
+        layoutGrounded: true,
+        layoutRowIndex: rowIndex + 1,
+        rowSourceKind: "column_model_row",
+        evidence: {
+          hasPrice: !!costPrice,
+          hasSku: !!sku,
+          hasProductKeyword: hasProductKeyword([name, rawText].join(" ")),
+          hasExplicitUnit: !!unitField.text,
+          hasGrounding: !!rowBBox,
+          layoutGrounded: true,
+          layoutRowIndex: rowIndex + 1,
+          rowSourceKind: "column_model_row",
+          fieldBboxes,
+          priceRole,
+          quoteArithmeticMatched: arithmeticMatched,
+          tableRegionId: region.id,
+          columnModelConfidence: model.confidence,
+          priceColumnUncertain: !!model.ambiguousPrice,
+        },
+      });
+      handledRows.add(`${Number(page.page || 0)}:${rowIndex}`);
+    }
+  }
+
+  return { items, handledRows, regions, models };
+}
+
 function inferPdfTableColumnLayout(pages = []) {
   for (const page of pages || []) {
     for (const row of page.rows || []) {
@@ -1729,7 +1897,7 @@ function reconstructPdfTableRow(page = {}, rowIndex = 0, layout = null) {
   return { name, sku, supplier, unit };
 }
 
-function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
+function heuristicExtractProductsFromPdfPages(pages, supplierGuess, options = {}) {
   const out = [];
   let currentCategory = "Chung";
   const tableLayout = inferPdfTableColumnLayout(pages);
@@ -1739,6 +1907,7 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess) {
       ? page.rows.map((row, index) => ({ line: row.text || "", rowIndex: index, evidence: { row: index + 1, rawText: row.text || "", bbox: row.bbox || null, parts: row.parts || [], pageWidth: page.pageWidth || null, pageHeight: page.pageHeight || null, matchScore: 1 } }))
       : splitLinesSmart(page.text).map((line, index) => ({ line, rowIndex: index, evidence: null }));
     for (const entry of sourceRows) {
+      if (options?.excludeRows?.has?.(`${Number(page.page || 0)}:${entry.rowIndex}`)) continue;
       const clean = normalizeText(entry.line);
       if (!clean) continue;
       const structural = classifyPdfStructuralRow(clean);
@@ -1906,12 +2075,16 @@ export async function parsePdfCatalogWithPipeline(params) {
     textChars: extracted.textChars,
   });
 
-  // Deterministic baseline always runs. This is the safety net for catalog PDFs.
+  // P1.3: column-aware geometry path runs first on selectable-text tables.
+  // Legacy heuristic remains fallback only for rows not handled by a trustworthy column model.
+  const columnPass = extractColumnAwareProductsFromPdfPages(extracted.pages, supplierGuess);
+  const columnItems = normalizePdfItems(columnPass.items, supplierGuess, "pdf-a-column-v2");
   const heuristicItems = normalizePdfItems(
-    heuristicExtractProductsFromPdfPages(extracted.pages, supplierGuess),
+    heuristicExtractProductsFromPdfPages(extracted.pages, supplierGuess, { excludeRows: columnPass.handledRows }),
     supplierGuess,
     "pdf-v3-text-heuristic",
   );
+  const deterministicItems = dedupeProducts([...columnItems, ...heuristicItems], { fileName: file.name, supplierGuess });
 
   const chunks = chunkPages(extracted.pages, params);
   const aiRaw = [];
@@ -1923,7 +2096,7 @@ export async function parsePdfCatalogWithPipeline(params) {
   const maxAiChunks = Number(params.maxAiChunks || 40);
 
   for (let i = 0; i < chunks.length; i++) {
-    if (i >= maxAiChunks && heuristicItems.length >= 20) {
+    if (i >= maxAiChunks && deterministicItems.length >= 20) {
       skippedAi = true;
       break;
     }
@@ -1951,14 +2124,14 @@ export async function parsePdfCatalogWithPipeline(params) {
   }
 
   const aiItems = normalizePdfItems(aiRaw, supplierGuess, "pdf-v3-ai-jsonl");
-  const structuredQuoteTable = !!inferPdfTableColumnLayout(extracted.pages);
-  const finalItems = mergeQuoteTableCandidates(heuristicItems, aiItems, { fileName: file.name, supplierGuess, structuredQuoteTable });
+  const structuredQuoteTable = columnPass.models.length > 0 || !!inferPdfTableColumnLayout(extracted.pages);
+  const finalItems = mergeQuoteTableCandidates(deterministicItems, aiItems, { fileName: file.name, supplierGuess, structuredQuoteTable });
 
   if (finalItems.length) {
     const warn = [];
     if (failedChunks) warn.push(`${failedChunks} phần AI lỗi nhưng đã dùng fallback text`);
     if (skippedAi) warn.push(`PDF dài: chỉ dùng AI cho ${maxAiChunks} phần đầu, phần còn lại dùng fallback text`);
-    const heuristicMsg = heuristicItems.length ? `, fallback text ${heuristicItems.length} dòng` : "";
+    const heuristicMsg = deterministicItems.length ? `, deterministic ${deterministicItems.length} dòng (${columnItems.length} column-aware)` : "";
     const aiMsg = aiItems.length ? `, AI ${aiItems.length} dòng` : "";
     onProgress?.({
       stage: "done",
@@ -2008,6 +2181,9 @@ export {
   classifyPdfStructuralRow,
   inferPdfTableColumnLayout,
   reconstructPdfTableRow,
+  extractColumnAwareProductsFromPdfPages,
+  inferTableRegions,
+  inferColumnModel,
   repairVietnameseGlyphSpacing,
   normalizePdfSku,
   skuIdentityCompatible,

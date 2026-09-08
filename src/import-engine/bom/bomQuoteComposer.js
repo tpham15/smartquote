@@ -1,5 +1,6 @@
 import { chooseComponentCandidate, shouldAutoAddComponent } from "./packTemplates.js";
 import { buildQuoteCompletenessAssessment, getAcceptedCompletenessRecommendations } from "./quoteCompleteness.js";
+import { quoteLineSalePrice, productCostPrice, isMarkupPricingUnreviewed } from "../../quote/quoteCommercialSafety.js";
 
 // BOM Phase 6 — Quote Composer A/B/C + Pack Template lines
 // Builds deterministic quote scenarios from parsed BOM lines, selected solution packs,
@@ -133,7 +134,7 @@ function addLine(roomMap, roomName, product, line, selectedRecommendation, extra
   const lines = roomMap.get(roomName);
   const existing = lines.find((l) => l.productId === product.id && (l.note || "") === note);
   if (existing) existing.qty += qty;
-  else lines.push({ productId: product.id, qty, note, source: extra.source || "bom_line" });
+  else lines.push({ productId: product.id, qty, note, factor: Number(extra.factor) > 0 ? Number(extra.factor) : 1, source: extra.source || "bom_line" });
 }
 
 function getSelectedPackRecommendation(pack = {}, packSelections = {}) {
@@ -141,7 +142,7 @@ function getSelectedPackRecommendation(pack = {}, packSelections = {}) {
   return (pack.recommendations || []).find((r) => r.id === selectedId) || pack.recommendations?.[0] || null;
 }
 
-function addPackTemplateLines({ roomMap, solutionPacks, productsById, packSelections, variant, grouping, existingProductIds }) {
+function addPackTemplateLines({ roomMap, solutionPacks, productsById, packSelections, variant, grouping, existingProductIds, defaultMarkupFactor = 1 }) {
   let addedCount = 0;
   let addedTotal = 0;
   let addedCost = 0;
@@ -166,14 +167,16 @@ function addPackTemplateLines({ roomMap, solutionPacks, productsById, packSelect
       existingProductIds.add(candidate.product.id);
       const qty = Number(component.qty) || 1;
       const note = `Bộ cấu hình · ${template.label} · ${component.label} · PA: ${recommendation.title}`;
+      const factor = candidate.product.priceMode === "fixed" ? 1 : defaultMarkupFactor;
       addLine(roomMap, roomName, candidate.product, { qty }, recommendation, {
         qty,
         note,
+        factor,
         source: "pack_template",
       });
       addedCount += 1;
-      addedTotal += priceOf(candidate.product) * qty;
-      addedCost += costOf(candidate.product) * qty;
+      addedTotal += quoteLineSalePrice(candidate.product, { factor }) * qty;
+      addedCost += (productCostPrice(candidate.product, {}) || 0) * qty;
       addedRoles.push(`${component.label}: ${candidate.product.name || candidate.product.sku}`);
     }
   }
@@ -187,6 +190,7 @@ function addCompletenessRecommendationLines({
   decisions,
   productsById,
   existingProductIds,
+  defaultMarkupFactor = 1,
 }) {
   let addedCount = 0;
   let addedTotal = 0;
@@ -206,14 +210,16 @@ function addCompletenessRecommendationLines({
     const qty = Math.max(1, Number(rec.qty) || 1);
     const roomName = `Bổ sung · ${rec.scopeLabel || "Độ đầy đủ hệ thống"}`;
     const note = `SmartQuote Completeness · ${rec.label}${rec.rationale ? ` · ${rec.rationale}` : ""}${rec.qtyNote ? ` · ${rec.qtyNote}` : ""}`;
+    const factor = product.priceMode === "fixed" ? 1 : defaultMarkupFactor;
     addLine(roomMap, roomName, product, { qty }, null, {
       qty,
       note,
+      factor,
       source: "quote_completeness",
     });
     addedCount += 1;
-    addedTotal += priceOf(product) * qty;
-    addedCost += costOf(product) * qty;
+    addedTotal += quoteLineSalePrice(product, { factor }) * qty;
+    addedCost += (productCostPrice(product, {}) || 0) * qty;
     addedLabels.push(`${rec.label}: ${product.name || product.sku || "Sản phẩm"}`);
   }
 
@@ -229,6 +235,7 @@ export function buildBomQuoteVariants({
   grouping = "scope",
   laborPercent = 0,
   completenessDecisions = {},
+  defaultMarkupFactor = 1,
 } = {}) {
   const productsById = new Map((products || []).map((p) => [p.id, p]));
   const solutionPacks = bomPreview?.solutionPacks || [];
@@ -251,6 +258,7 @@ export function buildBomQuoteVariants({
     let itemCount = 0;
     let qtyTotal = 0;
     let autoPicked = 0;
+    let pricingNeedsReviewCount = 0;
 
     const existingProductIds = new Set();
     let matchedBomLineCount = 0;
@@ -264,8 +272,10 @@ export function buildBomQuoteVariants({
       }
       const product = chosen.product;
       const qty = Number(line.qty) || 1;
-      const sale = priceOf(product) * qty;
-      const cost = costOf(product) * qty;
+      const factor = product.priceMode === "fixed" ? 1 : defaultMarkupFactor;
+      const sale = quoteLineSalePrice(product, { factor }) * qty;
+      const cost = (productCostPrice(product, {}) || 0) * qty;
+      if (isMarkupPricingUnreviewed(product, factor)) pricingNeedsReviewCount += 1;
       deviceTotal += sale;
       costTotal += cost;
       qtyTotal += qty;
@@ -274,7 +284,7 @@ export function buildBomQuoteVariants({
       existingProductIds.add(product.id);
       if (chosen.source === "user_locked") locked.push(line.id);
       else autoPicked += 1;
-      addLine(roomMap, makeRoomName(line, grouping, selectedRecommendation), product, line, selectedRecommendation);
+      addLine(roomMap, makeRoomName(line, grouping, selectedRecommendation), product, line, selectedRecommendation, { factor });
     }
 
     const templateAdds = addPackTemplateLines({
@@ -285,6 +295,7 @@ export function buildBomQuoteVariants({
       variant,
       grouping,
       existingProductIds,
+      defaultMarkupFactor,
     });
     if (templateAdds.addedCount) {
       deviceTotal += templateAdds.addedTotal;
@@ -300,6 +311,7 @@ export function buildBomQuoteVariants({
       decisions: completenessDecisions,
       productsById,
       existingProductIds,
+      defaultMarkupFactor,
     });
     if (completenessAdds.addedCount) {
       deviceTotal += completenessAdds.addedTotal;
@@ -309,10 +321,22 @@ export function buildBomQuoteVariants({
       autoPicked += completenessAdds.addedCount;
     }
 
+    // Recount all generated quote lines so pack/completeness additions are included in pricing safety.
+    const generatedLines = Array.from(roomMap.values()).flat();
+    pricingNeedsReviewCount = generatedLines.reduce((count, roomLine) => {
+      const product = productsById.get(roomLine.productId);
+      return count + (isMarkupPricingUnreviewed(product, roomLine.factor) ? 1 : 0);
+    }, 0);
+    const unknownCostCount = generatedLines.reduce((count, roomLine) => {
+      const product = productsById.get(roomLine.productId);
+      const cost = productCostPrice(product, roomLine);
+      return count + (!(Number(cost) > 0) ? 1 : 0);
+    }, 0);
+
     const laborTotal = Math.round((deviceTotal * (Number(laborPercent) || 0)) / 100);
     const grandTotal = deviceTotal + laborTotal;
-    const grossProfit = Math.max(0, deviceTotal - costTotal);
-    const marginPercent = deviceTotal > 0 ? Math.round((grossProfit / deviceTotal) * 100) : 0;
+    const grossProfit = unknownCostCount === 0 ? deviceTotal - costTotal : null;
+    const marginPercent = grossProfit != null && deviceTotal > 0 ? Math.round((grossProfit / deviceTotal) * 100) : null;
     const rooms = Array.from(roomMap.entries()).map(([name, roomLines]) => ({ name, lines: roomLines }));
     const coverage = lines.length ? Math.round((matchedBomLineCount / lines.length) * 100) : 0;
 
@@ -340,6 +364,9 @@ export function buildBomQuoteVariants({
       grossProfit,
       marginPercent,
       coverage,
+      pricingNeedsReviewCount,
+      unknownCostCount,
+      defaultMarkupFactor,
       ready: itemCount > 0,
     };
   });
@@ -354,7 +381,7 @@ export function quoteVariantToRooms(variant, makeId = () => Math.random().toStri
       productId: line.productId,
       qty: line.qty,
       note: line.note || "",
-      factor: 1,
+      factor: Number(line.factor) > 0 ? Number(line.factor) : 1,
     })),
   }));
 }

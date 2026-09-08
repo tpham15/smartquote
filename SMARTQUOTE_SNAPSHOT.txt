@@ -1,0 +1,38 @@
+SmartQuote Full Source Snapshot
+===============================
+
+Included latest code assembled in this conversation through:
+- Phase 14.1 PDF Engine v6
+- Phase 14.1A Semantic Table + Variant Price Binding
+- Phase 14.2 Universal PDF Document Framework
+- Phase 14.2.1 Structured Schema Runtime Fix
+- Phase 14.2.2 Compact IR + Adaptive Band Recovery
+- Phase 15 Quote Completeness & Accessory Recommendation Engine
+
+Included:
+- src/
+- api/
+- supabase/
+- scripts/
+- tests/
+- benchmarks/
+- docs/
+- public/
+- package.json + package-lock.json
+- Vercel/Vite configuration
+- .env.example
+
+Intentionally excluded:
+- .git/
+- node_modules/
+- .env / .env.local
+- local phase backup folders (.sq*-backup)
+- .DS_Store
+
+Validation performed before packaging:
+- Phase 14.1 smoke PASS
+- Phase 14.1A smoke PASS
+- Phase 14.2 smoke PASS
+- Phase 14.2.1 smoke PASS
+- Phase 14.2.2 smoke PASS
+- Phase 15 smoke PASS

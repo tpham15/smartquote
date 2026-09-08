@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sq-pilot-golden-freeze-lock-v1",
+  "version": "0.1.0",
+  "commercialScenariosSha256": "45c4d9f0cd8a637cf29c90de9e0cafecc1f5bf80f60022cf4f1cfa815fb94bb6",
+  "extractionSeedSha256": "9175b061841e195ae7825c3a2c965e2eb681ddbb687baf2ac54a3d43d3dd2b30",
+  "extractionManifestSha256": "55c89d74aff86dd484f48e2fc355f58d5d9a462f132856e5e1f8ee2487bae110",
+  "scenarioCount": 5,
+  "note": "Any commercial scenario factual change requires a P1.2 golden version bump and new lock."
+}

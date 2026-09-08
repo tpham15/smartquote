@@ -22,3 +22,8 @@ __pycache__/
 .paddleocr/
 paddle-model-cache/
 phase13-evidence/
+
+# Pilot P1.2 private golden corpus baselines & generated reports
+benchmarks/pilot-golden/private/**
+!benchmarks/pilot-golden/private/.gitkeep
+benchmarks/pilot-golden/reports/**

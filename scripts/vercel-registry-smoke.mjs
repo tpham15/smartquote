@@ -17,6 +17,11 @@ for (const file of files) {
   }
 }
 
+const vercel = fs.existsSync('vercel.json') ? JSON.parse(fs.readFileSync('vercel.json', 'utf8')) : {};
+if (vercel.installCommand !== 'npm ci --include=dev') {
+  failures.push('vercel.json must force installCommand=npm ci --include=dev so Vite devDependencies are present at build time');
+}
+
 const npmrc = fs.existsSync('.npmrc') ? fs.readFileSync('.npmrc', 'utf8') : '';
 if (!/registry\s*=\s*https:\/\/registry\.npmjs\.org\/?/i.test(npmrc)) {
   failures.push('.npmrc must pin registry=https://registry.npmjs.org/');

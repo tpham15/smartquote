@@ -95,9 +95,9 @@ function normalizeRequest(body) {
   const limit = Math.max(1, Math.min(Number(body.limit) || MAX_CANDIDATES, MAX_CANDIDATES));
   const category = clampText(body.category || '', 80);
   const supplier = clampText(body.supplier || '', 80);
-  const serperApiKey = clampText(body.serperApiKey || process.env.SERPER_API_KEY || process.env.SMARTQUOTE_SERPER_API_KEY || '', 240);
+  const serperApiKey = clampText(process.env.SERPER_API_KEY || process.env.SMARTQUOTE_SERPER_API_KEY || '', 240);
   if (!serperApiKey) {
-    throw httpError(400, 'Chưa cấu hình Serper API Key. Điền key ở Cài đặt hoặc đặt SERPER_API_KEY trên server.');
+    throw httpError(503, 'Tìm kiếm web chưa được quản trị viên cấu hình trên server.');
   }
   return { query, preferredSites, limit, category, supplier, serperApiKey };
 }
