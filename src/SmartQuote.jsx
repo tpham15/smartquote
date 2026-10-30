@@ -1320,15 +1320,15 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
           <div className="topbar-right">
             {cloud?.enabled && <span className={cloud?.enabled ? "cloud-dot on" : "cloud-dot"}></span>}
             {cloud?.enabled && <span className="cloud-status">{cloudSyncStatus}</span>}
-            {billingStatus && <span className={`plan-pill ${billingStatus.locked ? "locked" : ""}`}>{billingStatus.label}{billingStatus.plan === "trial" && billingStatus.trialDaysLeft != null ? ` · còn ${Math.max(0, billingStatus.trialDaysLeft)} ngày` : ""}</span>}
-            {cloud?.enabled && <button className="cloud-upgrade" onClick={openUpgrade}>{billingStatus?.locked ? "Gia hạn" : "Xem gói"}</button>}
+            {billingStatus?.locked && <span className="plan-pill locked">{billingStatus.label}</span>}
+            {cloud?.enabled && billingStatus?.locked && <button className="cloud-upgrade" onClick={openUpgrade}>Gia hạn</button>}
             {contextualTopbarAction ? <button className={`btn ${contextualTopbarAction.tone}`} onClick={contextualTopbarAction.onClick}>{contextualTopbarAction.label}</button> : null}
             {userEmail && <div className="avatar" title={userEmail}>{userInitial}</div>}
           </div>
         </header>
 
         <main className="content smartquote-content">
-        {cloud?.enabled && <PlanBanner billing={billingStatus} productsCount={products.length} onUpgrade={openUpgrade} onRefresh={cloud.refreshBilling} />}
+        {cloud?.enabled && tab !== "quote" && <PlanBanner billing={billingStatus} productsCount={products.length} onUpgrade={openUpgrade} onRefresh={cloud.refreshBilling} />}
         {tab === "settings" && effectiveSubView === "plan" && <UpgradePage billing={billingStatus} usage={cloud?.billing?.usage || {}} cloud={cloud} onBack={() => setTab("quote")} />}
         {billingStatus?.locked && !(tab === "settings" && effectiveSubView === "plan") && <UpgradePage billing={billingStatus} usage={cloud?.billing?.usage || {}} cloud={cloud} locked onBack={() => setTab("settings", "plan")} />}
         {!billingStatus?.locked && tab === "quote" && products.length === 0 && (
@@ -1979,6 +1979,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteListOpen, setQuoteListOpen] = useState(false);
   const [quoteManageOpen, setQuoteManageOpen] = useState(false);
+  const [customerDetailsOpen, setCustomerDetailsOpen] = useState(false);
+  const [showPassedQuoteChecks, setShowPassedQuoteChecks] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("draft");
   const [quoteLifecycle, setQuoteLifecycle] = useState(QUOTE_LIFECYCLE_DRAFT);
   const [quoteRevision, setQuoteRevision] = useState(1);
@@ -2109,6 +2111,9 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setQuoteCompanySnapshot(null);
     setPickerRoomId(null);
     setEditingLine(null);
+    setCustomerDetailsOpen(false);
+    setShowPassedQuoteChecks(false);
+    setQuoteManageOpen(false);
   };
 
   useEffect(() => {
@@ -2253,6 +2258,9 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     vatPercent,
     snapshotRooms: snapshotPreviewRooms,
   }), [commercialAssessment, customer, vatPercent, snapshotPreviewRooms]);
+  const actionableFinalBlockers = finalQuoteGate.blockers.filter((item) => !(item.id === "snapshot" && finalQuoteGate.lineCount === 0));
+  const passedQuoteChecks = finalQuoteGate.checks.filter((item) => item.pass);
+  const visibleQuoteChecks = showPassedQuoteChecks ? finalQuoteGate.checks : actionableFinalBlockers;
 
   const currentQuoteTitle = `${isFinalQuote ? "FINAL" : "DRAFT"} · Rev ${quoteRevision}${activeQuoteId ? ` · ${activeQuoteId.slice(0, 8)}` : " · chưa lưu"}`;
 
@@ -2344,6 +2352,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setQuoteCompanySnapshot(workflow.companySnapshot);
     setPickerRoomId(null);
     setEditingLine(null);
+    setCustomerDetailsOpen(Boolean(quote.customer?.address || quote.customer_address || quote.customer?.quoteNumber || quote.quote_number || quote.customer?.category || quote.category));
+    setShowPassedQuoteChecks(false);
     setQuoteListOpen(false);
   };
 
@@ -2373,7 +2383,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
       return;
     }
     if (calc.pointCount === 0) {
-      notify.warning("Chưa có thiết bị nào để Final báo giá.");
+      notify.warning("Chưa có thiết bị nào để chốt báo giá.");
       return;
     }
     const finalCustomer = {
@@ -2389,7 +2399,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
       snapshotRooms: frozenRooms,
     });
     if (!gate.ready) {
-      notify.warning(`Chưa Ready to send: ${gate.blockers.map((item) => item.label).join("; ")}.`);
+      notify.warning(`Chưa thể chốt báo giá: ${gate.blockers.map((item) => item.label).join("; ")}.`);
       return;
     }
     const finalizedAt = new Date().toISOString();
@@ -2465,11 +2475,11 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
 
   const requireFinalForExport = (label = "xuất báo giá") => {
     if (!isFinalQuote) {
-      notify.warning(`Không thể ${label}: báo giá đang là Draft. Hãy hoàn tất Final Quote Gate trước.`);
+      notify.warning(`Không thể ${label}: báo giá vẫn là bản nháp. Hãy hoàn tất các kiểm tra và chốt báo giá trước.`);
       return false;
     }
     if (!finalQuoteGate.ready) {
-      notify.warning(`Không thể ${label}: bản Final hiện không còn đạt gate (${finalQuoteGate.blockers.map((item) => item.label).join("; ")}).`);
+      notify.warning(`Không thể ${label}: báo giá đã chốt hiện không còn đạt kiểm tra an toàn (${finalQuoteGate.blockers.map((item) => item.label).join("; ")}).`);
       return false;
     }
     return true;
@@ -2602,45 +2612,51 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           <section className="quote-manage-card quote-manage-bar">
             <div className="quote-manage-head">
               <div>
-                <h2>Quản lý báo giá</h2>
+                <h2>{isFinalQuote ? "Báo giá đã chốt" : (activeQuoteId ? "Báo giá nháp" : "Báo giá mới")}</h2>
                 <p>{currentQuoteTitle}</p>
               </div>
-              <button
-                className="btn-ghost quote-manage-toggle"
-                onClick={() => { setQuoteManageOpen(!quoteManageOpen); if (!quoteManageOpen) reloadQuotes(); }}
-                aria-expanded={quoteManageOpen}
-              >
-                ⋯ Quản lý
-              </button>
+              <div className="quote-manage-head-actions">
+                {!isFinalQuote && (
+                  <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0} onClick={() => saveCurrentQuote()}>
+                    {quoteSaving ? "Đang lưu…" : "Lưu nháp"}
+                  </button>
+                )}
+                <button
+                  className="btn-ghost quote-manage-toggle"
+                  onClick={() => { setQuoteManageOpen(!quoteManageOpen); if (!quoteManageOpen) reloadQuotes(); }}
+                  aria-expanded={quoteManageOpen}
+                >
+                  ⋯ Quản lý
+                </button>
+              </div>
             </div>
             {quoteManageOpen && (
               <div className="quote-manage-body">
                 <div className="quote-manage-actions">
-                  <div className={`quote-lifecycle-pill ${isFinalQuote ? "final" : "draft"}`}>
-                    {isFinalQuote ? "FINAL" : "DRAFT"} · Rev {quoteRevision}
-                  </div>
-                  <label className="quote-status-field">
-                    <span>Tiến độ bán hàng</span>
-                    <select className="quote-status-select" disabled={!isFinalQuote} value={quoteStatus} onChange={(e) => setQuoteStatus(e.target.value)}>
-                      <option value="draft">Chưa gửi</option>
-                      <option value="sent">Đã gửi</option>
-                      <option value="won">Đã chốt</option>
-                      <option value="lost">Thua</option>
-                    </select>
-                  </label>
-                  {isFinalQuote ? (
-                    <button className="btn-primary" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
-                  ) : (
-                    <button className="btn-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={finalizeCurrentQuote}>Final báo giá</button>
+                  {isFinalQuote && (
+                    <>
+                      <label className="quote-status-field">
+                        <span>Tiến độ bán hàng</span>
+                        <select className="quote-status-select" value={quoteStatus} onChange={(e) => setQuoteStatus(e.target.value)}>
+                          <option value="draft">Chưa gửi</option>
+                          <option value="sent">Đã gửi</option>
+                          <option value="won">Đã chốt</option>
+                          <option value="lost">Thua</option>
+                        </select>
+                      </label>
+                      <button className="btn-ghost" disabled={quoteSaving} onClick={() => saveCurrentQuote()}>
+                        {quoteSaving ? "Đang lưu…" : "Lưu trạng thái"}
+                      </button>
+                    </>
                   )}
                   <button className="btn-ghost" onClick={() => { setQuoteListOpen(!quoteListOpen); if (!quoteListOpen) reloadQuotes(); }}>
                     {quoteListOpen ? "Ẩn báo giá cũ" : "Mở báo giá cũ"}
                   </button>
-                  <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0 || isFinalQuote} onClick={() => saveCurrentQuote({ asCopy: true })}>Lưu bản sao Draft</button>
-                </div>
-                <div className="quote-cloud-meta">
-                  <span>Quota báo giá tháng này: {formatLimit(cloud?.billing?.usage?.quotes_per_month || 0)} / {formatLimit(billingLimit(cloud?.billing, "quotes_per_month"))}</span>
-                  <span>{quoteList.length} báo giá gần nhất</span>
+                  {!isFinalQuote && (
+                    <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0} onClick={() => saveCurrentQuote({ asCopy: true })}>
+                      Tạo bản sao
+                    </button>
+                  )}
                 </div>
                 {quoteListOpen && (
                   <QuoteListPanel
@@ -2658,16 +2674,28 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
         )}
 
         {/* Thông tin khách hàng */}
-        <section className="card">
+        <section className="card quote-customer-card">
           <h2>Thông tin khách hàng</h2>
           <div className="field-grid">
-            <Field disabled={isFinalQuote} label="Tên khách hàng / Công trình" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
+            <Field disabled={isFinalQuote} label="Khách hàng / Công ty *" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
             <Field disabled={isFinalQuote} label="Số điện thoại" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
             <Field disabled={isFinalQuote} label="Tên công trình" value={customer.project} onChange={(v) => setCustomer({ ...customer, project: v })} />
-            <Field disabled={isFinalQuote} label="Địa điểm" value={customer.address} onChange={(v) => setCustomer({ ...customer, address: v })} />
-            <Field disabled={isFinalQuote} label="Số báo giá" value={customer.quoteNumber || ""} onChange={(v) => setCustomer({ ...customer, quoteNumber: v })} />
-            <Field disabled={isFinalQuote} label="Hạng mục" value={customer.category || ""} onChange={(v) => setCustomer({ ...customer, category: v })} />
           </div>
+          <button
+            className="quote-customer-more"
+            type="button"
+            onClick={() => setCustomerDetailsOpen((open) => !open)}
+            aria-expanded={customerDetailsOpen}
+          >
+            {customerDetailsOpen ? "− Ẩn thông tin thêm" : "+ Thông tin thêm"}
+          </button>
+          {customerDetailsOpen && (
+            <div className="field-grid quote-customer-extra">
+              <Field disabled={isFinalQuote} label="Địa điểm" value={customer.address} onChange={(v) => setCustomer({ ...customer, address: v })} />
+              <Field disabled={isFinalQuote} label="Hạng mục" value={customer.category || ""} onChange={(v) => setCustomer({ ...customer, category: v })} />
+              <Field disabled={isFinalQuote} label="Số báo giá" value={customer.quoteNumber || ""} onChange={(v) => setCustomer({ ...customer, quoteNumber: v })} />
+            </div>
+          )}
         </section>
 
         {/* Các phòng trong báo giá */}
@@ -2834,31 +2862,40 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
             <div className="s-lbl">Tổng báo giá</div>
             <div className="s-total num">{VND(calc.grand).replace("đ", "")}<small>đ</small></div>
             <div className={`s-margin ${grossMarginPct != null && grossMarginPct < 0 ? "danger" : ""}`}>
-              {grossMarginPct == null ? `Lãi gộp — · thiếu giá vốn ${commercialAssessment.unknownCostCount} dòng` : `${grossMarginPct < 0 ? "▼" : "▲"} Lãi gộp ${grossMarginPct}%`}
+              {grossMarginPct == null
+                ? (commercialAssessment.unknownCostCount > 0 ? `Lãi gộp — · thiếu giá vốn ${commercialAssessment.unknownCostCount} dòng` : "Lãi gộp —")
+                : `${grossMarginPct < 0 ? "▼" : "▲"} Lãi gộp ${grossMarginPct}%`}
             </div>
             <div className={`quote-final-gate ${isFinalQuote ? "final" : (finalQuoteGate.ready ? "ready" : "blocked")}`}>
               <div className="quote-final-gate-head">
                 <div>
-                  <strong>{isFinalQuote ? `FINAL · Rev ${quoteRevision}` : (finalQuoteGate.ready ? "Ready to Final" : "Draft · Chưa Ready to send")}</strong>
-                  <span>{isFinalQuote ? "Nội dung đã khóa. Muốn sửa phải tạo revision mới." : (finalQuoteGate.ready ? "Tất cả commercial gate đã đạt." : `${finalQuoteGate.blockerCount} gate cần xử lý trước khi xuất.`)}</span>
+                  <strong>{isFinalQuote ? `Đã chốt · Rev ${quoteRevision}` : (finalQuoteGate.ready ? "Sẵn sàng để chốt" : "Chưa thể chốt báo giá")}</strong>
+                  <span>{isFinalQuote ? "Nội dung và giá đã khóa. Muốn sửa hãy tạo revision mới." : (finalQuoteGate.ready ? "Tất cả kiểm tra an toàn đã đạt." : `Còn ${actionableFinalBlockers.length} việc cần xử lý.`)}</span>
                 </div>
-                <b>{finalQuoteGate.checks.filter((item) => item.pass).length}/{finalQuoteGate.checks.length}</b>
+                <b>{finalQuoteGate.ready ? "Đạt" : `${actionableFinalBlockers.length} việc`}</b>
               </div>
-              <div className="quote-final-gate-checks">
-                {finalQuoteGate.checks.map((item) => (
-                  <div key={item.id} className={item.pass ? "pass" : "fail"}>
-                    <span>{item.pass ? "✓" : "!"}</span>
-                    <div><strong>{item.label}</strong><small>{item.detail}</small></div>
-                  </div>
-                ))}
-              </div>
-              {quoteFinalizedAt && isFinalQuote && <div className="quote-finalized-at">Final: {new Date(quoteFinalizedAt).toLocaleString("vi-VN")}</div>}
+              {visibleQuoteChecks.length > 0 && (
+                <div className="quote-final-gate-checks">
+                  {visibleQuoteChecks.map((item) => (
+                    <div key={item.id} className={item.pass ? "pass" : "fail"}>
+                      <span>{item.pass ? "✓" : "!"}</span>
+                      <div><strong>{item.label}</strong><small>{item.detail}</small></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {passedQuoteChecks.length > 0 && !isFinalQuote && (
+                <button className="quote-gate-toggle" type="button" onClick={() => setShowPassedQuoteChecks((open) => !open)}>
+                  {showPassedQuoteChecks ? "Ẩn kiểm tra đã đạt" : `Xem ${passedQuoteChecks.length} kiểm tra đã đạt`}
+                </button>
+              )}
+              {quoteFinalizedAt && isFinalQuote && <div className="quote-finalized-at">Chốt lúc: {new Date(quoteFinalizedAt).toLocaleString("vi-VN")}</div>}
             </div>
             {(commercialAssessment.hardErrorCount > 0 || commercialAssessment.atOrBelowCostCount > 0) && (
               <div className="quote-commercial-warning">
                 {commercialAssessment.hardErrorCount > 0
-                  ? `⚠ ${commercialAssessment.hardErrorCount} dòng chưa đủ sản phẩm/giá bán — không thể final/export.`
-                  : `⚠ ${commercialAssessment.atOrBelowCostCount} dòng bán bằng hoặc dưới giá vốn — cần xác nhận trước khi export.`}
+                  ? `⚠ ${commercialAssessment.hardErrorCount} dòng chưa đủ sản phẩm/giá bán — chưa thể chốt hoặc xuất.`
+                  : `⚠ ${commercialAssessment.atOrBelowCostCount} dòng bán bằng hoặc dưới giá vốn — cần kiểm tra trước khi xuất.`}
               </div>
             )}
             <div className="s-rows">
@@ -2895,26 +2932,15 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                 </button>
               ) : (
                 <button className="btn-export-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={finalizeCurrentQuote}>
-                  {finalQuoteGate.ready ? "Final & khóa báo giá" : `Hoàn tất ${finalQuoteGate.blockerCount} gate để Final`}
+                  {finalQuoteGate.ready ? "Chốt & khóa báo giá" : `Còn ${actionableFinalBlockers.length} việc để chốt`}
                 </button>
               )}
-              <div className="row2">
-                {isFinalQuote ? (
-                  <>
-                    <button className="btn-ghost" disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>
-                    <button className="btn-ghost" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
-                  </>
-                ) : (
-                  <button className="btn-ghost" disabled={quoteSaving || calc.pointCount === 0} onClick={() => saveCurrentQuote()}>
-                    {quoteSaving ? "Đang lưu…" : "Lưu Draft"}
-                  </button>
-                )}
-                {cloud?.enabled && isFinalQuote && (
-                  <button className="btn-ghost" disabled={quoteSaving} onClick={() => saveCurrentQuote()}>
-                    {quoteSaving ? "Đang lưu…" : "Lưu trạng thái"}
-                  </button>
-                )}
-              </div>
+              {isFinalQuote && (
+                <div className="row2">
+                  <button className="btn-ghost" disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>
+                  <button className="btn-ghost" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
+                </div>
+              )}
               {excelQuoteTemplates.length > 0 && (
                 <div className="excel-template-export-box">
                   <label>Mẫu Excel dùng khi xuất</label>
@@ -9290,6 +9316,9 @@ const CSS = `
 .quote-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;}
 .quote-side{position:sticky;top:68px;}
 .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.quote-customer-more{margin-top:10px;border:0;background:transparent;color:var(--brand);font:inherit;font-size:12px;font-weight:800;cursor:pointer;padding:2px 0;}
+.quote-customer-more:hover{text-decoration:underline;}
+.quote-customer-extra{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
 .field{display:flex;flex-direction:column;gap:5px;font-size:13px;}
 .field.full{grid-column:1/-1;}
 .field span{font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.03em;}
@@ -9359,6 +9388,7 @@ const CSS = `
 .quote-manage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .quote-manage-head h2{margin:0;font-size:var(--fs-md);}
 .quote-manage-head p{margin:4px 0 0;color:var(--muted);font-size:12.5px;}
+.quote-manage-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
 .quote-manage-toggle{white-space:nowrap;}
 .quote-manage-body{border-top:1px solid var(--line);margin-top:10px;padding-top:10px;}
 .quote-manage-actions{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:10px;}
@@ -9697,6 +9727,8 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .quote-final-gate-checks .fail>span{background:var(--red-bg);color:var(--neg);}
 .quote-final-gate-checks strong{display:block;font-size:10.5px;color:var(--ink);}
 .quote-final-gate-checks small{display:block;font-size:9.5px;color:var(--muted);margin-top:1px;}
+.quote-gate-toggle{border:0;background:transparent;color:var(--brand);padding:3px 0 0;text-align:left;font:inherit;font-size:10.5px;font-weight:800;cursor:pointer;align-self:flex-start;}
+.quote-gate-toggle:hover{text-decoration:underline;}
 .quote-finalized-at{font-size:9.5px;color:var(--muted);text-align:right;}
 .quote-commercial-warning{margin:8px 0 10px;padding:8px 10px;border:1px solid var(--amber-line);background:var(--amber-bg);color:var(--amber);border-radius:8px;font-size:12px;line-height:1.45;font-weight:700;}
 .s-margin.danger{color:var(--neg)!important;}

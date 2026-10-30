@@ -11,7 +11,25 @@
 // Usage:
 //   npm run smoke:pdf
 
-import {
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+// Node does not understand Vite's `?url` import suffix. Build a temporary
+// test-only copy of the production pipeline that replaces only browser/network
+// imports while keeping the deterministic PDF parser itself byte-for-byte.
+const pipelineSourcePath = path.resolve('src/import-engine/pdf/pdfCatalogPipeline.js');
+let testablePipelineSource = fs.readFileSync(pipelineSourcePath, 'utf8');
+testablePipelineSource = testablePipelineSource
+  .replace(/import \{ callClaudeText[^\n]+\n/, `const callClaudeText=async()=>({}); const callClaudeStructured=async()=>({}); const PDF_CATALOG_OUTPUT_SCHEMA={}; const extractCatalogPdfWithClaude=async()=>[];\n`)
+  .replace(/import \{ smartQuoteFetch \} from '\.\.\/\.\.\/supabase\/apiFetch\.js';\n/, `const smartQuoteFetch=async()=>{throw new Error('offline PDF smoke')};\n`)
+  .replace(/import pdfJsWorkerUrl from "pdfjs-dist\/legacy\/build\/pdf\.worker\.mjs\?url";\n/, `const pdfJsWorkerUrl='';\n`);
+const tempPipelinePath = path.resolve(`src/import-engine/pdf/.pdf-smoke-testable-${process.pid}.mjs`);
+fs.writeFileSync(tempPipelinePath, testablePipelineSource);
+process.on('exit', () => { try { fs.unlinkSync(tempPipelinePath); } catch {} });
+
+const pipelineModule = await import(pathToFileURL(tempPipelinePath).href + `?smoke=${Date.now()}`);
+const {
   heuristicExtractProductsFromPdfPages,
   normalizePdfItems,
   dedupeProducts,
@@ -23,7 +41,7 @@ import {
   isLumiSmarthomeContext,
   getExpectedLumiPdfRows,
   buildDocumentPagePrompt,
-} from '../src/import-engine/pdf/pdfCatalogPipeline.js';
+} = pipelineModule;
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -148,9 +166,9 @@ function runPdfGuardrails() {
   assert(isLumiSmarthomeContext({ fileName: 'Bảng giá Smarthome 2026.06.01.pdf', supplierGuess: 'Lumi' }), 'must detect Lumi Smarthome context');
   assert(getExpectedLumiPdfRows({ fileName: 'Bảng giá Smarthome 2026.06.01.pdf', supplierGuess: 'Lumi' }) === 49, 'Lumi Smarthome scan expected row count should be 49');
   const smarthomePrompt = buildDocumentPagePrompt({ fileName: 'Bảng giá Smarthome 2026.06.01.pdf', supplierGuess: 'Lumi', pageNum: 1, pageCount: 3 });
-  assert(/Mỗi row vật lý = 1 object JSONL/i.test(smarthomePrompt), 'Lumi Smarthome prompt must enforce one physical row = one JSONL object');
-  assert(/Nếu SKU không chắc hoặc không đọc được, để sku="" nhưng vẫn xuất object/i.test(smarthomePrompt), 'Lumi Smarthome prompt must keep rows when SKU is blurry');
-  assert(/49 sản phẩm/i.test(smarthomePrompt), 'Lumi Smarthome prompt must include expected row target');
+  assert(/Mỗi STT\/hàng sản phẩm = đúng 1 product/i.test(smarthomePrompt), 'Lumi Smarthome prompt must enforce one physical row = one product');
+  assert(/Nếu không chắc SKU hay giá: dùng "" hoặc 0, tuyệt đối không đoán/i.test(smarthomePrompt), 'Lumi Smarthome prompt must fail safe on blurry SKU/price');
+  assert(/49 STT toàn tài liệu/i.test(smarthomePrompt), 'Lumi Smarthome prompt must include expected physical-row target');
 
   const simulatedSmarthomeRows = Array.from({ length: 49 }, (_, i) => ({
     name: i % 10 === 0 ? `Công tắc Luto dòng ${i + 1}` : `Thiết bị Lumi Smarthome ${i + 1}`,

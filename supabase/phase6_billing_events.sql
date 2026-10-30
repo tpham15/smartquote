@@ -156,6 +156,11 @@ declare
   event_row public.billing_events%rowtype;
   new_period_end timestamptz;
 begin
+  if coalesce(auth.role(), '') <> 'service_role'
+     and session_user not in ('postgres', 'supabase_admin') then
+    raise exception 'Admin billing activation requires service role';
+  end if;
+
   select * into event_row
   from public.billing_events
   where id = target_billing_event_id
@@ -217,6 +222,11 @@ declare
   new_event_id uuid := gen_random_uuid();
   amount integer;
 begin
+  if coalesce(auth.role(), '') <> 'service_role'
+     and session_user not in ('postgres', 'supabase_admin') then
+    raise exception 'Admin billing activation requires service role';
+  end if;
+
   if normalized_plan not in ('starter','pro','business') then
     raise exception 'Gói không hợp lệ';
   end if;
@@ -269,4 +279,11 @@ grant execute on function public.create_manual_billing_request(uuid, text, text,
 -- Admin functions are intentionally NOT granted to anon/authenticated.
 -- Run them only from Supabase SQL Editor/service role after you verify payment.
 revoke all on function public.admin_activate_manual_billing_event(uuid, text, text) from public;
+revoke all on function public.admin_activate_manual_billing_event(uuid, text, text) from anon;
+revoke all on function public.admin_activate_manual_billing_event(uuid, text, text) from authenticated;
+grant execute on function public.admin_activate_manual_billing_event(uuid, text, text) to service_role;
+
 revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from public;
+revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from anon;
+revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from authenticated;
+grant execute on function public.admin_activate_dealer_plan(uuid, text, integer, text) to service_role;

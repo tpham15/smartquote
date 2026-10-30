@@ -1052,6 +1052,11 @@ declare
   event_row public.billing_events%rowtype;
   new_period_end timestamptz;
 begin
+  if coalesce(auth.role(), '') <> 'service_role'
+     and session_user not in ('postgres', 'supabase_admin') then
+    raise exception 'Admin billing activation requires service role';
+  end if;
+
   select * into event_row
   from public.billing_events
   where id = target_billing_event_id
@@ -1113,6 +1118,11 @@ declare
   new_event_id uuid := gen_random_uuid();
   amount integer;
 begin
+  if coalesce(auth.role(), '') <> 'service_role'
+     and session_user not in ('postgres', 'supabase_admin') then
+    raise exception 'Admin billing activation requires service role';
+  end if;
+
   if normalized_plan not in ('starter','pro','business') then
     raise exception 'Gói không hợp lệ';
   end if;
@@ -1872,3 +1882,53 @@ grant execute on function public.create_manual_billing_request(uuid, text, text,
 
 revoke all on function public.mark_manual_billing_event_paid(uuid, uuid) from public;
 grant execute on function public.mark_manual_billing_event_paid(uuid, uuid) to authenticated;
+
+-- ============================================================================
+-- Pilot Security Fix — billing privilege hardening
+-- Keep this block aligned with supabase/smartquote_pilot_security_fix.sql.
+-- ============================================================================
+
+revoke insert, update, delete on table public.dealers from anon;
+revoke insert, update, delete on table public.dealers from authenticated;
+grant select on table public.dealers to authenticated;
+grant update (name, phone, address) on table public.dealers to authenticated;
+
+create or replace function public.smartquote_guard_dealer_billing_fields()
+returns trigger
+language plpgsql
+set search_path = public, auth
+as $$
+begin
+  if new.plan is distinct from old.plan
+     or new.subscription_status is distinct from old.subscription_status
+     or new.trial_ends_at is distinct from old.trial_ends_at
+     or new.current_period_end is distinct from old.current_period_end
+     or new.plan_started_at is distinct from old.plan_started_at then
+    if coalesce(auth.role(), '') <> 'service_role'
+       and session_user not in ('postgres', 'supabase_admin') then
+      raise exception 'Billing fields are server-controlled';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.smartquote_guard_dealer_billing_fields() from public;
+revoke all on function public.smartquote_guard_dealer_billing_fields() from anon;
+revoke all on function public.smartquote_guard_dealer_billing_fields() from authenticated;
+
+drop trigger if exists smartquote_guard_dealer_billing_fields on public.dealers;
+create trigger smartquote_guard_dealer_billing_fields
+before update on public.dealers
+for each row execute function public.smartquote_guard_dealer_billing_fields();
+
+-- Browser roles must never execute billing activation RPCs.
+revoke all on function public.admin_activate_manual_billing_event(uuid, text, text) from public;
+revoke all on function public.admin_activate_manual_billing_event(uuid, text, text) from anon;
+revoke all on function public.admin_activate_manual_billing_event(uuid, text, text) from authenticated;
+grant execute on function public.admin_activate_manual_billing_event(uuid, text, text) to service_role;
+
+revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from public;
+revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from anon;
+revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from authenticated;
+grant execute on function public.admin_activate_dealer_plan(uuid, text, integer, text) to service_role;

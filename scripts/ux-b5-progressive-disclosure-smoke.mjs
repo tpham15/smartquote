@@ -16,17 +16,17 @@ assertIncludes('Hệ số riêng của dòng này', 'line-detail factor label');
 
 // B5.2: cloud quote management moved behind a management panel.
 assertNotIncludes('Kho báo giá cloud', 'old cloud quote title');
-assertIncludes('Quản lý báo giá', 'quote management label');
+assertIncludes('Báo giá mới', 'compact quote management label');
 assertIncludes('quoteManageOpen &&', 'quote management collapsed body');
 assertIncludes('⋯ Quản lý', 'quote management overflow trigger');
-assertIncludes('Lưu bản sao', 'copy quote still available in management panel');
+assertIncludes('Tạo bản sao', 'copy quote still available in management panel');
 
 // B5.3 / Pilot P1.1 hierarchy — Draft must Final first; only Final exposes primary Excel export.
-assertIncludes('Final & khóa báo giá', 'Draft primary Final action');
+assertIncludes('Chốt & khóa báo giá', 'Draft primary finalize action');
 assertIncludes('disabled={exporting || !finalQuoteGate.ready} onClick={exportExcel}', 'Final-only primary Excel export');
 assertIncludes('`Xuất báo giá · Rev ${quoteRevision}`', 'revision-aware primary export label');
 assertIncludes('disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>', 'Final-only secondary PDF button');
-assertIncludes('Lưu Draft', 'secondary Draft save action');
+assertIncludes('Lưu nháp', 'Draft save action');
 assertIncludes('Tạo Rev {quoteRevision + 1}', 'Final revision action');
 assertNotIncludes('<button className="btn-pdf" onClick={exportPDF}>Xuất PDF</button>', 'PDF as primary action');
 assertNotIncludes('Lưu thay đổi', 'verbose primary save label in top action row');

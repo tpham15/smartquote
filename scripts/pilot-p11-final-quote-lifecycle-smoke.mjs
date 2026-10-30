@@ -100,7 +100,7 @@ for (const needle of [
   'const createRevisionFromFinal = async () => {',
   'const requireFinalForExport = (label = "xuất báo giá") => {',
   'buildFinalQuoteGate({',
-  'Final & khóa báo giá',
+  'Chốt & khóa báo giá',
   'Tạo Rev {quoteRevision + 1}',
   'Báo giá Final đã khóa nội dung',
   'function QuoteListPanel(',

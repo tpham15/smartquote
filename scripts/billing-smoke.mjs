@@ -30,7 +30,13 @@ assert.match(sql, /from public\.plan_catalog/i, 'billing SQL must read prices fr
 assert.doesNotMatch(sql, /when 'starter' then case[\s\S]*499000/i, 'billing SQL must not duplicate plan prices');
 assert.match(sql, /grant execute on function public\.create_manual_billing_request/i);
 assert.match(sql, /revoke all on function public\.admin_activate_manual_billing_event/i);
-assert.doesNotMatch(sql, /grant execute on function public\.admin_activate_manual_billing_event/i);
-assert.doesNotMatch(sql, /grant execute on function public\.admin_activate_dealer_plan/i);
+assert.match(sql, /revoke all on function public\.admin_activate_manual_billing_event\(uuid, text, text\) from anon/i);
+assert.match(sql, /revoke all on function public\.admin_activate_manual_billing_event\(uuid, text, text\) from authenticated/i);
+assert.match(sql, /grant execute on function public\.admin_activate_manual_billing_event\(uuid, text, text\) to service_role/i);
+assert.match(sql, /revoke all on function public\.admin_activate_dealer_plan\(uuid, text, integer, text\) from anon/i);
+assert.match(sql, /revoke all on function public\.admin_activate_dealer_plan\(uuid, text, integer, text\) from authenticated/i);
+assert.match(sql, /grant execute on function public\.admin_activate_dealer_plan\(uuid, text, integer, text\) to service_role/i);
+assert.doesNotMatch(sql, /grant execute on function public\.admin_activate_manual_billing_event[^\n]*to authenticated/i);
+assert.doesNotMatch(sql, /grant execute on function public\.admin_activate_dealer_plan[^\n]*to authenticated/i);
 
 console.log('✓ Billing/manual payment smoke passed');

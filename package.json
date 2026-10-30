@@ -106,7 +106,7 @@
     "smoke:phase14.2": "node scripts/phase142-universal-pdf-framework-smoke.mjs && node scripts/phase141a-semantic-variant-binding-smoke.mjs && node scripts/phase141-pdf-engine-v6-smoke.mjs",
     "smoke:pilot-p0": "node scripts/pilot-p0-commercial-safety-smoke.mjs",
     "smoke:phase15": "node scripts/phase15-quote-completeness-smoke.mjs",
-    "smoke:pilot": "npm run smoke:pilot-p13 && npm run smoke:pilot-p12 && npm run smoke:pilot-p11 && npm run smoke:pilot-p0 && npm run smoke:phase15 && npm run smoke:phase14.2 && npm run smoke:phase14.0:vat && npm run smoke:tenant && npm run smoke:plan-limits && npm run smoke:white-label && npm run smoke:phase12.4.1 && npm run smoke:quotes && npm run smoke:api-auth && npm run qa:production",
+    "smoke:pilot": "npm run smoke:pilot-p14 && npm run smoke:pilot-security && npm run smoke:pilot-p13 && npm run smoke:pilot-p12 && npm run smoke:pilot-p11 && npm run smoke:pilot-p0 && npm run smoke:phase15 && npm run smoke:phase14.2 && npm run smoke:phase14.0:vat && npm run smoke:tenant && npm run smoke:plan-limits && npm run smoke:white-label && npm run smoke:phase12.4.1 && npm run smoke:quotes && npm run smoke:api-auth && npm run qa:production",
     "smoke:pilot-p11": "node scripts/pilot-p11-final-quote-lifecycle-smoke.mjs",
     "smoke:pilot-p12": "node scripts/pilot-p12-golden-freeze-smoke.mjs && node scripts/pilot-p12-commercial-golden-smoke.mjs && node scripts/pilot-p12-private-golden-gate.mjs",
     "smoke:pilot-p12:file": "node scripts/pilot-p12-file-commercial-e2e.mjs",
@@ -114,7 +114,9 @@
     "golden:pilot:baseline:create": "node scripts/pilot-p12-native-golden-baseline.mjs --create-baseline --reviewer-confirmed",
     "golden:pilot:baseline:verify": "node scripts/pilot-p12-native-golden-baseline.mjs",
     "smoke:pilot-release": "npm run build && npm run smoke:pilot && npm run smoke:pilot-p12:file && npm run golden:pilot:private && npm run golden:pilot:baseline:verify && npm run smoke:bom && npm run smoke:import && npm run smoke:pdf",
-    "smoke:pilot-p13": "node scripts/pilot-p13-pdf-column-aware-smoke.mjs"
+    "smoke:pilot-p13": "node scripts/pilot-p13-pdf-column-aware-smoke.mjs",
+    "smoke:pilot-p14": "node scripts/pilot-p14-quote-clarity-smoke.mjs",
+    "smoke:pilot-security": "node scripts/pilot-security-billing-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

@@ -99,14 +99,14 @@ export function buildFinalQuoteGate({
   )).length;
 
   const checks = [
-    { id: "lines", label: "Có thiết bị trong báo giá", pass: lineCount > 0, detail: lineCount > 0 ? `${lineCount} dòng` : "Chưa có dòng thiết bị" },
-    { id: "customer", label: "Đã chọn khách hàng / công trình", pass: Boolean(String(customer?.name || "").trim()), detail: String(customer?.name || "").trim() || "Thiếu tên khách hàng / công trình" },
+    { id: "lines", label: "Thêm ít nhất 1 thiết bị", pass: lineCount > 0, detail: lineCount > 0 ? `${lineCount} dòng` : "Báo giá đang chưa có thiết bị" },
+    { id: "customer", label: "Nhập khách hàng / công ty", pass: Boolean(String(customer?.name || "").trim()), detail: String(customer?.name || "").trim() || "Chưa có tên khách hàng / công ty" },
     { id: "vat", label: "VAT hợp lệ", pass: Number.isFinite(vat) && vat >= 0 && vat <= 100, detail: Number.isFinite(vat) ? `${vat}%` : "VAT không hợp lệ" },
     { id: "product", label: "Không có dòng mất sản phẩm", pass: missingProductCount === 0, detail: missingProductCount ? `${missingProductCount} dòng` : "0 dòng" },
     { id: "sale_price", label: "Không có dòng thiếu giá bán", pass: missingSalePriceCount === 0, detail: missingSalePriceCount ? `${missingSalePriceCount} dòng` : "0 dòng" },
     { id: "cost", label: "Đủ giá vốn để kiểm tra margin", pass: unknownCostCount === 0, detail: unknownCostCount ? `${unknownCostCount} dòng thiếu giá vốn` : "Đầy đủ" },
     { id: "margin", label: "Không bán bằng / dưới giá vốn", pass: atOrBelowCostCount === 0, detail: atOrBelowCostCount ? `${atOrBelowCostCount} dòng (${negativeMarginCount} dòng bán lỗ)` : "0 dòng" },
-    { id: "snapshot", label: "Snapshot sản phẩm / giá đã sẵn sàng", pass: lineCount > 0 && frozenLineCount === lineCount, detail: `${frozenLineCount}/${lineCount} dòng` },
+    { id: "snapshot", label: "Hoàn tất dữ liệu sản phẩm và giá", pass: lineCount > 0 && frozenLineCount === lineCount, detail: `${frozenLineCount}/${lineCount} dòng sẵn sàng` },
   ];
   const blockers = checks.filter((check) => !check.pass);
   return {
