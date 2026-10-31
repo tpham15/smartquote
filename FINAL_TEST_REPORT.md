@@ -1,19 +1,28 @@
-# P2.0 Test Report — Final Quote Learning Memory
+# SmartQuote Final Pilot v1.0 — RC13 Candidate Test Status
 
-## PASS
-- Final quote observations are consolidated to one observation per product identity per quote.
-- Duplicate observation replay is idempotent.
-- 1–2 Final quotes remain observe-only.
-- 3–4 Final quotes expose suggestion metadata without changing identity.
-- 5+ Final quotes may fill missing/placeholder identity fields.
-- Trusted learning never overwrites current cost/list/sale pricing.
-- Same SKU across different suppliers remains isolated.
-- Tenant-scoped local memory remains isolated.
-- Origin survives Final quote snapshot learning.
-- Cloud SQL requires a real Final quote before learning is written.
-- Cloud table is SELECT-only to authenticated browser role; direct INSERT is revoked.
-- Learning RPC is denied to anon and allowed to authenticated members.
-- P1.5.5, P1.5.4, Bisco identity, P1.5.3.x, P1.5.2, P1.5.1, P1.5, P1.1, P0 and tenant-storage regressions PASS.
+## Verified in this packaging session
 
-## Production build
-`npm ci --prefer-offline --no-audit --no-fund` timed out in the container before Vite was installed, so production Vite build is **not claimed PASS here**. Run `npm ci && npm run build` on the deployment Mac before pushing.
+PASS:
+- P2.3.11 commercial price safety smoke
+- core import review smoke
+- P2.3.10 supplier-code reuse severity smoke
+- P2.3.9 large-Excel browser upload smoke
+- P2.3.8 final supplier identity smoke
+- P1.5.3.2 Bisco identity regression smoke
+- offline chain through RC5 after updating the intentionally changed RC5 generic-price contract
+
+## Environment-blocked here
+
+The packaging container does not contain the full npm dependency tree and `npm ci` could not complete, so the remaining full offline suite and Vite production build were not truthfully re-certified here.
+
+Before deployment, run:
+
+```bash
+npm ci
+npm run smoke:pilot-p23.11
+npm run smoke:core-review
+npm run smoke:pilot:offline
+npm run build
+```
+
+Then run the Bisco/Roger real-file gates and short browser UAT described in `FINAL_PILOT_README.md`.

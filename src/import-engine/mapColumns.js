@@ -291,8 +291,13 @@ export function mapColumns(headerRow, dataRows, maxCol) {
       && isPlainUnitPriceLabel(selectedPrice.label)
       && !isRetailLikePriceLabel(selectedPrice.label);
     map._singleSourceUnitPrice = onlyPlainUnitPrice;
+    // Pilot commercial-safety: a lone generic "Đơn giá / Unit price / Price" column
+    // is financially ambiguous. It may be supplier cost OR an already-sold/list
+    // price. Never silently promote it to costPrice. Keep the whole file in
+    // REVIEW until the user confirms the role once in Preview. Quote tables with
+    // SL × Đơn giá = Thành tiền are handled below as fixed sale prices.
     map._priceColUncertain = onlyPlainUnitPrice
-      ? false
+      ? true
       : (!selectedPrice.strongCost || selectedPrice.key === "price2" || isRetailLikePriceLabel(selectedPrice.label));
     if (priceCandidates.length >= 2) {
       map._priceCandidates = priceCandidates.map((p) => ({ col: p.col, label: p.label, priority: p.priority, strongCost: !!p.strongCost, scale: p.scale || 1 }));

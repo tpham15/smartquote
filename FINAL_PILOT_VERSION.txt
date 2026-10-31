@@ -1,0 +1,4 @@
+SmartQuote Final Pilot v1.0 — RC13 Candidate
+P2.3.11 Commercial Price Safety
+Base: RC12 + generic-price role confirmation + default markup ×1.20
+Date: 2026-10-31

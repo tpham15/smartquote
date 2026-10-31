@@ -42,6 +42,7 @@ import {
   listCorrectionLearningStats,
 } from "./import-engine/correctionLearning.js";
 import { applyCommercialValidation } from "./import-engine/businessValidator.js";
+import { applyAmbiguousPriceRole } from "./import-engine/priceRoleDecision.js";
 import { recordCorrectionEvent, getCorrectionTelemetryStats, buildCorrectionEvidenceExport, markCorrectionEvidenceExported } from "./import-engine/correctionTelemetry.js";
 import {
   buildFinalQuoteLearningObservations,
@@ -588,7 +589,7 @@ const sanitizeCompanyClientSecrets = (value = {}) => ({
 });
 
 const buildDefaultMarkups = () => [
-  { id: uid("mk"), label: "Mặc định", value: 1 },
+  { id: uid("mk"), label: "Mặc định", value: 1.2 },
 ];
 
 const valueOrFactory = (fallback) => (typeof fallback === "function" ? fallback() : fallback);
@@ -3477,7 +3478,7 @@ function LineProductSwap({ products, markups = [], current, line, learningInsigh
               />
             </label>
             <div className="hs-quick">
-              {(markups.length ? markups : [{ id: "default", value: 1 }]).slice(0, 4).map((m) => {
+              {(markups.length ? markups : [{ id: "default", value: 1.2 }]).slice(0, 4).map((m) => {
                 const factor = Number(m.value) > 0 ? Number(m.value) : 1;
                 return <button key={m.id || factor} className={(line?.factor || 1) === factor ? "on" : ""} onClick={() => onSetFactor?.(factor)}>{factor}</button>;
               })}
@@ -5620,6 +5621,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const [previewFilter, setPreviewFilter] = useState("all");
   const [highlightedPreviewIndex, setHighlightedPreviewIndex] = useState(null);
   const [priceColumnConfirmed, setPriceColumnConfirmed] = useState(false);
+  const [priceColumnRole, setPriceColumnRole] = useState(""); // "cost" | "list" | ""
   const [templateNotice, setTemplateNotice] = useState("");
   const [templateLibrary, setTemplateLibrary] = useState([]);
   const [templateSuggestions, setTemplateSuggestions] = useState([]);
@@ -5664,6 +5666,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     setHighlightedPreviewIndex(null);
     setGroundingIndex(null);
     setPriceColumnConfirmed(false);
+    setPriceColumnRole("");
     setTemplateNotice("");
     setLearningNotice("");
     setAiStatus("");
@@ -6539,7 +6542,10 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   }, [step, parsed.length]);
 
   useEffect(() => {
-    if (step !== "preview") setPriceColumnConfirmed(false);
+    if (step !== "preview") {
+      setPriceColumnConfirmed(false);
+      setPriceColumnRole("");
+    }
   }, [step]);
 
   const approvePreviewRow = (index) => {
@@ -6634,30 +6640,42 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     const rows = priceColumnUncertainRows();
     if (!rows.length) {
       setPriceColumnConfirmed(true);
+      setPriceColumnRole("cost");
       return;
     }
     const ok = await confirmAction({
-      title: `Xác nhận cột giá cho ${rows.length} dòng?`,
-      message: "Chỉ xác nhận khi bạn đã kiểm tra đúng cột GIÁ MUA VÀO trong file. Sau bước này SmartQuote sẽ cho phép lưu các dòng này vào danh mục.",
-      confirmLabel: "Tôi đã kiểm tra",
+      title: `Dùng “Đơn giá” làm GIÁ NHẬP cho ${rows.length} dòng?`,
+      message: "Chỉ chọn khi cột này thực sự là giá nhà cung cấp/giá vốn. Lựa chọn áp dụng một lần cho toàn bộ file import này.",
+      confirmLabel: "Đúng — đây là giá nhập",
     });
     if (!ok) return;
     setPriceColumnConfirmed(true);
+    setPriceColumnRole("cost");
     setParsed(prev => {
-      const next = prev.map((p, i) => {
-        if (!hasPriceColumnUncertainIssue(p, i)) return p;
-        return {
-          ...p,
-          _meta: {
-            ...(p._meta || {}),
-            acceptedAtPreview: true,
-            priceColumnConfirmed: true,
-            priceColumnConfirmedAt: new Date().toISOString(),
-            status: p._meta?.status || "review",
-          }
-        };
-      });
-      rebuildImportResultFromParsed(next, "price-column-confirmed-preview");
+      const next = applyAmbiguousPriceRole(prev, "cost");
+      rebuildImportResultFromParsed(next, "price-column-confirmed-as-cost");
+      return next;
+    });
+  };
+
+  const confirmPriceColumnAsListPrice = async () => {
+    const rows = priceColumnUncertainRows();
+    if (!rows.length) {
+      setPriceColumnConfirmed(true);
+      setPriceColumnRole("list");
+      return;
+    }
+    const ok = await confirmAction({
+      title: `Dùng “Đơn giá” làm GIÁ BÁN cho ${rows.length} dòng?`,
+      message: "SmartQuote sẽ chuyển giá đang đọc sang Giá bán/niêm yết và để Giá nhập trống. Lựa chọn này áp dụng một lần cho toàn bộ file; bạn vẫn có thể bổ sung giá nhập sau.",
+      confirmLabel: "Đúng — đây là giá bán",
+    });
+    if (!ok) return;
+    setPriceColumnConfirmed(true);
+    setPriceColumnRole("list");
+    setParsed(prev => {
+      const next = applyAmbiguousPriceRole(prev, "list");
+      rebuildImportResultFromParsed(next, "price-column-confirmed-as-list");
       return next;
     });
   };
@@ -6736,7 +6754,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     if (priceDanger.length > 0 && !priceColumnConfirmed) {
       notify.info(`Chưa thể lưu catalog vì còn ${priceDanger.length} dòng chưa xác nhận cột GIÁ MUA VÀO.
 
-Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trước khi lưu.`);
+Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc sửa mapping trước khi lưu.`);
       setPreviewFilter("review");
       scrollToPreviewIndex(priceDanger[0].index);
       return;
@@ -7099,7 +7117,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                     : `Đã sẵn sàng nhập`;
               const tone = hasBlocking ? "danger" : hasReview ? "warn" : "ok";
               const defaultAction = hasPriceUnconfirmed
-                ? { label: "Cần xác nhận cột giá", onClick: () => {}, disabled: true }
+                ? { label: "Chọn loại giá trước khi nhập", onClick: () => {}, disabled: true }
                 : hasBlocking
                   ? { label: `Đi tới lỗi đầu tiên`, onClick: () => goToPreviewIssue("blocking", "first") }
                   : { label: `Nhập ${readyCount} sản phẩm an toàn`, onClick: applyImport };
@@ -7116,7 +7134,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                   <div className="ci-import-hero-actions">
                     {hasReview && !hasBlocking && <button type="button" className="btn-ghost" onClick={() => setPreviewFilter("review")}>Xem dòng cần duyệt</button>}
                     {hasReview && hasBlocking && <button type="button" className="btn-ghost" onClick={() => goToPreviewIssue("review", "first")}>Xem dòng cần xem</button>}
-                    <button type="button" className={`ci-primary-action ${tone}`} disabled={defaultAction.disabled} title={defaultAction.disabled ? "Cần xác nhận cột GIÁ MUA VÀO trước khi lưu" : ""} onClick={defaultAction.onClick}>{defaultAction.label}</button>
+                    <button type="button" className={`ci-primary-action ${tone}`} disabled={defaultAction.disabled} title={defaultAction.disabled ? "Cần xác nhận vai trò của cột Đơn giá trước khi lưu" : ""} onClick={defaultAction.onClick}>{defaultAction.label}</button>
                   </div>
                 </div>
               );
@@ -7126,13 +7144,20 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
               <div className={`ci-price-confirm-strip ${priceColumnConfirmed ? "confirmed" : "danger"}`}>
                 <div className="ci-price-confirm-icon">⚠️</div>
                 <div className="ci-price-confirm-text">
-                  <strong>{priceColumnConfirmed ? "Đã xác nhận cột giá mua vào" : "Chúng tôi chưa chắc cột nào là GIÁ MUA VÀO."}</strong>
-                  <span>Hãy kiểm tra lại cột giá trước khi lưu catalog. SmartQuote sẽ chặn lưu cho tới khi bạn xác nhận.</span>
+                  <strong>{priceColumnConfirmed
+                    ? (priceColumnRole === "list" ? "Đã xác nhận: Đơn giá = GIÁ BÁN" : "Đã xác nhận: Đơn giá = GIÁ NHẬP")
+                    : "Cột “Đơn giá” trong file này là giá nào?"}</strong>
+                  <span>{priceColumnConfirmed
+                    ? "Lựa chọn áp dụng cho toàn bộ file import này."
+                    : "SmartQuote không tự đoán dữ liệu tài chính. Chọn một lần cho toàn bộ file trước khi lưu catalog."}</span>
                 </div>
                 <div className="ci-price-confirm-actions">
-                  <button type="button" className="btn-ghost" onClick={openManualMapping}>Chọn lại cột giá</button>
-                  <button type="button" className={priceColumnConfirmed ? "btn-ghost" : "btn-primary"} style={{ width: "auto" }} onClick={confirmPriceColumnSafety}>
-                    {priceColumnConfirmed ? "Xác nhận lại" : "Tôi đã kiểm tra cột giá"}
+                  <button type="button" className="btn-ghost" onClick={openManualMapping}>Sửa mapping</button>
+                  <button type="button" className={priceColumnRole === "list" ? "btn-primary" : "btn-ghost"} style={{ width: "auto" }} onClick={confirmPriceColumnAsListPrice}>
+                    Giá bán / niêm yết
+                  </button>
+                  <button type="button" className={priceColumnRole === "cost" ? "btn-primary" : "btn-ghost"} style={{ width: "auto" }} onClick={confirmPriceColumnSafety}>
+                    Giá nhập / giá vốn
                   </button>
                 </div>
               </div>
@@ -7315,7 +7340,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                   className="btn-primary"
                   style={{ width: "auto" }}
                   disabled={priceColumnUncertainRows().length > 0 && !priceColumnConfirmed}
-                  title={priceColumnUncertainRows().length > 0 && !priceColumnConfirmed ? "Cần xác nhận cột GIÁ MUA VÀO trước khi lưu" : ""}
+                  title={priceColumnUncertainRows().length > 0 && !priceColumnConfirmed ? "Cần xác nhận vai trò cột Đơn giá trước khi lưu" : ""}
                   onClick={applyImport}
                 >
                   {priceColumnUncertainRows().length > 0 && !priceColumnConfirmed
@@ -8553,7 +8578,7 @@ function Templates({ products, productById, templates, setTemplates, markups = [
     if (await confirmAction({ title: "Xóa bộ sản phẩm?", message: "Bộ sản phẩm này sẽ bị xóa khỏi thư viện mẫu.", confirmLabel: "Xóa", tone: "danger" })) setTemplates((ts) => ts.filter((t) => t.id !== id));
   };
 
-  const templateFactor = Number(markups?.[0]?.value) > 0 ? Number(markups[0].value) : 1;
+  const templateFactor = chooseDefaultMarkupFactor(markups);
   const tplTotal = (tpl) =>
     tpl.items.reduce((s, it) => s + Math.round(((productById[it.productId]?.costPrice || 0) * templateFactor) / 1000) * 1000 * it.qty, 0);
 
@@ -9294,7 +9319,8 @@ function Settings({ company, setCompany, markups, setMarkups, industryProfile, b
           <span>Hệ số giá theo khách</span>
         </div>
         <div className="section-card-body">
-          <p className="tab-intro" style={{ margin: "0 0 10px" }}>Giá bán = giá gốc × hệ số. Khi tạo báo giá chọn mức phù hợp cho từng khách.</p>
+          <p className="tab-intro" style={{ margin: "0 0 6px" }}>Giá bán = giá gốc × hệ số. Khi tạo báo giá chọn mức phù hợp cho từng khách.</p>
+          <p className="side-note" style={{ margin: "0 0 10px" }}>Workspace mới dùng mặc định ×1,20 để tránh tạo báo giá 0% lãi. Hãy điều chỉnh theo chính sách giá của doanh nghiệp trước khi gửi khách.</p>
           {markups.map((m) => (
             <div className="markup-row" key={m.id}>
               <input className="markup-name-input" value={m.label} onChange={(e) => updateMarkup(m.id, "label", e.target.value)} />

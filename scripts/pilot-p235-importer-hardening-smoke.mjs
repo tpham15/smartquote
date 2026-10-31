@@ -9,8 +9,8 @@ function row(r, cells) {
   return { r, text, joined: text.filter(Boolean).join(' '), filled: text.filter(Boolean).length, cells: [] };
 }
 
-// 1) A supplier catalog with a single explicit ĐƠN GIÁ column is not ambiguous
-// merely because the header is generic. The source label remains provenance.
+// 1) A supplier catalog with a single generic ĐƠN GIÁ column is financially ambiguous.
+// RC13 requires one file-level user decision before it can become cost or list price.
 {
   const header = row(0, { 0: 'Mã SP', 1: 'Tên sản phẩm', 2: 'ĐƠN GIÁ' });
   const data = [
@@ -21,7 +21,7 @@ function row(r, cells) {
   const { map } = mapColumns(header, data, 2);
   assert.equal(map.price, 2);
   assert.equal(map._singleSourceUnitPrice, true);
-  assert.equal(map._priceColUncertain, false);
+  assert.equal(map._priceColUncertain, true);
 }
 
 // 2) Concise source commercial label beats the opaque fallback "Sản phẩm <SKU>".
@@ -73,7 +73,7 @@ function row(r, cells) {
 }
 
 console.log('✓ P2.3.5 RC5 importer hardening smoke PASS');
-console.log('  - single source ĐƠN GIÁ accepted as deterministic supplier price');
+console.log('  - single source ĐƠN GIÁ stays REVIEW until user selects cost vs list price');
 console.log('  - source commercial labels preserved over generic SKU fallback');
 console.log('  - natural-language pseudo-SKU is not promoted to identity');
 console.log('  - tax/subtotal pseudo-products are blocked');

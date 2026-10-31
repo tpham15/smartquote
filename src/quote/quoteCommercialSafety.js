@@ -10,7 +10,7 @@ export function chooseDefaultMarkupFactor(markups = []) {
   const values = (Array.isArray(markups) ? markups : [])
     .map((m) => finiteNumber(m?.value, NaN))
     .filter((v) => Number.isFinite(v) && v > 0);
-  return values.find((v) => v > 1) || values[0] || 1;
+  return values.find((v) => v > 1) || values[0] || 1.2;
 }
 
 export function productCostPrice(product = {}, line = {}) {

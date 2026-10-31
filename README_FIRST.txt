@@ -1,26 +1,11 @@
-SmartQuote FINAL P1.5.3.1 — PILOT MASTER
+SMARTQUOTE FINAL PILOT v1.0 — RC13 CANDIDATE
 
-1) SUPABASE
-   Open Supabase > SQL Editor > New query.
-   Run the ENTIRE file: 01_RUN_ON_SUPABASE.sql
+Start here: FINAL_PILOT_README.md
 
-   Final result rule:
-   - every *_should_be_false = false
-   - every *_should_be_true  = true
+Current release code: P2.3.11 / RC13 Candidate.
+The older P1.x / P2.x START_HERE, STATUS, TEST_REPORT and RELEASE_NOTES files are historical engineering records, not current deployment instructions.
 
-2) MAC
-   npm ci
-   npm run smoke:pilot-p15.3.1
-   npm run smoke:pilot-p15.3
-   npm run smoke:pilot-p15.2
-   npm run smoke:pilot-p15.1
-   npm run smoke:pilot-p15
-   npm run smoke:pilot-security
-   npm run build
+Canonical Supabase setup entrypoint for this pilot tree:
+  01_RUN_ON_SUPABASE.sql
 
-3) DEPLOY
-   Commit/push only after the checks above pass.
-
-P1.5.3.1 changes only:
-- fixes business-type onboarding submit event bug;
-- consolidates all required pilot DB migrations into one master SQL.
+Do not commit or distribute .env / .env.local / secrets.
