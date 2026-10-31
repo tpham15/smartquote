@@ -47,17 +47,44 @@ export function validateCommercialItem(item = {}, context = {}, index = 0, rules
   }
 
   const dupMap = context.duplicateSkuMap || new Map();
+  const dupItemsMap = context.duplicateSkuItemsMap || new Map();
   const sk = skuKey(sku);
   if (sk && (dupMap.get(sk) || []).length > 1) {
     const positions = dupMap.get(sk).map((n) => n + 1);
-    issues.push(issue(
-      "duplicate_sku_in_import",
-      "error",
-      `SKU ${sku} xuất hiện ${positions.length} lần trong file import`,
-      "sku",
-      `Giữ đúng một dòng cho SKU này (dòng ${positions.join(", ")})`,
-      { sku, rows: positions }
-    ));
+    const groupedItems = dupItemsMap.get(sk) || [];
+    const visibleNames = [...new Set(groupedItems.map((entry) => key(entry?.item?.name)).filter(Boolean))];
+    const supplierReuseAlreadyGrounded = groupedItems.some((entry) =>
+      (entry?.item?._meta?.issues || entry?.item?.issues || []).some((it) =>
+        ["supplier_sku_reused_for_distinct_products", "identity_collision_review"].includes(String(it?.code || "").toLowerCase())
+      )
+    );
+
+    // A supplier code is not necessarily a globally unique catalog identity.
+    // Real supplier catalogs (Roger is a golden example) can deliberately reuse
+    // one code for visibly distinct sellable products/configurations. Preserve
+    // those rows and ask for review; only an exact/same-name duplicate is a hard
+    // duplicate-SKU ambiguity.
+    if (visibleNames.length > 1 || supplierReuseAlreadyGrounded) {
+      if (!supplierReuseAlreadyGrounded) {
+        issues.push(issue(
+          "supplier_code_reused",
+          "warning",
+          `Nhà cung cấp dùng cùng mã ${sku} cho ${positions.length} sản phẩm/cấu hình khác nhau; SmartQuote giữ riêng, không tự gộp`,
+          "sku",
+          "Đối chiếu tên/cấu hình; có thể tạo mã nội bộ riêng nếu cần",
+          { sku, rows: positions, distinctNames: visibleNames.length }
+        ));
+      }
+    } else {
+      issues.push(issue(
+        "duplicate_sku_in_import",
+        "error",
+        `SKU ${sku} xuất hiện ${positions.length} lần trong file import`,
+        "sku",
+        `Giữ đúng một dòng cho SKU này (dòng ${positions.join(", ")})`,
+        { sku, rows: positions }
+      ));
+    }
   }
 
   const existing = context.existingBySku?.get(sk) || context.existingByName?.get(key(item.name));
@@ -109,11 +136,14 @@ export function validateCommercialItem(item = {}, context = {}, index = 0, rules
 
 export function buildCommercialValidationContext(items = [], existingProducts = []) {
   const duplicateSkuMap = new Map();
+  const duplicateSkuItemsMap = new Map();
   (items || []).forEach((item, index) => {
     const sk = skuKey(item?.sku);
     if (!sk) return;
     if (!duplicateSkuMap.has(sk)) duplicateSkuMap.set(sk, []);
+    if (!duplicateSkuItemsMap.has(sk)) duplicateSkuItemsMap.set(sk, []);
     duplicateSkuMap.get(sk).push(index);
+    duplicateSkuItemsMap.get(sk).push({ index, item });
   });
 
   const existingBySku = new Map();
@@ -124,7 +154,7 @@ export function buildCommercialValidationContext(items = [], existingProducts = 
     const nk = key(item?.name);
     if (nk) existingByName.set(nk, item);
   });
-  return { duplicateSkuMap, existingBySku, existingByName };
+  return { duplicateSkuMap, duplicateSkuItemsMap, existingBySku, existingByName };
 }
 
 export function applyCommercialValidation(items = [], { existingProducts = [], rules = PILOT_BUSINESS_RULES_V1 } = {}) {

@@ -11,7 +11,7 @@ import { buildQuoteCompletenessAssessment, getCompletenessRecommendationProductI
 import { rememberQuoteCompletenessDecision } from "./import-engine/bom/quoteCompletenessLearning.js";
 import { mapBomRowsWithClaude, mapTakeoffColumnsWithClaude, autoMapCatalogColumnsWithClaude } from "./import-engine/legacy/legacyClaudeMapper.js";
 import { parsePdfCatalogWithClaude, parseSupplierPriceFile, guessCatalogColumnsByName, buildCatalogPreview, readCatalogRowsForManualMapping } from "./import-engine/legacy/legacyCatalogImport.js";
-import { sanitizeCatalogProducts, dedupeCatalogIdentities, isUnsafeImportedProduct, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
+import { sanitizeCatalogProducts, dedupeCatalogIdentities, isUnsafeImportedProduct, isNonBlockingImportAdvisoryIssue, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
 import { productIdentityKey, canAutoMergeIdentity } from "./import-engine/productIdentity.js";
 import { canonicalizeLegacyProductForMatching } from "./import-engine/productSemantics.js";
 import { webScrapeItemsToProducts } from "./import-engine/web/webCatalogImport.js";
@@ -6446,13 +6446,19 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     const rows = list.map((p, index) => ({ p, index }));
     const blocking = rows.filter(({ p, index }) => getPreviewIssues(p, index).some(isBlockingIssue)).length;
     const warningOnly = rows.filter(({ p, index }) => isWarningOnlyProduct(p, index)).length;
+    const advisoryOnly = rows.filter(({ p, index }) => {
+      const issues = getPreviewIssues(p, index);
+      return issues.length > 0 && issues.every(isNonBlockingImportAdvisoryIssue);
+    }).length;
+    const actionableReview = rows.filter(({ p, index }) => isWarningOnlyProduct(p, index) && isUnsafeImportedProduct(p)).length;
     const priceUncertain = rows.filter(({ p, index }) => hasPriceColumnUncertainIssue(p, index)).length;
     const priceSafety = rows.filter(({ p, index }) => hasPriceSafetyIssue(p, index)).length;
     const manualOnly = rows.filter(({ p, index }) => hasManualReviewOnlyIssue(p, index)).length;
     const safeWarningOnly = rows.filter(({ p, index }) => isWarningOnlyProduct(p, index) && !hasPriceColumnUncertainIssue(p, index) && !hasManualReviewOnlyIssue(p, index)).length;
     const clean = list.length - blocking - warningOnly;
     const skipped = importResult?.summary?.skipped || 0;
-    return { clean: Math.max(0, clean), warningOnly, safeWarningOnly, manualOnly, blocking, priceUncertain, priceSafety, skipped, willImport: Math.max(0, clean), needFix: warningOnly + blocking };
+    const willImport = rows.filter(({ p }) => !isUnsafeImportedProduct(p)).length;
+    return { clean: Math.max(0, clean), warningOnly, advisoryOnly, actionableReview, safeWarningOnly, manualOnly, blocking, priceUncertain, priceSafety, skipped, willImport: Math.max(0, willImport), needFix: actionableReview + blocking };
   };
 
   const getPreviewStatusForRow = (p, index) => getLineForProductIndex(index, p)?.status || p?._meta?.canonicalStatus || p?._meta?.status || "auto_approved";
@@ -7081,21 +7087,22 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
               const hasPriceUnconfirmed = priceColumnUncertainRows().length > 0 && !priceColumnConfirmed;
               const hasBlocking = c.blocking > 0;
               const hasReview = c.warningOnly > 0;
-              const readyCount = c.clean;
+              const hasActionableReview = c.actionableReview > 0;
+              const readyCount = c.willImport;
               const skippedCount = c.skipped;
               const title = hasBlocking
                 ? `Có ${c.blocking} lỗi cần xử lý`
-                : hasReview
-                  ? `Cần xem lại ${c.warningOnly} dòng`
-                  : `Đã sẵn sàng nhập`;
+                : hasActionableReview
+                  ? `Cần xem lại ${c.actionableReview} dòng trước khi nhập đủ`
+                  : hasReview
+                    ? `Sẵn sàng nhập — có ${c.advisoryOnly} cảnh báo không chặn`
+                    : `Đã sẵn sàng nhập`;
               const tone = hasBlocking ? "danger" : hasReview ? "warn" : "ok";
               const defaultAction = hasPriceUnconfirmed
                 ? { label: "Cần xác nhận cột giá", onClick: () => {}, disabled: true }
                 : hasBlocking
                   ? { label: `Đi tới lỗi đầu tiên`, onClick: () => goToPreviewIssue("blocking", "first") }
-                  : hasReview
-                    ? { label: `Duyệt ${c.warningOnly} dòng an toàn`, onClick: approveAllPreviewRows }
-                    : { label: `Nhập ${readyCount} sản phẩm`, onClick: applyImport };
+                  : { label: `Nhập ${readyCount} sản phẩm an toàn`, onClick: applyImport };
               return (
                 <div className={`ci-import-hero ${tone}`}>
                   <div className="ci-import-hero-main">
@@ -7103,7 +7110,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                     <div className="ci-import-source">📄 {importResult?.fileName || file?.name || "Nguồn import"}{importResult?.engine ? ` · ${importResult.engine}` : ""}</div>
                     <h3>{title}</h3>
                     <p>
-                      <strong>{readyCount}</strong> sản phẩm sẵn sàng nhập · <strong>{c.warningOnly}</strong> cần xem lại · <strong>{skippedCount}</strong> dòng đã bỏ qua
+                      <strong>{readyCount}</strong> sản phẩm có thể nhập · <strong>{c.actionableReview}</strong> cần duyệt · <strong>{c.advisoryOnly}</strong> cảnh báo không chặn · <strong>{skippedCount}</strong> dòng đã bỏ qua
                     </p>
                   </div>
                   <div className="ci-import-hero-actions">
@@ -7314,8 +7321,8 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                   {priceColumnUncertainRows().length > 0 && !priceColumnConfirmed
                     ? "Cần xác nhận cột giá"
                     : mergeMode === "replace"
-                      ? `Thay thế danh mục bằng ${getPreviewCounts(parsed).clean} sản phẩm`
-                      : `Thêm ${getPreviewCounts(parsed).clean} sản phẩm vào danh mục`}
+                      ? `Thay thế danh mục bằng ${getPreviewCounts(parsed).willImport} sản phẩm`
+                      : `Thêm ${getPreviewCounts(parsed).willImport} sản phẩm vào danh mục`}
                 </button>
               </div>
             </div>

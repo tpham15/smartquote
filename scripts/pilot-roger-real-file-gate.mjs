@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import { extractPagesFromPdf } from '../api/_lib/pdfTextGeometry.js';
 import { dedupeCatalogIdentities } from '../src/import-engine/productSanitizer.js';
+import { applyCommercialValidation } from '../src/import-engine/businessValidator.js';
 
 const root = process.cwd();
 const filePath = path.resolve(process.argv[2] || process.env.SQ_ROGER_GOLDEN_PDF || '');
@@ -105,6 +106,19 @@ for (const group of golden.reusedSupplierCodes || []) {
   assert.equal(new Set(matches.map(p => p.name)).size, group.expectedRows, `supplier SKU ${group.sku}: distinct names were collapsed`);
 }
 
+// RC12 browser/business validation contract: supplier-code reuse for visibly
+// distinct products is REVIEW/WARNING, never a blocking duplicate-SKU error.
+const businessValidated = applyCommercialValidation(products).products;
+const blockingDuplicateSku = businessValidated.filter((p) => (p?._meta?.issues || []).some((it) =>
+  String(it?.code || '') === 'pilot_business_duplicate_sku_in_import' && String(it?.level || '').toLowerCase() === 'error'
+));
+assert.equal(blockingDuplicateSku.length, 0, `Roger supplier-code reuse must not create blocking duplicate-SKU errors; got ${blockingDuplicateSku.length}`);
+for (const group of golden.reusedSupplierCodes || []) {
+  const matches = businessValidated.filter(p => String(p.sku || '').toUpperCase() === String(group.sku).toUpperCase());
+  assert.equal(matches.length, group.expectedRows, `business validation changed ${group.sku} row count`);
+  assert.ok(matches.every(p => p?._meta?.canonicalStatus !== 'failed'), `${group.sku}: business validation must preserve rows as review/non-failed`);
+}
+
 const forbidden = /(chính sách đặc biệt|giá khóa lục bằng khóa chìa|đã cọc đế|gửi ngay mạch khác|số lượng tối thiểu 10 bộ)/i;
 assert.equal(products.filter(p => forbidden.test(String(p.name || ''))).length, 0, 'supplier notes leaked into catalog as products');
 
@@ -114,5 +128,5 @@ console.log(`  production geometry: pages=${extracted.pageCount} textChars=${ext
 console.log(`  STT coverage: 88/88, UI identity stage: ${products.length}/88`);
 console.log('  Mã SP != Tên sản phẩm: enforced for ordinary rows');
 console.log('  Giá cấp 1 -> costPrice; Giá bán lẻ -> listPrice: enforced');
-console.log('  FU supplier-code reuse: 8 distinct products preserved');
+console.log('  FU supplier-code reuse: 8 distinct products preserved; business validation = REVIEW/WARNING, not ERROR');
 console.log('  STT 1/2: 201/304 price options preserved; no silent price selection');

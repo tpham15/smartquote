@@ -1066,6 +1066,15 @@ export function sanitizeCatalogProducts(products, opts = {}) {
   return (products || []).map((p) => sanitizeCatalogProduct(p, opts));
 }
 
+const NON_BLOCKING_IMPORT_ADVISORY_CODES = new Set([
+  "supplier_sku_reused_for_distinct_products",
+  "pilot_business_supplier_code_reused",
+]);
+
+export function isNonBlockingImportAdvisoryIssue(it) {
+  return NON_BLOCKING_IMPORT_ADVISORY_CODES.has(getIssueCode(it));
+}
+
 export function isUnsafeImportedProduct(product) {
   const issues = product?._meta?.issues || [];
   const accepted = isUserAccepted(product);
@@ -1075,5 +1084,15 @@ export function isUnsafeImportedProduct(product) {
   const status = product?._meta?.status;
   const canonicalStatus = product?._meta?.canonicalStatus;
   if (status === "skipped" || canonicalStatus === "skipped") return true;
-  return status === "review" || status === "rejected" || issues.some((it) => getIssueLevel(it) === "error" || getIssueLevel(it) === "warning");
+  if (status === "rejected" || canonicalStatus === "failed") return true;
+
+  const actionableIssues = issues.filter((it) => !isNonBlockingImportAdvisoryIssue(it));
+  if (actionableIssues.some((it) => ["error", "warning"].includes(getIssueLevel(it)))) return true;
+
+  // A row may intentionally remain yellow in preview to show supplier-code reuse
+  // provenance while still being safe to import. Unknown review states with no
+  // explicit advisory evidence remain unsafe/fail-closed.
+  const isReviewState = status === "review" || canonicalStatus === "need_review";
+  if (isReviewState) return !(issues.length > 0 && actionableIssues.length === 0);
+  return false;
 }
