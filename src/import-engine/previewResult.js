@@ -179,6 +179,14 @@ function normalizeSource(source = {}, index = 0) {
     parts: Array.isArray(source.parts) ? source.parts : [],
     pageWidth: Number(source.pageWidth || 0) || null,
     pageHeight: Number(source.pageHeight || 0) || null,
+    // Preserve source-level identity/taxonomy provenance across the canonical
+    // preview boundary. P2.3.3 originally extracted these fields correctly,
+    // but normalizeSource() dropped them before importPreviewLinesToProducts(),
+    // which made real XLSX imports lose Quy Cách/documentCategory.
+    documentCategory: source.documentCategory || source.quoteSpecification || "",
+    section: source.section || source.sectionName || "",
+    rawSku: source.rawSku || "",
+    canonicalSkuEvidence: source.canonicalSkuEvidence || "",
   };
 }
 

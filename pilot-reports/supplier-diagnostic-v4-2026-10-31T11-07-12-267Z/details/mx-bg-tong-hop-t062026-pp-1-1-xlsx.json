@@ -1,0 +1,304 @@
+{
+  "file": "MX-BG Tổng Hợp T062026 PP(1)  -1.xlsx",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/MX-BG Tổng Hợp T062026 PP(1)  -1.xlsx",
+  "type": "spreadsheet",
+  "hash": "c7341560a777ec1ec529c00d6a79b2fa98431e5f2962862cc4a7db01049257b8",
+  "engine": "v2",
+  "sourceRows": 54,
+  "previewLines": 40,
+  "productCount": 40,
+  "dedupedCount": 0,
+  "identityConflicts": 0,
+  "scanLike": false,
+  "golden": null,
+  "issues": [
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=Chuông hình BasIP · row=32",
+      "source": {
+        "sheet": "Chuông hình BasIP",
+        "row": 32,
+        "cells": [
+          "A33",
+          "B33",
+          "D33",
+          "E33",
+          "H33",
+          "I33",
+          "J33"
+        ],
+        "rawText": "14 Giá đỡ màn hình Chiếc 1 VN 600000 600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "14 Giá đỡ màn hình Chiếc 1 VN 600000 600000",
+      "parsed": {
+        "name": "Giá đỡ màn hình",
+        "sku": "",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "MX BG T062026 PP(1) 1",
+        "unit": "Cái",
+        "costPrice": 600000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=Chuông hình BasIP · row=32",
+      "source": {
+        "sheet": "Chuông hình BasIP",
+        "row": 32,
+        "cells": [
+          "A33",
+          "B33",
+          "D33",
+          "E33",
+          "H33",
+          "I33",
+          "J33"
+        ],
+        "rawText": "14 Giá đỡ màn hình Chiếc 1 VN 600000 600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "14 Giá đỡ màn hình Chiếc 1 VN 600000 600000",
+      "parsed": {
+        "name": "Giá đỡ màn hình",
+        "sku": "",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "MX BG T062026 PP(1) 1",
+        "unit": "Cái",
+        "costPrice": 600000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=Aiphone  · row=19",
+      "source": {
+        "sheet": "Aiphone ",
+        "row": 19,
+        "cells": [
+          "A20",
+          "B20",
+          "D20",
+          "E20",
+          "F20",
+          "G20",
+          "H20",
+          "I20",
+          "J20"
+        ],
+        "rawText": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku",
+        "groundedIdentityEvidence": "tail_unit_quantity_identity"
+      },
+      "rawText": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+      "parsed": {
+        "name": "Chuông cửa có hình JOS-1A",
+        "sku": "JOS-1A",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "MX BG T062026 PP(1) 1",
+        "unit": "Cái",
+        "costPrice": 7895000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "grounded_identity_recovered_from_source_row"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=Aiphone  · row=19",
+      "source": {
+        "sheet": "Aiphone ",
+        "row": 19,
+        "cells": [
+          "A20",
+          "B20",
+          "D20",
+          "E20",
+          "F20",
+          "G20",
+          "H20",
+          "I20",
+          "J20"
+        ],
+        "rawText": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku",
+        "groundedIdentityEvidence": "tail_unit_quantity_identity"
+      },
+      "rawText": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+      "parsed": {
+        "name": "Chuông cửa có hình JOS-1A",
+        "sku": "JOS-1A",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "MX BG T062026 PP(1) 1",
+        "unit": "Cái",
+        "costPrice": 7895000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "grounded_identity_recovered_from_source_row"
+      ]
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Aiphone  · row=19",
+      "source": {
+        "sheet": "Aiphone ",
+        "row": 19,
+        "cells": [
+          "A20",
+          "B20",
+          "D20",
+          "E20",
+          "F20",
+          "G20",
+          "H20",
+          "I20",
+          "J20"
+        ],
+        "rawText": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+      "parsed": {
+        "name": "Sản phẩm JO-1MD",
+        "sku": "",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "MX BG T062026 PP(1) 1",
+        "unit": "Cái",
+        "costPrice": 7895000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_1hma4e0",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "4 Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm Bộ 1 Chuông cửa có hình JOS-1A (Gồm chuông cửa JO-1MD và JO-DA) Aiphone Thái Lan 9849000 7895000",
+        "sku": "",
+        "unit": "Cái",
+        "price": 7895000
+      },
+      "parsedLine": {
+        "productName": "Sản phẩm JO-1MD",
+        "sku": "",
+        "category": "Chuông cửa",
+        "supplier": "MX BG T062026 PP(1) 1",
+        "unit": "Cái",
+        "unitPrice": 7895000,
+        "costPrice": 7895000,
+        "listPrice": 0,
+        "publicPrice": 0,
+        "minRetailPrice": 0,
+        "priceMode": "markup",
+        "specs": "Bao gồm Màn hình JO-1MD và nút chuông JO-DA - Màn hình LCD: 7 inch, phím bấm cảm ứng - Nút chuông IP54,điều chỉnh được góc quan sát - Lựa chọn thêm màn hình phụ -Giao tiếp không dùng tai nghe ( Press to Talk) - Nút chuông dương tường bằng nhựa, có thể điều chỉnh góc quan sát. - Lăp được ngoài trời ( Chống chịu được nước tràn) - Đèn hỗ trợ quan sát ban đêm"
+      }
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 5,
+      "INFO": 0
+    },
+    "byCode": [
+      {
+        "code": "MISSING_SKU",
+        "count": 1
+      },
+      {
+        "code": "ENGINE_MISSING_SKU",
+        "count": 1
+      },
+      {
+        "code": "NEEDS_REVIEW",
+        "count": 1
+      },
+      {
+        "code": "DUPLICATE_PRICE_CONFLICT",
+        "count": 1
+      },
+      {
+        "code": "ENGINE_LINE_REVIEW",
+        "count": 1
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

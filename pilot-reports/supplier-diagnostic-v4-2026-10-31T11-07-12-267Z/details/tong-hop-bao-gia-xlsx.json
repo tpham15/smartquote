@@ -1,0 +1,4811 @@
+{
+  "file": "Tổng hợp báo giá.xlsx",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/Tổng hợp báo giá.xlsx",
+  "type": "spreadsheet",
+  "hash": "7d63ef1c7421a2f43020bbe019d4686a3124ac01dd60b87135be140d6f894606",
+  "engine": "v2",
+  "sourceRows": 117,
+  "previewLines": 101,
+  "productCount": 100,
+  "dedupedCount": 0,
+  "identityConflicts": 0,
+  "scanLike": false,
+  "golden": null,
+  "issues": [
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA BIỆT THỰ · row=6",
+      "source": {
+        "sheet": "KHÓA BIỆT THỰ",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7",
+          "L7"
+        ],
+        "rawText": "1 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x730mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 38690000 39890000 24 tháng Hết hàng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x730mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 38690000 39890000 24 tháng Hết hàng",
+      "parsed": {
+        "name": "Cảm biến - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Cảm biến",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 39890000,
+        "listPrice": 39890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA BIỆT THỰ · row=6",
+      "source": {
+        "sheet": "KHÓA BIỆT THỰ",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7",
+          "L7"
+        ],
+        "rawText": "1 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x730mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 38690000 39890000 24 tháng Hết hàng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x730mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 38690000 39890000 24 tháng Hết hàng",
+      "parsed": {
+        "name": "Cảm biến - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Cảm biến",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 39890000,
+        "listPrice": 39890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA BIỆT THỰ · row=7",
+      "source": {
+        "sheet": "KHÓA BIỆT THỰ",
+        "row": 7,
+        "cells": [
+          "A8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "K8"
+        ],
+        "rawText": "2 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x480mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 36990000 38190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x480mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 36990000 38190000 24 tháng",
+      "parsed": {
+        "name": "Cảm biến - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Cảm biến",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 38190000,
+        "listPrice": 38190000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA BIỆT THỰ · row=7",
+      "source": {
+        "sheet": "KHÓA BIỆT THỰ",
+        "row": 7,
+        "cells": [
+          "A8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "K8"
+        ],
+        "rawText": "2 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x480mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 36990000 38190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Màu sắc: Mạ vàng 24K Chất liệu: Đồng nguyên khối Phụ kiện kèm theo: 02 thẻ từ , 02 chìa cơ , 04 pin AA Phương thức mở khóa: * Vân tay * Mã số * Thẻ từ: Thẻ tần số cao, tích hợp tháng máy * Chìa cơ * Mở khóa từ xa qua App Tuya Mở khóa khẩn cấp: Chìa khóa cơ/Cổng USB Chế độ thông phòng: Khi chế độ thông phòng được kích hoạt, không cần dùng vân tay, mã số vẫn có thể mở được khóa. Dung lượng bộ nhớ: 150 users. Tuổi thọ pin: 5.000 lần mở khóa Kích thước khóa: 84x480mm Chốt an toàn bên trong: Khi bật lên, bên ngoài dù có vân tay cũng không mở khóa được, đảm bảo chế độ riêng tư. Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App 1 36990000 38190000 24 tháng",
+      "parsed": {
+        "name": "Cảm biến - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Cảm biến",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 38190000,
+        "listPrice": 38190000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA THÔNG MINH · row=6",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x75mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4800000 4990000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x75mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4800000 4990000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4990000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA THÔNG MINH · row=6",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x75mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4800000 4990000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x75mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4800000 4990000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4990000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA THÔNG MINH · row=8",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 8,
+        "cells": [
+          "A9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "G9",
+          "K9"
+        ],
+        "rawText": "2 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 155x29mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4000000 4190000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 155x29mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4000000 4190000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4190000,
+        "listPrice": 4190000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA THÔNG MINH · row=8",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 8,
+        "cells": [
+          "A9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "G9",
+          "K9"
+        ],
+        "rawText": "2 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 155x29mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4000000 4190000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 155x29mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 4000000 4190000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4190000,
+        "listPrice": 4190000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA THÔNG MINH · row=10",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 10,
+        "cells": [
+          "A11",
+          "C11",
+          "D11",
+          "E11",
+          "F11",
+          "G11",
+          "K11"
+        ],
+        "rawText": "4 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x280mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/ đỏ đồng/ đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 3800000 3990000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x280mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/ đỏ đồng/ đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 3800000 3990000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3990000,
+        "listPrice": 3990000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA THÔNG MINH · row=10",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 10,
+        "cells": [
+          "A11",
+          "C11",
+          "D11",
+          "E11",
+          "F11",
+          "G11",
+          "K11"
+        ],
+        "rawText": "4 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x280mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/ đỏ đồng/ đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 3800000 3990000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 60x280mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/ đỏ đồng/ đen Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App/Remote (mở rộng) 1 3800000 3990000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3990000,
+        "listPrice": 3990000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA THÔNG MINH · row=14",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 14,
+        "cells": [
+          "A15",
+          "C15",
+          "D15",
+          "E15",
+          "F15",
+          "G15",
+          "K15"
+        ],
+        "rawText": "8 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 88 users Kích thước khóa: 75x370mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Đen/đỏ đồng/bạc Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App Tuya 1 5190000 5490000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 88 users Kích thước khóa: 75x370mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Đen/đỏ đồng/bạc Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App Tuya 1 5190000 5490000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5490000,
+        "listPrice": 5490000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA THÔNG MINH · row=14",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 14,
+        "cells": [
+          "A15",
+          "C15",
+          "D15",
+          "E15",
+          "F15",
+          "G15",
+          "K15"
+        ],
+        "rawText": "8 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 88 users Kích thước khóa: 75x370mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Đen/đỏ đồng/bạc Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App Tuya 1 5190000 5490000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 88 users Kích thước khóa: 75x370mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Đen/đỏ đồng/bạc Mật khẩu/ Vân tay/Thẻ từ// Chìa cơ/App Tuya 1 5190000 5490000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5490000,
+        "listPrice": 5490000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA THÔNG MINH · row=16",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 16,
+        "cells": [
+          "A17",
+          "C17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "K17"
+        ],
+        "rawText": "10 Điện áp làm việc: Pin Lithium 4200mAh Tuổi thọ pin: 3.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 150 users Kích thước khóa: 80x450mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/Đen/Tím cafe Mật khẩu/ Vân tay/Thẻ từ/App Usmartgo/ Chìa cơ 1 9890000 10390000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "10 Điện áp làm việc: Pin Lithium 4200mAh Tuổi thọ pin: 3.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 150 users Kích thước khóa: 80x450mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/Đen/Tím cafe Mật khẩu/ Vân tay/Thẻ từ/App Usmartgo/ Chìa cơ 1 9890000 10390000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 10390000,
+        "listPrice": 10390000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA THÔNG MINH · row=16",
+      "source": {
+        "sheet": "KHÓA THÔNG MINH",
+        "row": 16,
+        "cells": [
+          "A17",
+          "C17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "K17"
+        ],
+        "rawText": "10 Điện áp làm việc: Pin Lithium 4200mAh Tuổi thọ pin: 3.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 150 users Kích thước khóa: 80x450mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/Đen/Tím cafe Mật khẩu/ Vân tay/Thẻ từ/App Usmartgo/ Chìa cơ 1 9890000 10390000 24 tháng.",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "10 Điện áp làm việc: Pin Lithium 4200mAh Tuổi thọ pin: 3.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: Tiếng Anh Nguồn điện khẩn cấp: Cấp qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 150 users Kích thước khóa: 80x450mm Độ dày cửa: >35mm Loại cửa: Cửa kim loại, cửa gỗ Màu sắc: Vàng/Đen/Tím cafe Mật khẩu/ Vân tay/Thẻ từ/App Usmartgo/ Chìa cơ 1 9890000 10390000 24 tháng.",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 10390000,
+        "listPrice": 10390000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "H7",
+          "I7",
+          "J7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2994000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "H7",
+          "I7",
+          "J7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2994000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "H7",
+          "I7",
+          "J7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2994000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "H7",
+          "I7",
+          "J7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2994000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=7",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 7,
+        "cells": [
+          "A8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "K8"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 43x303mm Độ dày cửa: >30mm Loại cửa:Cửa nhôm kính, cửa kim loại Màu sắc: Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 5290000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 43x303mm Độ dày cửa: >30mm Loại cửa:Cửa nhôm kính, cửa kim loại Màu sắc: Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 5290000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5290000,
+        "listPrice": 5290000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=7",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 7,
+        "cells": [
+          "A8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "K8"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 43x303mm Độ dày cửa: >30mm Loại cửa:Cửa nhôm kính, cửa kim loại Màu sắc: Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 5290000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin: 5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 43x303mm Độ dày cửa: >30mm Loại cửa:Cửa nhôm kính, cửa kim loại Màu sắc: Bạc/đen/vàng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 5290000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5290000,
+        "listPrice": 5290000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=9",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 9,
+        "cells": [
+          "A10",
+          "C10",
+          "D10",
+          "E10",
+          "F10",
+          "G10",
+          "K10"
+        ],
+        "rawText": "3 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 user Kích thước khóa: 37x330mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5690000 5890000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 user Kích thước khóa: 37x330mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5690000 5890000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5890000,
+        "listPrice": 5890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=9",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 9,
+        "cells": [
+          "A10",
+          "C10",
+          "D10",
+          "E10",
+          "F10",
+          "G10",
+          "K10"
+        ],
+        "rawText": "3 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 user Kích thước khóa: 37x330mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5690000 5890000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App Tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 user Kích thước khóa: 37x330mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5690000 5890000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5890000,
+        "listPrice": 5890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=19",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 19,
+        "cells": [
+          "B20",
+          "C20",
+          "D20",
+          "E20",
+          "F20",
+          "G20",
+          "K20"
+        ],
+        "rawText": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-2606",
+        "sku": "OSN-2606",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 6190000,
+        "listPrice": 6190000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=19",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 19,
+        "cells": [
+          "B20",
+          "C20",
+          "D20",
+          "E20",
+          "F20",
+          "G20",
+          "K20"
+        ],
+        "rawText": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-2606",
+        "sku": "OSN-2606",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 6190000,
+        "listPrice": 6190000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7"
+        ],
+        "rawText": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "OSN-3373",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3373",
+        "sku": "OSN-3373",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4590000,
+        "listPrice": 4590000
+      },
+      "issueCodes": [
+        "price_column_uncertain"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: STT",
+      "location": "sheet=KHÓA KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7"
+        ],
+        "rawText": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "OSN-3373",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3373",
+        "sku": "OSN-3373",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4590000,
+        "listPrice": 4590000
+      },
+      "issueCodes": [
+        "price_column_uncertain"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=6",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7",
+          "L7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x300mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa gỗ, cửa kim loại Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/ bạc/nâu Thẻ từ/chìa cơ 1 3890000 3890000 24 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x300mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa gỗ, cửa kim loại Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/ bạc/nâu Thẻ từ/chìa cơ 1 3890000 3890000 24 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3890000,
+        "listPrice": 3890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=6",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7",
+          "L7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x300mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa gỗ, cửa kim loại Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/ bạc/nâu Thẻ từ/chìa cơ 1 3890000 3890000 24 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x300mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa gỗ, cửa kim loại Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/ bạc/nâu Thẻ từ/chìa cơ 1 3890000 3890000 24 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3890000,
+        "listPrice": 3890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=7",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 7,
+        "cells": [
+          "A8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "K8",
+          "L8"
+        ],
+        "rawText": "2 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x304mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/bạc Thẻ từ/chìa cơ 1 3490000 3490000 24 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x304mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/bạc Thẻ từ/chìa cơ 1 3490000 3490000 24 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3490000,
+        "listPrice": 3490000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=7",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 7,
+        "cells": [
+          "A8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "K8",
+          "L8"
+        ],
+        "rawText": "2 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x304mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/bạc Thẻ từ/chìa cơ 1 3490000 3490000 24 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 70x304mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng kim/bạc Thẻ từ/chìa cơ 1 3490000 3490000 24 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3490000,
+        "listPrice": 3490000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=8",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 8,
+        "cells": [
+          "A9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "G9",
+          "K9",
+          "L9"
+        ],
+        "rawText": "3 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 42x243mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >30mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 125Khz Màu sắc: Bạc Thẻ từ/chìa cơ 1 3190000 3390000 24 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 42x243mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >30mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 125Khz Màu sắc: Bạc Thẻ từ/chìa cơ 1 3190000 3390000 24 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3390000,
+        "listPrice": 3390000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=8",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 8,
+        "cells": [
+          "A9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "G9",
+          "K9",
+          "L9"
+        ],
+        "rawText": "3 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 42x243mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >30mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 125Khz Màu sắc: Bạc Thẻ từ/chìa cơ 1 3190000 3390000 24 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 42x243mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >30mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 125Khz Màu sắc: Bạc Thẻ từ/chìa cơ 1 3190000 3390000 24 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3390000,
+        "listPrice": 3390000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=9",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 9,
+        "cells": [
+          "A10",
+          "C10",
+          "D10",
+          "E10",
+          "F10",
+          "G10",
+          "K10",
+          "L10"
+        ],
+        "rawText": "4 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 75x305mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng/đen/đỏ đồng Thẻ từ/chìa cơ 1 2990000 3190000 24 tháng Hàng có sẵn màu đỏ đồng/đen",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 75x305mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng/đen/đỏ đồng Thẻ từ/chìa cơ 1 2990000 3190000 24 tháng Hàng có sẵn màu đỏ đồng/đen",
+      "parsed": {
+        "name": "Đèn - Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3190000,
+        "listPrice": 3190000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=9",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 9,
+        "cells": [
+          "A10",
+          "C10",
+          "D10",
+          "E10",
+          "F10",
+          "G10",
+          "K10",
+          "L10"
+        ],
+        "rawText": "4 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 75x305mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng/đen/đỏ đồng Thẻ từ/chìa cơ 1 2990000 3190000 24 tháng Hàng có sẵn màu đỏ đồng/đen",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5.000 lần mở khóa Dung lượng bộ nhớ: 1.000 lần mở khóa Kích thước khóa: 75x305mm Chất liệu: Hợp kim chịu lực Độ dày cửa: >40mm Loại cửa: Cửa kim loại, cửa gỗ Thẻ từ tần số 13.56Mhz Màu sắc: Vàng/đen/đỏ đồng Thẻ từ/chìa cơ 1 2990000 3190000 24 tháng Hàng có sẵn màu đỏ đồng/đen",
+      "parsed": {
+        "name": "Đèn - Thẻ từ/chìa cơ",
+        "sku": "",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 3190000,
+        "listPrice": 3190000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=25",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 25,
+        "cells": [
+          "A26",
+          "B26",
+          "C26",
+          "E26",
+          "F26",
+          "G26",
+          "H26",
+          "K26",
+          "L26"
+        ],
+        "rawText": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Khóa thông minh MPT13.56MHZ",
+        "sku": "MPT13.56MHZ",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4000000,
+        "listPrice": 5500000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=25",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 25,
+        "cells": [
+          "A26",
+          "B26",
+          "C26",
+          "E26",
+          "F26",
+          "G26",
+          "H26",
+          "K26",
+          "L26"
+        ],
+        "rawText": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Khóa thông minh MPT13.56MHZ",
+        "sku": "MPT13.56MHZ",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4000000,
+        "listPrice": 5500000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=29",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 29,
+        "cells": [
+          "A30",
+          "B30",
+          "C30",
+          "E30",
+          "F30",
+          "G30",
+          "H30"
+        ],
+        "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+      "parsed": {
+        "name": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 40000,
+        "listPrice": 75000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=29",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 29,
+        "cells": [
+          "A30",
+          "B30",
+          "C30",
+          "E30",
+          "F30",
+          "G30",
+          "H30"
+        ],
+        "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+      "parsed": {
+        "name": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 40000,
+        "listPrice": 75000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=29",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 29,
+        "cells": [
+          "A30",
+          "B30",
+          "C30",
+          "E30",
+          "F30",
+          "G30",
+          "H30"
+        ],
+        "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+      "parsed": {
+        "name": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 40000,
+        "listPrice": 75000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=29",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 29,
+        "cells": [
+          "A30",
+          "B30",
+          "C30",
+          "E30",
+          "F30",
+          "G30",
+          "H30"
+        ],
+        "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+      "parsed": {
+        "name": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 40000,
+        "listPrice": 75000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=32",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 32,
+        "cells": [
+          "A33",
+          "B33",
+          "E33",
+          "F33",
+          "G33",
+          "H33"
+        ],
+        "rawText": "27 Thẻ từ Mifare 125Khz ( thẻ trắng) 1 50000 55000 35000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "27 Thẻ từ Mifare 125Khz ( thẻ trắng) 1 50000 55000 35000",
+      "parsed": {
+        "name": "Thẻ từ Mifare 125Khz ( thẻ trắng)",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 35000,
+        "listPrice": 55000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=32",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 32,
+        "cells": [
+          "A33",
+          "B33",
+          "E33",
+          "F33",
+          "G33",
+          "H33"
+        ],
+        "rawText": "27 Thẻ từ Mifare 125Khz ( thẻ trắng) 1 50000 55000 35000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "27 Thẻ từ Mifare 125Khz ( thẻ trắng) 1 50000 55000 35000",
+      "parsed": {
+        "name": "Thẻ từ Mifare 125Khz ( thẻ trắng)",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 35000,
+        "listPrice": 55000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHÓA CỔNG · row=6",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "J7"
+        ],
+        "rawText": "1 Phương thức mở khóa: vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước khóa 130Lx105Wx38H(mm) Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 4690000 4890000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Phương thức mở khóa: vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước khóa 130Lx105Wx38H(mm) Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 4690000 4890000 24 tháng",
+      "parsed": {
+        "name": "Phương thức mở khóa: vân tay/thẻ từ/mật khẩu...",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4890000,
+        "listPrice": 4890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHÓA CỔNG · row=6",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "J7"
+        ],
+        "rawText": "1 Phương thức mở khóa: vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước khóa 130Lx105Wx38H(mm) Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 4690000 4890000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Phương thức mở khóa: vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước khóa 130Lx105Wx38H(mm) Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 4690000 4890000 24 tháng",
+      "parsed": {
+        "name": "Phương thức mở khóa: vân tay/thẻ từ/mật khẩu...",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4890000,
+        "listPrice": 4890000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA CỔNG · row=7",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3334",
+        "sku": "OSN-3334",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 6490000,
+        "listPrice": 6490000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA CỔNG · row=7",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3334",
+        "sku": "OSN-3334",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 6490000,
+        "listPrice": 6490000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA CỔNG · row=12",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 12,
+        "cells": [
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "J13"
+        ],
+        "rawText": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3335",
+        "sku": "OSN-3335",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5590000,
+        "listPrice": 5590000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA CỔNG · row=12",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 12,
+        "cells": [
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "J13"
+        ],
+        "rawText": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3335",
+        "sku": "OSN-3335",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5590000,
+        "listPrice": 5590000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHÓA CỔNG · row=14",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 14,
+        "cells": [
+          "B15",
+          "C15",
+          "D15",
+          "E15",
+          "F15",
+          "J15"
+        ],
+        "rawText": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3336",
+        "sku": "OSN-3336",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 7190000,
+        "listPrice": 7190000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHÓA CỔNG · row=14",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 14,
+        "cells": [
+          "B15",
+          "C15",
+          "D15",
+          "E15",
+          "F15",
+          "J15"
+        ],
+        "rawText": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3336",
+        "sku": "OSN-3336",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 7190000,
+        "listPrice": 7190000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=12",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "G13"
+        ],
+        "rawText": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "OSN-KC06",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-KC06",
+        "sku": "OSN-KC06",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 462000,
+        "listPrice": 770000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=12",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "G13"
+        ],
+        "rawText": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "OSN-KC06",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-KC06",
+        "sku": "OSN-KC06",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 462000,
+        "listPrice": 770000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=22",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 22,
+        "cells": [
+          "B23",
+          "C23",
+          "E23",
+          "F23",
+          "G23"
+        ],
+        "rawText": "Mắt thần (1) Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính rộng, trong và nét 120000 72000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "Mắt thần (1) Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính rộng, trong và nét 120000 72000 12 tháng",
+      "parsed": {
+        "name": "Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 72000,
+        "listPrice": 120000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=22",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 22,
+        "cells": [
+          "B23",
+          "C23",
+          "E23",
+          "F23",
+          "G23"
+        ],
+        "rawText": "Mắt thần (1) Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính rộng, trong và nét 120000 72000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "Mắt thần (1) Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính rộng, trong và nét 120000 72000 12 tháng",
+      "parsed": {
+        "name": "Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 72000,
+        "listPrice": 120000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=23",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 23,
+        "cells": [
+          "B24",
+          "C24",
+          "E24",
+          "F24",
+          "G24"
+        ],
+        "rawText": "Mắt thần (2) Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính nhỏ hơn 105000 63000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "Mắt thần (2) Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính nhỏ hơn 105000 63000 12 tháng",
+      "parsed": {
+        "name": "Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 63000,
+        "listPrice": 105000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=23",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 23,
+        "cells": [
+          "B24",
+          "C24",
+          "E24",
+          "F24",
+          "G24"
+        ],
+        "rawText": "Mắt thần (2) Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính nhỏ hơn 105000 63000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "Mắt thần (2) Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO Dòng sản phẩm: Mắt thần Màu sắc: Bạc Chất liệu: SS304 Thấu kính nhỏ hơn 105000 63000 12 tháng",
+      "parsed": {
+        "name": "Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 63000,
+        "listPrice": 105000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=7",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "H8"
+        ],
+        "rawText": "2 Tủ nguồn Tủ có đèn báo và lưu điện 12V 7.5AH 1 2300000 2590000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Tủ nguồn Tủ có đèn báo và lưu điện 12V 7.5AH 1 2300000 2590000 12 tháng",
+      "parsed": {
+        "name": "Tủ nguồn",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=7",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "H8"
+        ],
+        "rawText": "2 Tủ nguồn Tủ có đèn báo và lưu điện 12V 7.5AH 1 2300000 2590000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Tủ nguồn Tủ có đèn báo và lưu điện 12V 7.5AH 1 2300000 2590000 12 tháng",
+      "parsed": {
+        "name": "Tủ nguồn",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=8",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 8,
+        "cells": [
+          "A9",
+          "B9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "G9",
+          "H9"
+        ],
+        "rawText": "3 Nam châm 1 Trọng tải 280kg 1 1100000 1210000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 Nam châm 1 Trọng tải 280kg 1 1100000 1210000 12 tháng",
+      "parsed": {
+        "name": "Nam châm",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 1210000,
+        "listPrice": 1210000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=8",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 8,
+        "cells": [
+          "A9",
+          "B9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "G9",
+          "H9"
+        ],
+        "rawText": "3 Nam châm 1 Trọng tải 280kg 1 1100000 1210000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 Nam châm 1 Trọng tải 280kg 1 1100000 1210000 12 tháng",
+      "parsed": {
+        "name": "Nam châm",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 1210000,
+        "listPrice": 1210000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=9",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "E10",
+          "F10",
+          "G10",
+          "H10"
+        ],
+        "rawText": "4 Bát ZL 1 500000 550000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Bát ZL 1 500000 550000 12 tháng",
+      "parsed": {
+        "name": "Bát ZL",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 550000,
+        "listPrice": 550000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=9",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "E10",
+          "F10",
+          "G10",
+          "H10"
+        ],
+        "rawText": "4 Bát ZL 1 500000 550000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "4 Bát ZL 1 500000 550000 12 tháng",
+      "parsed": {
+        "name": "Bát ZL",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 550000,
+        "listPrice": 550000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=10",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 10,
+        "cells": [
+          "A11",
+          "B11",
+          "D11",
+          "E11",
+          "F11",
+          "G11",
+          "H11"
+        ],
+        "rawText": "5 Mô tơ cửa Khóa cơ, tránh trường hợp mất điện hút từ nam châm bị nhả 1 1550000 1690000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "5 Mô tơ cửa Khóa cơ, tránh trường hợp mất điện hút từ nam châm bị nhả 1 1550000 1690000 12 tháng",
+      "parsed": {
+        "name": "Mô tơ cửa",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 1690000,
+        "listPrice": 1690000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=10",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 10,
+        "cells": [
+          "A11",
+          "B11",
+          "D11",
+          "E11",
+          "F11",
+          "G11",
+          "H11"
+        ],
+        "rawText": "5 Mô tơ cửa Khóa cơ, tránh trường hợp mất điện hút từ nam châm bị nhả 1 1550000 1690000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "5 Mô tơ cửa Khóa cơ, tránh trường hợp mất điện hút từ nam châm bị nhả 1 1550000 1690000 12 tháng",
+      "parsed": {
+        "name": "Mô tơ cửa",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 1690000,
+        "listPrice": 1690000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=11",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "C12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12"
+        ],
+        "rawText": "6 Gateway mở khóa từ xa qua wifi 1 Chuyển đổi sóng bluetooth sang wifi giúp mở khóa từ xa không giới hạn khoảng cách 1 1260000 1390000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 Gateway mở khóa từ xa qua wifi 1 Chuyển đổi sóng bluetooth sang wifi giúp mở khóa từ xa không giới hạn khoảng cách 1 1260000 1390000 12 tháng",
+      "parsed": {
+        "name": "Gateway mở khóa từ xa qua wifi",
+        "sku": "",
+        "category": "Bộ điều khiển trung tâm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 1390000,
+        "listPrice": 1390000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=11",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "C12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12"
+        ],
+        "rawText": "6 Gateway mở khóa từ xa qua wifi 1 Chuyển đổi sóng bluetooth sang wifi giúp mở khóa từ xa không giới hạn khoảng cách 1 1260000 1390000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 Gateway mở khóa từ xa qua wifi 1 Chuyển đổi sóng bluetooth sang wifi giúp mở khóa từ xa không giới hạn khoảng cách 1 1260000 1390000 12 tháng",
+      "parsed": {
+        "name": "Gateway mở khóa từ xa qua wifi",
+        "sku": "",
+        "category": "Bộ điều khiển trung tâm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 1390000,
+        "listPrice": 1390000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=12",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "G13",
+          "H13"
+        ],
+        "rawText": "7 Exit 1 Nút nhấn mở cửa bên trong 1 200000 220000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "7 Exit 1 Nút nhấn mở cửa bên trong 1 200000 220000 12 tháng",
+      "parsed": {
+        "name": "Exit",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 220000,
+        "listPrice": 220000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=12",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "G13",
+          "H13"
+        ],
+        "rawText": "7 Exit 1 Nút nhấn mở cửa bên trong 1 200000 220000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "7 Exit 1 Nút nhấn mở cửa bên trong 1 200000 220000 12 tháng",
+      "parsed": {
+        "name": "Exit",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 220000,
+        "listPrice": 220000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=13",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 13,
+        "cells": [
+          "A14",
+          "B14",
+          "D14",
+          "E14",
+          "F14",
+          "G14",
+          "H14"
+        ],
+        "rawText": "8 Remote Remote mở cửa 1 300000 330000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 Remote Remote mở cửa 1 300000 330000 12 tháng",
+      "parsed": {
+        "name": "Remote",
+        "sku": "",
+        "category": "Rèm thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 330000,
+        "listPrice": 330000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=13",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 13,
+        "cells": [
+          "A14",
+          "B14",
+          "D14",
+          "E14",
+          "F14",
+          "G14",
+          "H14"
+        ],
+        "rawText": "8 Remote Remote mở cửa 1 300000 330000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 Remote Remote mở cửa 1 300000 330000 12 tháng",
+      "parsed": {
+        "name": "Remote",
+        "sku": "",
+        "category": "Rèm thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 330000,
+        "listPrice": 330000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=14",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 14,
+        "cells": [
+          "A15",
+          "B15",
+          "D15",
+          "E15",
+          "F15",
+          "G15",
+          "H15"
+        ],
+        "rawText": "9 Chuông Chuông cửa (doorbell) 1 200000 220000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "9 Chuông Chuông cửa (doorbell) 1 200000 220000 12 tháng",
+      "parsed": {
+        "name": "Chuông",
+        "sku": "",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 220000,
+        "listPrice": 220000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=14",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 14,
+        "cells": [
+          "A15",
+          "B15",
+          "D15",
+          "E15",
+          "F15",
+          "G15",
+          "H15"
+        ],
+        "rawText": "9 Chuông Chuông cửa (doorbell) 1 200000 220000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "9 Chuông Chuông cửa (doorbell) 1 200000 220000 12 tháng",
+      "parsed": {
+        "name": "Chuông",
+        "sku": "",
+        "category": "Chuông cửa",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 220000,
+        "listPrice": 220000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 01 · row=15",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 15,
+        "cells": [
+          "A16",
+          "B16",
+          "C16",
+          "D16",
+          "E16",
+          "F16",
+          "G16",
+          "K16"
+        ],
+        "rawText": "10 Thẻ từ ATM 30 IC Card 1 50000 55000 mo to, gateway, chuông, remote,",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "10 Thẻ từ ATM 30 IC Card 1 50000 55000 mo to, gateway, chuông, remote,",
+      "parsed": {
+        "name": "IC Card · Giá niêm yết cũ: 50.000đ · Giá điều chỉnh: 55.000đ | IC Card",
+        "sku": "",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 55000,
+        "listPrice": 55000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "canonical_product_name_from_semantics"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 01 · row=15",
+      "source": {
+        "sheet": "BKS 01",
+        "row": 15,
+        "cells": [
+          "A16",
+          "B16",
+          "C16",
+          "D16",
+          "E16",
+          "F16",
+          "G16",
+          "K16"
+        ],
+        "rawText": "10 Thẻ từ ATM 30 IC Card 1 50000 55000 mo to, gateway, chuông, remote,",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "10 Thẻ từ ATM 30 IC Card 1 50000 55000 mo to, gateway, chuông, remote,",
+      "parsed": {
+        "name": "IC Card · Giá niêm yết cũ: 50.000đ · Giá điều chỉnh: 55.000đ | IC Card",
+        "sku": "",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 55000,
+        "listPrice": 55000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "canonical_product_name_from_semantics"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 02 · row=7",
+      "source": {
+        "sheet": "BKS 02",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "H8"
+        ],
+        "rawText": "2 Nguồn tuyến tính 1 - Sử dụng trong trường hợp mất điện (tránh bị nhả hít từ) 1 2300000 2590000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Nguồn tuyến tính 1 - Sử dụng trong trường hợp mất điện (tránh bị nhả hít từ) 1 2300000 2590000 12 tháng",
+      "parsed": {
+        "name": "Nguồn tuyến tính",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 02 · row=7",
+      "source": {
+        "sheet": "BKS 02",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "G8",
+          "H8"
+        ],
+        "rawText": "2 Nguồn tuyến tính 1 - Sử dụng trong trường hợp mất điện (tránh bị nhả hít từ) 1 2300000 2590000 12 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 Nguồn tuyến tính 1 - Sử dụng trong trường hợp mất điện (tránh bị nhả hít từ) 1 2300000 2590000 12 tháng",
+      "parsed": {
+        "name": "Nguồn tuyến tính",
+        "sku": "",
+        "category": "Phụ kiện",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=BKS 02 · row=11",
+      "source": {
+        "sheet": "BKS 02",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "C12",
+          "D12",
+          "E12",
+          "F12",
+          "G12"
+        ],
+        "rawText": "6 Thẻ từ 30 IC Card 1 50000 55000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 Thẻ từ 30 IC Card 1 50000 55000",
+      "parsed": {
+        "name": "Thẻ từ",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 55000,
+        "listPrice": 55000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=BKS 02 · row=11",
+      "source": {
+        "sheet": "BKS 02",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "C12",
+          "D12",
+          "E12",
+          "F12",
+          "G12"
+        ],
+        "rawText": "6 Thẻ từ 30 IC Card 1 50000 55000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 Thẻ từ 30 IC Card 1 50000 55000",
+      "parsed": {
+        "name": "Thẻ từ",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 55000,
+        "listPrice": 55000
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KÉT SẮT · row=5",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 5,
+        "cells": [
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "J6"
+        ],
+        "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT01",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT01",
+        "sku": "KAT01",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: STT",
+      "location": "sheet=KÉT SẮT · row=5",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 5,
+        "cells": [
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "J6"
+        ],
+        "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT01",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT01",
+        "sku": "KAT01",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_RECOVERED",
+      "severity": "WARN",
+      "message": "Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "location": "sheet=KÉT SẮT · row=5",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 5,
+        "cells": [
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "J6"
+        ],
+        "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT01",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT01",
+        "sku": "KAT01",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KÉT SẮT · row=6",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 6,
+        "cells": [
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "J7"
+        ],
+        "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT02",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT02",
+        "sku": "KAT02",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: STT",
+      "location": "sheet=KÉT SẮT · row=6",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 6,
+        "cells": [
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "J7"
+        ],
+        "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT02",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT02",
+        "sku": "KAT02",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_RECOVERED",
+      "severity": "WARN",
+      "message": "Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "location": "sheet=KÉT SẮT · row=6",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 6,
+        "cells": [
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "J7"
+        ],
+        "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT02",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT02",
+        "sku": "KAT02",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KÉT SẮT · row=7",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 7,
+        "cells": [
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT03",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT03",
+        "sku": "KAT03",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: STT",
+      "location": "sheet=KÉT SẮT · row=7",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 7,
+        "cells": [
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT03",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT03",
+        "sku": "KAT03",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_RECOVERED",
+      "severity": "WARN",
+      "message": "Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "location": "sheet=KÉT SẮT · row=7",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 7,
+        "cells": [
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT03",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT03",
+        "sku": "KAT03",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2590000,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "H7",
+          "I7",
+          "J7",
+          "K7"
+        ],
+        "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 2994000,
+        "listPrice": 4990000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_oov5qb",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "1 Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 4990000 3493000 3243500 2994000 24 tháng",
+        "sku": "",
+        "unit": "Cái",
+        "price": 2994000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+        "sku": "",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 2994000,
+        "costPrice": 2994000,
+        "listPrice": 4990000,
+        "publicPrice": 4990000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen/vàng · Giá niêm yết cũ: 5.990.000đ · Điều chỉnh tăng 15/04/2026: 6.290.000đ | Điện áp làm việc: 4 Pin AAA Tuổi thọ pin:5.000 lần mở khóa Vân tay cảm biến điện dung: <0.1s Chất liệu: Hợp kim chịu lực Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp điện qua cổng USB Tỷ lệ sai số: <0.0001% Dung lượng bộ nhớ: 100 users Kích thước khóa: 40x310mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính, cửa kim loại Màu sắc:Bạc/đen/vàng | Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng)"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA NHÔM KÍNH · row=19",
+      "source": {
+        "sheet": "KHÓA NHÔM KÍNH",
+        "row": 19,
+        "cells": [
+          "B20",
+          "C20",
+          "D20",
+          "E20",
+          "F20",
+          "G20",
+          "K20"
+        ],
+        "rawText": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-2606",
+        "sku": "OSN-2606",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 6190000,
+        "listPrice": 6190000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_qvih67",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "OSN-2606 (bản app TTlock) Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng) 1 5890000 6190000 24 tháng",
+        "sku": "OSN-2606",
+        "unit": "Cái",
+        "price": 6190000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh OSN-2606",
+        "sku": "OSN-2606",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 6190000,
+        "costPrice": 6190000,
+        "listPrice": 6190000,
+        "publicPrice": 6190000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám · Giá niêm yết cũ: 5.890.000đ · Điều chỉnh tăng 15/04/2026: 6.190.000đ | Điện áp làm việc: Pin lithium 4800m Tuổi thọ pin: 5,000 lần mở khoá ( 6 tháng) Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,01% Khoảng cách nhận diện khuôn mặt: 0.35-1m Tốc độ nhận diện: <1s Dung lượng bộ nhớ: 200 users Kích thước khoá: Mặt trước 410*37mm, mặt sau 408*36mm Độ dày cửa: >30mm Loại cửa: Cửa nhôm kính Màu sắc: Vàng/Đen/Xám Lõi khoá: 3085/3585 Chống nước IP65 Màu sắc: Đen/Vàng/Xám | Nhận diện khuôn mặt/ Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/APP/ Remote (mở rộng)"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA KÍNH · row=6",
+      "source": {
+        "sheet": "KHÓA KÍNH",
+        "row": 6,
+        "cells": [
+          "A7",
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "K7"
+        ],
+        "rawText": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "OSN-3373",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3373",
+        "sku": "OSN-3373",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4590000,
+        "listPrice": 4590000
+      },
+      "issueCodes": [
+        "price_column_uncertain"
+      ],
+      "lineId": "line_1dgf8bw",
+      "confidence": 0.67,
+      "raw": {
+        "productName": "2 OSN-3373 Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng) 1 4350000 4590000 24 tháng",
+        "sku": "OSN-3373",
+        "unit": "Cái",
+        "price": 4590000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh OSN-3373",
+        "sku": "OSN-3373",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 4590000,
+        "costPrice": 4590000,
+        "listPrice": 4590000,
+        "publicPrice": 4590000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng · Giá niêm yết cũ: 4.350.000đ · Điều chỉnh 15/4: 4.590.000đ | Điện áp làm việc: 4 Pin AA Tuổi thọ pin: 10.000 lần mở khóa Vân tay Live-scan: <0.1s Chất liệu: Hợp kim cao cấp Ngôn ngữ: App tiếng Việt Nguồn điện khẩn cấp:Cấp qua cổng USB Tỷ lệ từ chối: <0.15% Tỷ lệ sai số: <0.0004% Dung lượng bộ nhớ: 100 user Kích thước khóa:67x185x38mm Khoảng cách 2 cánh cửa: >5mm Loại cửa: Cửa kính kéo đẩy, cửa lùa Màu sắc: Đen Có chế độ thông phòng | Mật khẩu/ Vân tay/Thẻ từ/ Chìa cơ/App/ Điều khiển (mở rộng)"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=25",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 25,
+        "cells": [
+          "A26",
+          "B26",
+          "C26",
+          "E26",
+          "F26",
+          "G26",
+          "H26",
+          "K26",
+          "L26"
+        ],
+        "rawText": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+      "parsed": {
+        "name": "Khóa thông minh MPT13.56MHZ",
+        "sku": "MPT13.56MHZ",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 4000000,
+        "listPrice": 5500000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_b0hyhd",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "20 Máy phát thẻ MPT13.56Mhz (Hệ nâng cấp) Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3381, OSN-3388, OSN-3339, 3331 1 5000000 5500000 4000000 12 tháng Hàng có sẵn",
+        "sku": "MPT13.56MHZ",
+        "unit": "Cái",
+        "price": 4000000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh MPT13.56MHZ",
+        "sku": "MPT13.56MHZ",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 4000000,
+        "costPrice": 4000000,
+        "listPrice": 5500000,
+        "publicPrice": 5500000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3379V, OSN-2311, OSN-2315, OSN-2382 (lô mới). Thẻ từ tần số cao 13.56 · Giá niêm yết cũ: 3.500.000đ · Điều chỉnh 15/4: 3.600.000đ | Tích hợp: Hệ thống phần mềm quản lý khách sạn Loại thẻ đọc: Thẻ RFID Nguồn điện: Nguồn máy tính qua kết nối USB. Tốc độ đọc thẻ: <1s Khoảng cách đọc thẻ: <3cm Tích hợp nhiều loại thẻ như: thẻ dọn phòng, thẻ quản lý, thẻ phục vụ, thẻ khác… Chất liệu: Nhựa ABS. Mã khóa sử dụng: OSN-3379V, OSN-2311, OSN-2315, OSN-2382 (lô mới). Thẻ từ tần số cao 13.56"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA KHÁCH SẠN · row=29",
+      "source": {
+        "sheet": "KHÓA KHÁCH SẠN",
+        "row": 29,
+        "cells": [
+          "A30",
+          "B30",
+          "C30",
+          "E30",
+          "F30",
+          "G30",
+          "H30"
+        ],
+        "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+      "parsed": {
+        "name": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+        "sku": "",
+        "category": "Sản phẩm",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 40000,
+        "listPrice": 75000
+      },
+      "issueCodes": [
+        "missing_sku",
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_1k4yh3m",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "24 Thẻ từ Mifare 13.56Mhz Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) 1 70000 75000 40000",
+        "sku": "",
+        "unit": "Cái",
+        "price": 40000
+      },
+      "parsedLine": {
+        "productName": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+        "sku": "",
+        "category": "Sản phẩm",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 40000,
+        "costPrice": 40000,
+        "listPrice": 75000,
+        "publicPrice": 75000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24) · Giá niêm yết cũ: 70.000đ · Điều chỉnh 15/4: 75.000đ | Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in theo yêu cầu, số lượng thẻ in bội của 24)"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA CỔNG · row=7",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 7,
+        "cells": [
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3334",
+        "sku": "OSN-3334",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 6490000,
+        "listPrice": 6490000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_18ixthh",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "2 OSN-3334 (2 mặt vân tay) Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 6290000 6490000 24 tháng",
+        "sku": "OSN-3334",
+        "unit": "Cái",
+        "price": 6490000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh OSN-3334",
+        "sku": "OSN-3334",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 6490000,
+        "costPrice": 6490000,
+        "listPrice": 6490000,
+        "publicPrice": 6490000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ · Giá niêm yết cũ: 6.290.000đ · Đơn giá điều chỉnh 15/4: 6.490.000đ | Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Hợp kim cao cấp Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA CỔNG · row=12",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 12,
+        "cells": [
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "J13"
+        ],
+        "rawText": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3335",
+        "sku": "OSN-3335",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 5590000,
+        "listPrice": 5590000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_zww68b",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "OSN-3335 cửa lùa Khoá cổng cửa lùa Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ 1 5390000 5590000 24 tháng",
+        "sku": "OSN-3335",
+        "unit": "Cái",
+        "price": 5590000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh OSN-3335",
+        "sku": "OSN-3335",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 5590000,
+        "costPrice": 5590000,
+        "listPrice": 5590000,
+        "publicPrice": 5590000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Khoá cổng inox 2 mặt Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ · Giá niêm yết cũ: 6.790.000đ · Đơn giá điều chỉnh 15/4: 6.990.000đ | Khoá cổng inox 2 mặt Phương thức mở khóa: Vân tay, thẻ từ, mật khẩu, chìa cơ, app TTLock (điều khiển mở rộng). Tự động khóa khi đóng cửa Chất liệu: Inox Điện áp 12VDC – 24VDC – Dòng tĩnh: 16 mA Bộ nhớ quản lý : 100 users Kích thước: Mặt ngoài: 59*170mm; Mặt trong: 96*127mm Trọng lượng: 1.35 Kg Phù hợp lắp cho các loại cửa sắt, cửa gỗ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHÓA CỔNG · row=14",
+      "source": {
+        "sheet": "KHÓA CỔNG",
+        "row": 14,
+        "cells": [
+          "B15",
+          "C15",
+          "D15",
+          "E15",
+          "F15",
+          "J15"
+        ],
+        "rawText": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-3336",
+        "sku": "OSN-3336",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 7190000,
+        "listPrice": 7190000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_1a2afbh",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "OSN-3336 2 mặt Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen 1 6990000 7190000 24 tháng",
+        "sku": "OSN-3336",
+        "unit": "Cái",
+        "price": 7190000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh OSN-3336",
+        "sku": "OSN-3336",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 7190000,
+        "costPrice": 7190000,
+        "listPrice": 7190000,
+        "publicPrice": 7190000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen · Giá niêm yết cũ: 6.990.000đ · Đơn giá điều chỉnh 15/4: 7.190.000đ | Điện áp làm việc: 4 pin AA Tuổi thọ pin: 5,000 lần mở khoá Công nghệ vân tay: Live scan Chất liệu: Hợp kim Ngôn ngữ: Tiếng Việt, tiếng Anh Nguồn điện khẩn cấp: Cấp điện qua cổng USB Tỉ lệ sai số: 0,0001% Dung lượng bộ nhớ: 100 users Kích thước khoá: 165*56mm Độ dày cửa: >30mm Loại cửa: Cửa cổng kim loại, cửa gỗ Màu sắc: Đen"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KHOÁ CƠ VÀ PHỤ KIỆN CỬA · row=12",
+      "source": {
+        "sheet": "KHOÁ CƠ VÀ PHỤ KIỆN CỬA",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "G13"
+        ],
+        "rawText": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "OSN-KC06",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+      "parsed": {
+        "name": "Khóa thông minh OSN-KC06",
+        "sku": "OSN-KC06",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 462000,
+        "listPrice": 770000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_1ia1q1f",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "5 OSN-KC06 Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép. 1 770000 462000 24 tháng",
+        "sku": "OSN-KC06",
+        "unit": "Cái",
+        "price": 462000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh OSN-KC06",
+        "sku": "OSN-KC06",
+        "category": "Khóa thông minh",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 462000,
+        "costPrice": 462000,
+        "listPrice": 770000,
+        "publicPrice": 770000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Khóa cơ cao cấp OSN - KC06 Màu sắc: Bạc Chất liệu: hợp kim Ruột khóa: chuẩn EU với 02 chốt an toàn Ổ chìa: Thiết kế chìa vi tính (7 bi) tránh bị trùng chìa, an toàn. Độ dài lõi khóa: 50 mm (từ tay cầm đến đầu lõi khóa) Kích thước: 48mm x 175mm Kiểu dáng: Tay gạt, 1 đầu chìa, 1 đầu vặn Độ dày cửa: >35mm Thân khóa: có thể lắp cùng thân khóa 5050B và 5050C Chìa cơ: 03 chìa Ứng dụng: cửa gỗ, cửa kim loại, cửa thép."
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KÉT SẮT · row=5",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 5,
+        "cells": [
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "J6"
+        ],
+        "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT01",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT01",
+        "sku": "KAT01",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 0,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "missing_cost_price"
+      ],
+      "lineId": "line_410wmq",
+      "confidence": 0.52,
+      "raw": {
+        "productName": "1 KAT01 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "sku": "KAT01",
+        "unit": "Cái",
+        "price": 0
+      },
+      "parsedLine": {
+        "productName": "Đèn KAT01",
+        "sku": "KAT01",
+        "category": "Đèn",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 0,
+        "costPrice": 0,
+        "listPrice": 2590000,
+        "publicPrice": 2590000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: KAT-01 | Mật khẩu/Chìa cơ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KÉT SẮT · row=6",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 6,
+        "cells": [
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "J7"
+        ],
+        "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT02",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT02",
+        "sku": "KAT02",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 0,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "missing_cost_price"
+      ],
+      "lineId": "line_lx3g82",
+      "confidence": 0.52,
+      "raw": {
+        "productName": "KAT02 Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "sku": "KAT02",
+        "unit": "Cái",
+        "price": 0
+      },
+      "parsedLine": {
+        "productName": "Đèn KAT02",
+        "sku": "KAT02",
+        "category": "Đèn",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 0,
+        "costPrice": 0,
+        "listPrice": 2590000,
+        "publicPrice": 2590000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Kích thước sản phẩm: (rộng/sâu/cao): 316 × 202 × 244 mm Độ dày thân/cửa:2/3mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa link ảnh: Hàng mới | Mật khẩu/Chìa cơ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KÉT SẮT · row=7",
+      "source": {
+        "sheet": "KÉT SẮT",
+        "row": 7,
+        "cells": [
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "J8"
+        ],
+        "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "KAT03",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+      "parsed": {
+        "name": "Đèn KAT03",
+        "sku": "KAT03",
+        "category": "Đèn",
+        "productType": "",
+        "model": "",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "costPrice": 0,
+        "listPrice": 2590000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "missing_cost_price"
+      ],
+      "lineId": "line_18soo4b",
+      "confidence": 0.52,
+      "raw": {
+        "productName": "KAT03 Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 Mật khẩu/Chìa cơ 1 2590000 24 tháng",
+        "sku": "KAT03",
+        "unit": "Cái",
+        "price": 0
+      },
+      "parsedLine": {
+        "productName": "Đèn KAT03",
+        "sku": "KAT03",
+        "category": "Đèn",
+        "supplier": "Tổng hợp báo giá",
+        "unit": "Cái",
+        "unitPrice": 0,
+        "costPrice": 0,
+        "listPrice": 2590000,
+        "publicPrice": 2590000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Kích thước sản phẩm: (rộng/sâu/cao): 420*370*200mm Độ dày thân/cửa:1,5/5mm - Chất liệu thép, sơn tĩnh điện - Bu lông thép đặc 18mm đảm bảo an toàn và độ bền tối đa. - Nguồn điện hoạt động 4 pin AA. Cảnh báo mức pin yếu tự động. - Màn hình hiển thị LED. - Quản lý người dùng: Mã khách 3-6 chữ số. - Quản lý khách sạn: 6 chữ số /chìa cơ dự phòng - Hệ thống đóng băng 5 phút nếu sai mã 3 lần. - Màu sắc: Đen - Bộ nhớ: 1000 lần mở khóa Link ảnh: KAT-03 | Mật khẩu/Chìa cơ"
+      }
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 99,
+      "INFO": 0
+    },
+    "byCode": [
+      {
+        "code": "MISSING_SKU",
+        "count": 30
+      },
+      {
+        "code": "ENGINE_MISSING_SKU",
+        "count": 30
+      },
+      {
+        "code": "NEEDS_REVIEW",
+        "count": 12
+      },
+      {
+        "code": "ENGINE_LINE_REVIEW",
+        "count": 12
+      },
+      {
+        "code": "DUPLICATE_PRICE_CONFLICT",
+        "count": 8
+      },
+      {
+        "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+        "count": 4
+      },
+      {
+        "code": "ENGINE_PRICE_RECOVERED",
+        "count": 3
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

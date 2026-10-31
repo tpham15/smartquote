@@ -54,6 +54,16 @@ function isRetailLikePriceLabel(label = "") {
   return /ban\s*le|cong\s*bo|niem\s*yet|gia\s*moi|dieu\s*chinh|ap\s*dung|map|retail|public|list/.test(s);
 }
 
+// RC5: supplier workbooks often expose exactly one monetary column named
+// "ĐƠN GIÁ" / "Đơn giá (VND)". When no competing retail/list/tier price
+// exists, this is the only explicit commercial price in the source and should
+// not be downgraded merely because the header is generic. We still preserve
+// the source label in provenance, so UAT can review it if needed.
+function isPlainUnitPriceLabel(label = "") {
+  const s = normalizeHeaderTextForPrice(label).replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  return /^(don gia|unit price|price)(?: vnd| dong)?$/.test(s);
+}
+
 function parseNumericCell(value) {
   if (value === null || value === undefined) return 0;
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -225,6 +235,13 @@ export function mapColumns(headerRow, dataRows, maxCol) {
           } else if (map[rule.key] == null) {
             map[rule.key] = c;
             used.add(c);
+            if (rule.key === "sku") {
+              // RC6: remember whether SKU came from an explicit source header.
+              // Inferred columns must not promote feature tokens such as TAY/TH
+              // or IN/CHECK into canonical product identity.
+              map._skuHeaderExplicit = true;
+              map._skuSourceLabel = label;
+            }
             if (rule.key === "name" && /tên\s*(sản\s*phẩm|hàng|thiết\s*bị|vật\s*tư)|hàng\s*ho[áa]|product\s*name/i.test(label)) map._lockedName = true;
             if (["currentListPrice", "listPrice", "minRetailPrice"].includes(rule.key)) rememberPriceScale(map, c, label);
           }
@@ -269,7 +286,14 @@ export function mapColumns(headerRow, dataRows, maxCol) {
     map.price = selectedPrice.col;
     if (selectedPrice.scale > 1) map._priceScale = selectedPrice.scale;
     map._priceSourceLabel = selectedPrice.label || "";
-    map._priceColUncertain = !selectedPrice.strongCost || selectedPrice.key === "price2" || isRetailLikePriceLabel(selectedPrice.label);
+    const onlyPlainUnitPrice = priceCandidates.length === 1
+      && selectedPrice.key === "price2"
+      && isPlainUnitPriceLabel(selectedPrice.label)
+      && !isRetailLikePriceLabel(selectedPrice.label);
+    map._singleSourceUnitPrice = onlyPlainUnitPrice;
+    map._priceColUncertain = onlyPlainUnitPrice
+      ? false
+      : (!selectedPrice.strongCost || selectedPrice.key === "price2" || isRetailLikePriceLabel(selectedPrice.label));
     if (priceCandidates.length >= 2) {
       map._priceCandidates = priceCandidates.map((p) => ({ col: p.col, label: p.label, priority: p.priority, strongCost: !!p.strongCost, scale: p.scale || 1 }));
     }

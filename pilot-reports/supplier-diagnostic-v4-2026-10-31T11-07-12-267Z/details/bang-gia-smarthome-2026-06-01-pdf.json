@@ -1,0 +1,36 @@
+{
+  "file": "Bảng giá Smarthome 2026.06.01.pdf",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/Bảng giá Smarthome 2026.06.01.pdf",
+  "type": "pdf",
+  "hash": "730de65a946c651232f8973e22fd6185afcb6aad4cfc43ed2c2c489442e2fa50",
+  "pageCount": 3,
+  "textChars": 0,
+  "columnModels": 0,
+  "productCount": 0,
+  "scanLike": true,
+  "golden": null,
+  "issues": [
+    {
+      "code": "SCAN_OR_IMAGE_PDF",
+      "severity": "WARN",
+      "message": "PDF has little/no selectable text; deterministic text parser cannot verify the catalog. Route to OCR/vision + human review.",
+      "location": "document",
+      "rawText": "",
+      "parsed": null
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 1,
+      "INFO": 0
+    },
+    "byCode": [
+      {
+        "code": "SCAN_OR_IMAGE_PDF",
+        "count": 1
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

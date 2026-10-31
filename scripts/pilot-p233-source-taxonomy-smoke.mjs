@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { rowToItem } from "../src/import-engine/extractItems.js";
 import { sanitizeCatalogProduct } from "../src/import-engine/productSanitizer.js";
-import { extractSheetDocumentContext } from "../src/import-engine/sheetContext.js";
+import { extractSheetDocumentContext, contextRowText } from "../src/import-engine/sheetContext.js";
+import { normalizeImportLine } from "../src/import-engine/previewResult.js";
 
 const contextSamples = [
   ["Quy Cách: Cổng  Âm sàn tự động", "Cổng Âm sàn tự động"],
@@ -98,8 +99,23 @@ for (const c of cases) {
   assert.equal(p.attributes.identity.semanticRule, "gate_source_taxonomy");
 }
 
+
+// Canonical preview must preserve document-level taxonomy/identity provenance.
+const previewLine = normalizeImportLine({
+  source: {
+    sheet: "VUCAN - 24V",
+    documentCategory: "Cổng Âm sàn tự động",
+    rawSku: "Vulcan - 24V (29G020)",
+    canonicalSkuEvidence: "explicit_model_label",
+  },
+  parsed: { productName: "Cổng xoay tự động âm sàn V2 - VULCAN 24V", sku: "29G020" },
+  confidence: 1,
+});
+assert.equal(previewLine.source.documentCategory, "Cổng Âm sàn tự động", "canonical preview dropped Quy Cách/documentCategory");
+assert.equal(previewLine.source.rawSku, "Vulcan - 24V (29G020)", "canonical preview dropped raw SKU provenance");
+
 console.log("✓ P2.3.3 source taxonomy PASS");
 console.log("  - Cổng tự động is family only, not the category forced onto every Bisco row");
-console.log("  - Quy Cách survives as documentCategory provenance");
+console.log("  - Quy Cách survives row extraction + canonical preview provenance");
 console.log("  - product type/name preserve source terminology: Cổng xoay... vs Mô tơ cổng trượt...");
 console.log("  - all 9 Bisco products keep canonical Model/SKU separation");

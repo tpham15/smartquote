@@ -22,7 +22,7 @@ const NON_PRODUCT_ROW_RE = /(^|\b)(hàng\s*đặt|hang\s*dat|thi\s*công|thi\s*c
 const BILLABLE_SERVICE_ROW_RE = /(^|\b)(nhân\s*công|nhan\s*cong|công\s*lắp|cong\s*lap|lắp\s*đặt|lap\s*dat|thi\s*công|thi\s*cong|bảo\s*hành\s*mở\s*rộng|bao\s*hanh\s*mo\s*rong|khảo\s*sát|khao\s*sat|dịch\s*vụ|dich\s*vu)(\b|:)/i;
 const CONTACT_OR_BANK_RE = /(ngân\s*hàng|ngan\s*hang|tài\s*khoản|tai\s*khoan|số\s*tk|so\s*tk|hotline|website|email|địa\s*chỉ|dia\s*chi|mst|mã\s*số\s*thuế|ma\s*so\s*thue)/i;
 const DOCUMENT_METADATA_RE = /^\s*(khách\s*hàng|khach\s*hang|công\s*trình|cong\s*trinh|địa\s*điểm(?:\s*công\s*trình)?|dia\s*diem(?:\s*cong\s*trinh)?|điện\s*thoại|dien\s*thoai|số\s*điện\s*thoại|so\s*dien\s*thoai|số\s*báo\s*giá|so\s*bao\s*gia|ngày|ngay|email|người\s*báo\s*giá|nguoi\s*bao\s*gia|hạng\s*mục|hang\s*muc|mst|mã\s*số\s*thuế|ma\s*so\s*thue|showroom|vpgd)\s*[:：]/i;
-const SKU_CANDIDATE_RE = /\b(?:[A-Z]{2,}[A-Z0-9]*[-_/][A-Z0-9][A-Z0-9._\-/]{1,}|[A-Z]{2,}\d{2,}[A-Z0-9._\-/]*|\d{2,}[A-Z](?:[A-Z0-9]*\d[A-Z0-9]*|[-_/][A-Z0-9]+)|[A-Z0-9]{2,}-[A-Z0-9]{2,}(?:[-_/][A-Z0-9]{1,})*)\b/g;
+const SKU_CANDIDATE_RE = /\b(?:[A-Z]{2,}[A-Z0-9]*[-_/][A-Z0-9][A-Z0-9._\-/]{1,}|[A-Z]{2,}\d{2,}[A-Z0-9._\-/]*|[A-Z]\d{3,}[A-Z0-9._\-/]*|\d{2,}[A-Z](?:[A-Z0-9]*\d[A-Z0-9]*|[-_/][A-Z0-9]+)|[A-Z0-9]{2,}-[A-Z0-9]{2,}(?:[-_/][A-Z0-9]{1,})*)\b/g;
 
 function text(v) {
   return String(v ?? "").replace(/\s+/g, " ").trim();
@@ -279,6 +279,21 @@ function isBadSkuCandidate(cand) {
   if (!cand || /^\d+$/.test(cand)) return true;
   // Technical values such as 230V/24V/50HZ are specs, never product identity.
   if (/^\d+(?:V|W|A|HZ|KHZ|MHZ|GHZ|MM|CM|KG|G)$/i.test(cand)) return true;
+
+  // RC8: compact feature/mode abbreviations and electrical/dimension ranges
+  // repeatedly appeared in supplier workbooks as false SKU identity.
+  const featureParts = String(cand).toUpperCase().split(/[\/_-]+/).filter(Boolean);
+  const featureVocabulary = new Set(["TAY", "TH", "PIN", "IN", "CHECK", "APP", "REMOTE"]);
+  if (featureParts.length >= 2 && featureParts.every((part) => featureVocabulary.has(part))) return true;
+  if (/^\d+(?:VDC|VAC)(?:[-–—]\d+(?:VDC|VAC))?(?:[-–—][A-Z])?$/i.test(cand)) return true;
+  if (/^\d+(?:[-–—]\d+)?(?:MM|CM)(?:[-–—][A-Z])?$/i.test(cand)) return true;
+  // RC6: dimensions/material grades repeatedly appeared as fake SKUs in real
+  // supplier workbooks (86X86X45MM, 130LX105WX38H, SS304). They are strong
+  // technical evidence but not product identity unless an explicit SKU column
+  // already supplied them; free-text extraction must reject them.
+  if (/^\d+(?:[X×]\d+){1,3}(?:MM|CM|M)?$/i.test(cand)) return true;
+  if (/^\d+L[X×]\d+W(?:[X×]\d+H)?(?:MM)?$/i.test(cand)) return true;
+  if (/^(?:SS|SUS|INOX)[-_ ]?(?:201|304|316L?)$/i.test(cand)) return true;
   if (/^(VAT|TEL|HOTLINE|EMAIL|WWW|HTTP|HTTPS|MODEL|CODE|SKU)$/.test(cand)) return true;
   if (/^20\d{2}$/.test(cand)) return true;
   if (cand.length < 4 || cand.length > 40) return true;
@@ -312,6 +327,10 @@ export function extractSkuCandidatesFromText(rawText) {
   const raw = String(rawText ?? "")
     .toUpperCase()
     .replace(/[\u00a0\t\r\n]+/g, " ")
+    // Supplier sheets frequently render a model as "SBX202 - 5C0" or
+    // "K20- Pro". Collapse visual spacing around the hyphen before tokenizing
+    // so the full source model is not truncated to its stem.
+    .replace(/\s*[-–—]\s*/g, "-")
     .replace(/[|]+/g, " ");
   const seen = new Set();
   const candidates = [];
@@ -409,6 +428,157 @@ export function extractCommercialNameFromSpecs(rawSpecs = "") {
   const head = headBeforeSpecs(text(rawSpecs));
   if (head.length >= 4 && head.length <= 110 && !isSpecOnlyStart(head)) return head;
   return "";
+}
+
+
+function escapeRegExpLiteral(value = "") {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isSyntheticGenericProductName(name = "", sku = "") {
+  const n = text(name);
+  if (!n) return true;
+  if (/^sản phẩm(?:\s*[-–—])?\s+/i.test(n)) return true;
+  const nk = asciiFold(n).replace(/[^a-z0-9]+/g, "");
+  const sk = asciiFold(sku).replace(/[^a-z0-9]+/g, "");
+  return !!(nk && sk && nk === sk);
+}
+
+function cleanGroundedCommercialPhrase(value = "") {
+  let out = text(value)
+    .replace(/^\d{1,3}[.)]?\s+/, "")
+    .replace(/^[\-–—:;,]+|[\-–—:;,]+$/g, "")
+    .trim();
+  if (!out) return "";
+  out = out.split(/\b(?:vỏ\s*cáp|kích\s*thước|kich\s*thuoc|thông\s*số|thong\s*so|tính\s*năng|tinh\s*nang|nguồn\s*điện|nguon\s*dien|công\s*suất|cong\s*suat)\b/i)[0];
+  const punctHead = text(out.split(/[,;|]/)[0]);
+  if (punctHead.length >= 3 && (out.length > 90 || punctHead.length <= 70)) out = punctHead;
+  out = text(out);
+  if (out.length < 3 || out.length > 90) return "";
+  if (!/[A-Za-zÀ-ỹ]/.test(out)) return "";
+  if (/^(?:cái|chiếc|bộ|set|thùng|hộp|cuộn|m2|m3|md|pcs?)$/i.test(out)) return "";
+  return out;
+}
+
+function matchSkuInText(raw = "", sku = "") {
+  const normalizedSku = text(sku).replace(/\s*[-–—]\s*/g, "-");
+  if (!normalizedSku) return null;
+  const pattern = escapeRegExpLiteral(normalizedSku).replace(/\\-/g, "\\s*[-–—]\\s*");
+  return new RegExp(pattern, "i").exec(String(raw || ""));
+}
+
+function recoverTailSellableIdentity(rawText = "") {
+  let body = text(rawText).replace(/\s*[-–—]\s*/g, "-");
+  if (!body) return null;
+  body = body.replace(/^\d{1,3}[.)]?\s+/, "");
+
+  const unitRe = /\b(?:cái|chiếc|bộ|set|thùng|hộp|cuộn|m2|m3|md|pcs?)\s+\d+(?:[.,]\d+)?\s+/gi;
+  let unitMatch = null;
+  for (const m of body.matchAll(unitRe)) unitMatch = m;
+  if (!unitMatch) return null;
+
+  let tail = body.slice(unitMatch.index + unitMatch[0].length).trim();
+  tail = tail.replace(/\s+\d{5,}(?:\s+\d{5,}){0,3}\s*$/, "").trim();
+  if (!tail) return null;
+
+  const candidates = extractSkuCandidatesFromText(tail);
+  if (!candidates.length) {
+    const shortCode = tail.match(/\b[A-Z]{2,}[A-Z0-9]*[-_/]\d[A-Z0-9]?\b/i)?.[0] || "";
+    if (shortCode && !isBadSkuCandidate(shortCode.toUpperCase())) candidates.push(shortCode.toUpperCase());
+  }
+  if (!candidates.length) return null;
+  const sellableSku = candidates[0];
+  const m = matchSkuInText(tail, sellableSku);
+  if (!m) return null;
+
+  const phrase = cleanGroundedCommercialPhrase(tail.slice(0, m.index + m[0].length).replace(/\([^)]*$/, ""));
+  return {
+    sku: sellableSku,
+    name: phrase && asciiFold(phrase).replace(/[^a-z0-9]+/g, "") !== asciiFold(sellableSku).replace(/[^a-z0-9]+/g, "")
+      ? phrase
+      : "",
+    evidence: "tail_unit_quantity_identity",
+  };
+}
+
+function recoverSeriesNameAroundSku(rawText = "", sku = "") {
+  let body = text(rawText).replace(/\s*[-–—]\s*/g, "-");
+  const normalizedSku = text(sku).replace(/\s*[-–—]\s*/g, "-");
+  if (!body || !normalizedSku) return "";
+  body = body.replace(/^\d{1,3}[.)]?\s+/, "");
+
+  const first = matchSkuInText(body, normalizedSku);
+  if (!first || first.index !== 0) return "";
+  let rest = body.slice(first.index + first[0].length).trim();
+  rest = rest.replace(/^\d{1,3}[.)]?\s+/, "");
+  const second = matchSkuInText(rest, normalizedSku);
+  if (!second || second.index <= 0) return "";
+
+  const series = cleanGroundedCommercialPhrase(rest.slice(0, second.index));
+  if (!series) return "";
+  return `${series} ${normalizedSku}`.replace(/\s+/g, " ").trim();
+}
+
+function recoverPrefixNameBeforeSku(rawText = "", sku = "") {
+  let body = text(rawText).replace(/\s*[-–—]\s*/g, "-");
+  const normalizedSku = text(sku).replace(/\s*[-–—]\s*/g, "-");
+  if (!body || !normalizedSku) return "";
+  body = body.replace(/^\d{1,3}[.)]?\s+/, "");
+  const m = matchSkuInText(body, normalizedSku);
+  if (!m || m.index <= 0) return "";
+
+  const prefix = cleanGroundedCommercialPhrase(body.slice(0, m.index));
+  if (!prefix || /^(?:bao\s*gồm|bao\s*gom)\b/i.test(prefix)) return "";
+  const pk = asciiFold(prefix).replace(/[^a-z0-9]+/g, "");
+  const sk = asciiFold(normalizedSku).replace(/[^a-z0-9]+/g, "");
+  return pk.includes(sk) ? prefix : `${prefix} ${normalizedSku}`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Late identity recovery for structured supplier rows.
+ * Runs only when the display identity is still generic or SKU is missing, and
+ * uses visible source-row evidence. It never invents a commercial label.
+ */
+export function recoverGroundedCatalogIdentity({ name = "", sku = "", specs = "", rawText = "" } = {}) {
+  const currentName = text(name);
+  const currentSku = text(sku);
+  const raw = text(rawText);
+  const generic = isSyntheticGenericProductName(currentName, currentSku);
+
+  const tail = recoverTailSellableIdentity(raw);
+  if ((generic || !currentSku) && tail?.sku) {
+    const recoveredName = tail.name || (generic ? recoverPrefixNameBeforeSku(raw, tail.sku) : "");
+    if (tail.sku !== currentSku || recoveredName) {
+      return {
+        name: recoveredName || currentName,
+        sku: tail.sku,
+        recovered: true,
+        evidence: tail.evidence,
+      };
+    }
+  }
+
+  if (generic && currentSku) {
+    const series = recoverSeriesNameAroundSku(raw, currentSku);
+    if (series) return { name: series, sku: currentSku, recovered: true, evidence: "repeated_sku_series_label" };
+
+    const prefix = recoverPrefixNameBeforeSku(raw, currentSku);
+    if (prefix) return { name: prefix, sku: currentSku, recovered: true, evidence: "source_prefix_before_sku" };
+
+    const specName = extractCommercialNameFromSpecs(specs);
+    if (specName && !isSyntheticGenericProductName(specName, currentSku)) {
+      const sk = asciiFold(currentSku).replace(/[^a-z0-9]+/g, "");
+      const nk = asciiFold(specName).replace(/[^a-z0-9]+/g, "");
+      return {
+        name: nk.includes(sk) ? specName : `${specName} ${currentSku}`.replace(/\s+/g, " ").trim(),
+        sku: currentSku,
+        recovered: true,
+        evidence: "spec_commercial_name",
+      };
+    }
+  }
+
+  return { name: currentName, sku: currentSku, recovered: false, evidence: "none" };
 }
 
 export function recoverQuoteSectionSchemaIdentity({ name = "", sku = "", specs = "" } = {}) {
@@ -663,9 +833,13 @@ export function sanitizeCatalogProduct(product, opts = {}) {
   // the same row after the column model deliberately refused to choose one.
   const suppressAmbiguousPdfPriceRecovery = !!p._meta?.productEvidence?.priceColumnUncertain
     || (String(p._meta?.engine || "").includes("column-v2") && p._meta?.source?.priceRole === "unknown");
-  const price = suppressAmbiguousPdfPriceRecovery
-    ? { costPrice: parseSafePrice(p.costPrice || 0) || 0, issues: [] }
-    : normalizePriceWithIssues(p.costPrice ?? p.price, priceRawText);
+  const hasPdfConfigurationPrices = Array.isArray(p?.attributes?.pdfPriceOptions)
+    && p.attributes.pdfPriceOptions.some((x) => parseSafePrice(x?.costPrice || 0) >= MIN_NORMAL_PRICE);
+  const price = hasPdfConfigurationPrices && !parseSafePrice(p.costPrice || 0)
+    ? { costPrice: 0, issues: [] }
+    : suppressAmbiguousPdfPriceRecovery
+      ? { costPrice: parseSafePrice(p.costPrice || 0) || 0, issues: [] }
+      : normalizePriceWithIssues(p.costPrice ?? p.price, priceRawText);
   p.costPrice = price.costPrice;
   issues.push(...price.issues);
 
@@ -736,6 +910,49 @@ export function sanitizeCatalogProduct(product, opts = {}) {
     }
   }
 
+  // P2.3.8 — late grounded identity recovery. Some structured supplier sheets
+  // map a component/model mention as SKU while the actual sellable product
+  // identity appears later in the same visible row. Recover only from source
+  // evidence when the current display name is generic or SKU is still missing.
+  const groundedIdentity = recoverGroundedCatalogIdentity({
+    name: p.name,
+    sku: p.sku,
+    specs: p.specs,
+    rawText: p._meta?.source?.rawText || p.source?.rawText || p.rawText || "",
+  });
+  if (groundedIdentity.recovered) {
+    const beforeName = p.name;
+    const beforeSku = p.sku;
+    if (groundedIdentity.name) p.name = stripWeird(groundedIdentity.name);
+    if (groundedIdentity.sku) p.sku = stripWeird(groundedIdentity.sku);
+    p._meta = {
+      ...(p._meta || {}),
+      source: {
+        ...(p._meta?.source || {}),
+        groundedIdentityEvidence: groundedIdentity.evidence,
+        ...(beforeSku && beforeSku !== p.sku ? { rawSku: p._meta?.source?.rawSku || beforeSku } : {}),
+      },
+    };
+    issues.push(issue(
+      "grounded_identity_recovered_from_source_row",
+      "info",
+      beforeSku && beforeSku !== p.sku
+        ? `Đã khôi phục sản phẩm bán thực tế từ dòng nguồn: ${p.name} / ${p.sku}`
+        : `Đã khôi phục tên thương mại từ dòng nguồn: ${p.name}`,
+      beforeSku && beforeSku !== p.sku ? "sku" : "name"
+    ));
+    // Preserve original display identity for audit without letting it continue
+    // to drive downstream matching.
+    p.attributes = {
+      ...(p.attributes || {}),
+      identity: {
+        ...(p.attributes?.identity || {}),
+        sourceName: p.attributes?.identity?.sourceName || beforeName || "",
+        sourceAlias: p.attributes?.identity?.sourceAlias || beforeSku || "",
+      },
+    };
+  }
+
   if (!p.sku) {
     const extractedSku = extractSkuFromText([p.name, p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" "));
     if (extractedSku) {
@@ -749,7 +966,12 @@ export function sanitizeCatalogProduct(product, opts = {}) {
   // rule may canonicalize the display name, while retaining sourceName/rawSku
   // under attributes.identity for audit/provenance.
   const beforeSemanticName = p.name;
+  // RC4: the first descriptive line in Specs is source evidence, not a field
+  // to be reconstructed from sheet/model metadata. Preserve it as the
+  // commercial name authority when available.
+  const sourceCommercialName = extractCommercialNameFromSpecs(p.specs);
   const semanticProduct = applyProductSemantics(p, {
+    sourceCommercialName,
     category: p.category,
     sheetName: p.source?.sheet || p._meta?.source?.sheet || "",
     sectionName: p.source?.section || p._meta?.source?.section || "",
@@ -793,7 +1015,24 @@ export function sanitizeCatalogProduct(product, opts = {}) {
       : issue("weird_font", "warning", "Text có dấu hiệu lỗi font từ file nguồn", "name"));
   }
 
-  const finalIssues = filterIssuesAfterUserAcceptance(issues, p);
+  // RC8 resolved-issue cleanup: earlier pipeline stages may flag missing SKU or
+  // missing price before later grounded recovery succeeds. Do not carry stale
+  // hard errors into the final product once the field is demonstrably resolved.
+  const resolvedIssues = issues.filter((it) => {
+    const code = getIssueCode(it);
+    const hasResolvedName = text(p.name).length >= 2 && !isSyntheticGenericProductName(p.name, p.sku);
+    const hasResolvedSku = !!text(p.sku);
+    const hasResolvedCost = Number(p.costPrice || p.price || 0) > 0;
+    const hasAnyResolvedPrice = hasResolvedCost || Number(p.listPrice || p.publicPrice || 0) > 0;
+    if (code === "missing_sku" && hasResolvedSku) return false;
+    if (code === "missing_price" && hasAnyResolvedPrice) return false;
+    if (code === "missing_cost_price" && hasResolvedCost) return false;
+    if (code === "missing_product_name" && hasResolvedName) return false;
+    if (code === "generic_product_name" && hasResolvedName) return false;
+    if (code === "no_price_no_sku" && (hasAnyResolvedPrice || hasResolvedSku)) return false;
+    return true;
+  });
+  const finalIssues = filterIssuesAfterUserAcceptance(resolvedIssues, p);
   const hasError = finalIssues.some((it) => it.level === "error");
   const hasWarn = finalIssues.some((it) => it.level === "warning");
   const prevMeta = p._meta || {};

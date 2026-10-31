@@ -91,7 +91,9 @@ export function classifyPdfStructuralRow(rawLine = "") {
 
   // Company/contact/bank headers are metadata, never catalog products. This is
   // structural rather than an ever-growing business-text denylist.
-  const contact = /\b(mst|ma so thue|dien thoai|dt|tel|telephone|hotline|dia chi|email|website|so tk|stk|tai khoan ngan hang|tai khoan)\b/.test(k);
+  const strongContact = /\b(mst|ma so thue|hotline|dia chi|email|website|so tk|stk|tai khoan ngan hang|tai khoan)\b/.test(k);
+  const phoneLabel = /(?:^|\s)(?:dien thoai|dt|tel|telephone)\s*[:\-]?\s*(?:\+?\d[\d .()-]{6,}|$)/i.test(k);
+  const contact = strongContact || phoneLabel;
   if (contact && !productKeyword(raw)) return { kind: "header_contact", catalogEligible: false };
 
   // Old quotation section headers often include their subtotal on the same line,

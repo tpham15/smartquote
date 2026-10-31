@@ -13,8 +13,12 @@ export function scoreConfidence(items, mapConfidence = 0.5) {
   return items.map((item) => {
     let conf = 0.3 + 0.4 * mapConfidence; // nền tảng từ chất lượng mapping
 
-    // có giá hợp lệ
-    if (item.price >= 1000) conf += 0.15;
+    // có giá hợp lệ. Nếu chỉ có giá bán/listPrice thì vẫn là bằng chứng
+    // sản phẩm thật, nhưng yếu hơn giá vốn đã xác nhận.
+    const alternatePrice = Number(item.listPrice ?? item.currentListPrice ?? item.publicPrice ?? 0) || 0;
+    const hasAnyPrice = Number(item.price || item.costPrice || 0) >= 1000 || alternatePrice >= 1000;
+    if (Number(item.price || item.costPrice || 0) >= 1000) conf += 0.15;
+    else if (alternatePrice >= 1000) conf += 0.08;
     // có mã
     if (item.sku) conf += 0.1;
     // đã match catalog
@@ -54,7 +58,7 @@ export function scoreConfidence(items, mapConfidence = 0.5) {
 
     if (shouldSkipSubtotal) {
       status = STATUS.SKIPPED || "skipped";
-    } else if (hardReject || (!item.price && !item.sku)) {
+    } else if (hardReject || (!hasAnyPrice && !item.sku)) {
       status = STATUS.REJECTED;
     } else if (item.matchedProductId && conf >= 0.7 && !requiresPriceReview) {
       status = STATUS.MATCHED;

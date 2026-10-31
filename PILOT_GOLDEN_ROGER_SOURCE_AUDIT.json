@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sq-pilot-golden-roger-v1",
+  "fileName": "Roger_BG - RF - Giá đại lý Cấp 1 - 2026.pdf",
+  "sha256": "2d8de09b5014ebc634a425da4137b1fcf747f1909ba6925ed0b05e01084fb0c8",
+  "expectedProductRows": 88,
+  "multiConfigurationRows": {
+    "1": {
+      "sku": "R21/351",
+      "name": "Cổng tự động âm sàn Roger Italia R21/351 - 230V - 800kg",
+      "priceOptions": [
+        { "label": "201", "listPrice": 57000000, "costPrice": 30500000 },
+        { "label": "304", "listPrice": 60000000, "costPrice": 32000000 }
+      ]
+    },
+    "2": {
+      "sku": "BR21/351",
+      "name": "Cổng tự động âm sàn Roger Italia BR21/351 - 36V - 800kg",
+      "priceOptions": [
+        { "label": "201", "listPrice": 77000000, "costPrice": 37000000 },
+        { "label": "304", "listPrice": 80300000, "costPrice": 38500000 }
+      ]
+    }
+  },
+  "criticalRows": [
+    { "stt": 9, "sku": "SMARTY7", "name": "Cổng tự động tay đòn Roger Italia Smarty 7 - 36V - 1400kg", "listPrice": 84300000, "costPrice": 44500000 },
+    { "stt": 13, "sku": "R30", "name": "Cổng tự động trượt Roger Italia KIT R30 - 230V - 1200kg", "listPrice": 35500000, "costPrice": 19900000 },
+    { "stt": 14, "sku": "G30", "name": "Cổng tự động trượt Roger Italia KIT G30 - 230V - 2200kg", "listPrice": 36500000, "costPrice": 23000000 },
+    { "stt": 17, "sku": "T80", "name": "Tay điều khiển Roger Italia 2 nút - T80/2 (MÀU ROGER 2022)", "listPrice": 2300000, "costPrice": 800000 },
+    { "stt": 34, "sku": "Znex", "name": "Thiết bị mở cổng qua điện thoại - Znex", "listPrice": 5000000, "costPrice": 1700000 },
+    { "stt": 46, "sku": "FU", "name": "Đế Inox FU103/R - 304 (bao gồm đế, ngõng, phụ kiện)", "listPrice": 10600000, "costPrice": 3600000 },
+    { "stt": 50, "sku": "FU", "name": "Đế Inox FU103/R - 304 (Đế & Nắp)", "listPrice": 7500000, "costPrice": 2500000 },
+    { "stt": 58, "sku": "R21/351", "name": "Mô tơ R21/351 - 230V - 800kg", "listPrice": 33000000, "costPrice": 12500000 },
+    { "stt": 88, "sku": "PKXL01", "name": "Phụ kiện cổng trượt tự động xếp lớp", "listPrice": 6000000, "costPrice": 1980000 }
+  ],
+  "reusedSupplierCodes": [
+    { "sku": "FU", "expectedRows": 8 }
+  ]
+}

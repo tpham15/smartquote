@@ -1,0 +1,3111 @@
+{
+  "file": " BÁO GIÁ ĐL SSEHOME.xlsx",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/ BÁO GIÁ ĐL SSEHOME.xlsx",
+  "type": "spreadsheet",
+  "hash": "ad6018dfe00a4b8c07c91da8a58ec285e30058dc0e059fc4f26959af8d7492c1",
+  "engine": "v2",
+  "sourceRows": 76,
+  "previewLines": 71,
+  "productCount": 71,
+  "dedupedCount": 0,
+  "identityConflicts": 3,
+  "scanLike": false,
+  "golden": null,
+  "issues": [
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=KÉT PHILIPS · row=11",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12",
+          "I12",
+          "J12",
+          "K12",
+          "L12"
+        ],
+        "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+      "parsed": {
+        "name": "Két an toàn Philips SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30500000,
+        "listPrice": 49625000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "IDENTITY_COLLISION",
+      "severity": "WARN",
+      "message": "Same coarse identity has conflicting visible evidence; SmartQuote preserved both rows for review.",
+      "location": "sheet=KÉT PHILIPS · row=11",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12",
+          "I12",
+          "J12",
+          "K12",
+          "L12"
+        ],
+        "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+      "parsed": {
+        "name": "Két an toàn Philips SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30500000,
+        "listPrice": 49625000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=KÉT PHILIPS · row=16",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 16,
+        "cells": [
+          "B17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "H17",
+          "I17",
+          "K17",
+          "L17"
+        ],
+        "rawText": "SBX202 - 7C0 70kg Vân tay/ mật mã/chìa cơ Vàng/ Xám 700*450*420 20500000 26700000 33375000 0.2 0.3857677903",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX202 - 7C0 70kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX202 - 7C0 70kg Vân tay/ mật mã/chìa cơ Vàng/ Xám 700*450*420 20500000 26700000 33375000 0.2 0.3857677903",
+      "parsed": {
+        "name": "Két an toàn Philips SBX202-7C0",
+        "sku": "SBX202-7C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 26700000,
+        "listPrice": 33375000
+      },
+      "issueCodes": [
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_RECOVERED",
+      "severity": "WARN",
+      "message": "Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "location": "sheet=KÉT PHILIPS · row=16",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 16,
+        "cells": [
+          "B17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "H17",
+          "I17",
+          "K17",
+          "L17"
+        ],
+        "rawText": "SBX202 - 7C0 70kg Vân tay/ mật mã/chìa cơ Vàng/ Xám 700*450*420 20500000 26700000 33375000 0.2 0.3857677903",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX202 - 7C0 70kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX202 - 7C0 70kg Vân tay/ mật mã/chìa cơ Vàng/ Xám 700*450*420 20500000 26700000 33375000 0.2 0.3857677903",
+      "parsed": {
+        "name": "Két an toàn Philips SBX202-7C0",
+        "sku": "SBX202-7C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 26700000,
+        "listPrice": 33375000
+      },
+      "issueCodes": [
+        "price_recovered"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=KÉT PHILIPS · row=23",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 23,
+        "cells": [
+          "A24",
+          "B24",
+          "D24",
+          "E24",
+          "F24",
+          "G24",
+          "H24",
+          "I24",
+          "K24",
+          "L24"
+        ],
+        "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+      "parsed": {
+        "name": "Két an toàn Philips SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 32000000,
+        "listPrice": 48875000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "IDENTITY_COLLISION",
+      "severity": "WARN",
+      "message": "Same coarse identity has conflicting visible evidence; SmartQuote preserved both rows for review.",
+      "location": "sheet=KÉT PHILIPS · row=23",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 23,
+        "cells": [
+          "A24",
+          "B24",
+          "D24",
+          "E24",
+          "F24",
+          "G24",
+          "H24",
+          "I24",
+          "K24",
+          "L24"
+        ],
+        "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+      "parsed": {
+        "name": "Két an toàn Philips SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 32000000,
+        "listPrice": 48875000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=KÉT PHILIPS · row=27",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 27,
+        "cells": [
+          "A28",
+          "B28",
+          "D28",
+          "E28",
+          "F28",
+          "G28",
+          "H28",
+          "I28",
+          "K28",
+          "L28"
+        ],
+        "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+      "parsed": {
+        "name": "Két an toàn Philips SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 25900000,
+        "listPrice": 40125000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "IDENTITY_COLLISION",
+      "severity": "WARN",
+      "message": "Same coarse identity has conflicting visible evidence; SmartQuote preserved both rows for review.",
+      "location": "sheet=KÉT PHILIPS · row=27",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 27,
+        "cells": [
+          "A28",
+          "B28",
+          "D28",
+          "E28",
+          "F28",
+          "G28",
+          "H28",
+          "I28",
+          "K28",
+          "L28"
+        ],
+        "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+      "parsed": {
+        "name": "Két an toàn Philips SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 25900000,
+        "listPrice": 40125000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "sheet=KÉT PHILIPS · row=31",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 31,
+        "cells": [
+          "A32",
+          "B32",
+          "D32",
+          "E32",
+          "F32",
+          "G32",
+          "K32",
+          "L32"
+        ],
+        "rawText": "22 Kệ trưng bày Két Kệ trưng bày Két Tiêu chuẩn 1300*790*30 4000000 #DIV/0! #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "22 Kệ trưng bày Két Kệ trưng bày Két Tiêu chuẩn 1300*790*30 4000000 #DIV/0! #DIV/0!",
+      "parsed": {
+        "name": "Kệ trưng bày Két",
+        "sku": "",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 4000000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_SKU",
+      "severity": "WARN",
+      "message": "Thiếu mã SKU — vẫn có thể nhập nếu tên và giá đã rõ",
+      "location": "sheet=KÉT PHILIPS · row=31",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 31,
+        "cells": [
+          "A32",
+          "B32",
+          "D32",
+          "E32",
+          "F32",
+          "G32",
+          "K32",
+          "L32"
+        ],
+        "rawText": "22 Kệ trưng bày Két Kệ trưng bày Két Tiêu chuẩn 1300*790*30 4000000 #DIV/0! #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "22 Kệ trưng bày Két Kệ trưng bày Két Tiêu chuẩn 1300*790*30 4000000 #DIV/0! #DIV/0!",
+      "parsed": {
+        "name": "Kệ trưng bày Két",
+        "sku": "",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 4000000,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_sku"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=KHÓA KAADAS · row=4",
+      "source": {
+        "sheet": "KHÓA KAADAS",
+        "row": 4,
+        "cells": [
+          "A5",
+          "C5",
+          "D5",
+          "E5",
+          "F5",
+          "G5",
+          "H5",
+          "I5",
+          "J5",
+          "K5",
+          "L5"
+        ],
+        "rawText": "2 K20- Pro Wooden doors Metal doors L425*W78*H56mm L420.1*W75.1*H56mm Xám/ Đồng đỏ Camera, Vân tay, Mật mã, Thẻ từ, Chìa cơ, Wifi App, Doorbell screen 12100000 11000000 15400000 19250000 Chưa có hàng",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "K20- Pro",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 K20- Pro Wooden doors Metal doors L425*W78*H56mm L420.1*W75.1*H56mm Xám/ Đồng đỏ Camera, Vân tay, Mật mã, Thẻ từ, Chìa cơ, Wifi App, Doorbell screen 12100000 11000000 15400000 19250000 Chưa có hàng",
+      "parsed": {
+        "name": "Khóa thông minh Kaadas K20-Pro",
+        "sku": "K20-Pro",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 12100000,
+        "listPrice": 11000000
+      },
+      "issueCodes": [
+        "list_price_below_cost",
+        "pilot_business_dealer_above_retail"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=Khóa HEXA · row=4",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 4,
+        "cells": [
+          "A5",
+          "B5",
+          "D5",
+          "E5",
+          "F5",
+          "G5",
+          "H5",
+          "I5",
+          "J5"
+        ],
+        "rawText": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "P100M-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+      "parsed": {
+        "name": "Khóa thông minh Hexa P100M-Pro Max",
+        "sku": "P100M-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 7300000,
+        "listPrice": 14300000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=Khóa HEXA · row=4",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 4,
+        "cells": [
+          "A5",
+          "B5",
+          "D5",
+          "E5",
+          "F5",
+          "G5",
+          "H5",
+          "I5",
+          "J5"
+        ],
+        "rawText": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "P100M-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+      "parsed": {
+        "name": "Khóa thông minh Hexa P100M-Pro Max",
+        "sku": "P100M-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 7300000,
+        "listPrice": 14300000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=Khóa HEXA · row=6",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 6,
+        "cells": [
+          "B7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7",
+          "J7"
+        ],
+        "rawText": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "P100M",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+      "parsed": {
+        "name": "Khóa thông minh Hexa P100M",
+        "sku": "P100M",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 4900000,
+        "listPrice": 9800000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=Khóa HEXA · row=6",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 6,
+        "cells": [
+          "B7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7",
+          "J7"
+        ],
+        "rawText": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "P100M",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+      "parsed": {
+        "name": "Khóa thông minh Hexa P100M",
+        "sku": "P100M",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 4900000,
+        "listPrice": 9800000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=Khóa HEXA · row=9",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "D10",
+          "J10"
+        ],
+        "rawText": "3 R100-Pro Max SET #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "R100-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 R100-Pro Max SET #DIV/0!",
+      "parsed": {
+        "name": "Khóa thông minh Hexa R100-Pro Max",
+        "sku": "R100-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 0,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_price",
+        "price_unreasonable"
+      ]
+    },
+    {
+      "code": "MISSING_PRICE",
+      "severity": "WARN",
+      "message": "No usable cost/list price was resolved.",
+      "location": "sheet=Khóa HEXA · row=9",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "D10",
+          "J10"
+        ],
+        "rawText": "3 R100-Pro Max SET #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "R100-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 R100-Pro Max SET #DIV/0!",
+      "parsed": {
+        "name": "Khóa thông minh Hexa R100-Pro Max",
+        "sku": "R100-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 0,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_price",
+        "price_unreasonable"
+      ]
+    },
+    {
+      "code": "ENGINE_MISSING_PRICE",
+      "severity": "ERROR",
+      "message": "Thiếu giá",
+      "location": "sheet=Khóa HEXA · row=9",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "D10",
+          "J10"
+        ],
+        "rawText": "3 R100-Pro Max SET #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "R100-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 R100-Pro Max SET #DIV/0!",
+      "parsed": {
+        "name": "Khóa thông minh Hexa R100-Pro Max",
+        "sku": "R100-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 0,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_price",
+        "price_unreasonable"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_UNREASONABLE",
+      "severity": "ERROR",
+      "message": "Giá nhập bất thường hoặc bị dính nhiều cột giá",
+      "location": "sheet=Khóa HEXA · row=9",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "D10",
+          "J10"
+        ],
+        "rawText": "3 R100-Pro Max SET #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "R100-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 R100-Pro Max SET #DIV/0!",
+      "parsed": {
+        "name": "Khóa thông minh Hexa R100-Pro Max",
+        "sku": "R100-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 0,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_price",
+        "price_unreasonable"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=Khóa HEXA · row=12",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "D13",
+          "E13",
+          "F13",
+          "G13",
+          "H13",
+          "I13",
+          "J13"
+        ],
+        "rawText": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "L100",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+      "parsed": {
+        "name": "Khóa thông minh Hexa L100",
+        "sku": "L100",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 3800000,
+        "listPrice": 8000000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=Khóa HEXA · row=12",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "D13",
+          "E13",
+          "F13",
+          "G13",
+          "H13",
+          "I13",
+          "J13"
+        ],
+        "rawText": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "L100",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+      "parsed": {
+        "name": "Khóa thông minh Hexa L100",
+        "sku": "L100",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 3800000,
+        "listPrice": 8000000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=Khóa HEXA · row=16",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 16,
+        "cells": [
+          "A17",
+          "B17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "H17",
+          "I17",
+          "J17"
+        ],
+        "rawText": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "HX12",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+      "parsed": {
+        "name": "Khóa thông minh Hexa HX12",
+        "sku": "HX12",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 2100000,
+        "listPrice": 4900000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "DUPLICATE_PRICE_CONFLICT",
+      "severity": "WARN",
+      "message": "Same canonical identity has conflicting prices; SmartQuote preserved source occurrences and requires review.",
+      "location": "sheet=Khóa HEXA · row=16",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 16,
+        "cells": [
+          "A17",
+          "B17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "H17",
+          "I17",
+          "J17"
+        ],
+        "rawText": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "HX12",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+      "parsed": {
+        "name": "Khóa thông minh Hexa HX12",
+        "sku": "HX12",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 2100000,
+        "listPrice": 4900000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "duplicate_identity_price_conflict"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=Trang tính6 · row=6",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 6,
+        "cells": [
+          "C7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7"
+        ],
+        "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+      "parsed": {
+        "name": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37800000,
+        "listPrice": 47200000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "IDENTITY_COLLISION",
+      "severity": "WARN",
+      "message": "Same coarse identity has conflicting visible evidence; SmartQuote preserved both rows for review.",
+      "location": "sheet=Trang tính6 · row=6",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 6,
+        "cells": [
+          "C7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7"
+        ],
+        "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+      "parsed": {
+        "name": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37800000,
+        "listPrice": 47200000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%",
+      "location": "sheet=Trang tính6 · row=6",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 6,
+        "cells": [
+          "C7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7"
+        ],
+        "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+      "parsed": {
+        "name": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37800000,
+        "listPrice": 47200000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=Trang tính6 · row=7",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 7,
+        "cells": [
+          "C8",
+          "E8",
+          "F8",
+          "G8",
+          "H8",
+          "I8"
+        ],
+        "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+      "parsed": {
+        "name": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37300000,
+        "listPrice": 46600000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "IDENTITY_COLLISION",
+      "severity": "WARN",
+      "message": "Same coarse identity has conflicting visible evidence; SmartQuote preserved both rows for review.",
+      "location": "sheet=Trang tính6 · row=7",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 7,
+        "cells": [
+          "C8",
+          "E8",
+          "F8",
+          "G8",
+          "H8",
+          "I8"
+        ],
+        "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+      "parsed": {
+        "name": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37300000,
+        "listPrice": 46600000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%",
+      "location": "sheet=Trang tính6 · row=7",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 7,
+        "cells": [
+          "C8",
+          "E8",
+          "F8",
+          "G8",
+          "H8",
+          "I8"
+        ],
+        "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+      "parsed": {
+        "name": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37300000,
+        "listPrice": 46600000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "UNSAFE_PRODUCT",
+      "severity": "ERROR",
+      "message": "Product has a hard sanitizer/validation error.",
+      "location": "sheet=Trang tính6 · row=8",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 8,
+        "cells": [
+          "C9",
+          "E9",
+          "F9",
+          "G9",
+          "H9",
+          "I9"
+        ],
+        "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+      "parsed": {
+        "name": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30600000,
+        "listPrice": 38300000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "IDENTITY_COLLISION",
+      "severity": "WARN",
+      "message": "Same coarse identity has conflicting visible evidence; SmartQuote preserved both rows for review.",
+      "location": "sheet=Trang tính6 · row=8",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 8,
+        "cells": [
+          "C9",
+          "E9",
+          "F9",
+          "G9",
+          "H9",
+          "I9"
+        ],
+        "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+      "parsed": {
+        "name": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30600000,
+        "listPrice": 38300000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%",
+      "location": "sheet=Trang tính6 · row=8",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 8,
+        "cells": [
+          "C9",
+          "E9",
+          "F9",
+          "G9",
+          "H9",
+          "I9"
+        ],
+        "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+      "parsed": {
+        "name": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30600000,
+        "listPrice": 38300000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "sheet=Trang tính6 · row=9",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 9,
+        "cells": [
+          "C10",
+          "E10",
+          "F10",
+          "G10",
+          "H10",
+          "I10"
+        ],
+        "rawText": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX601-4B0 31kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+      "parsed": {
+        "name": "Két an toàn SBX601-4B0",
+        "sku": "SBX601-4B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 15500000,
+        "listPrice": 23600000
+      },
+      "issueCodes": [
+        "price_column_uncertain"
+      ]
+    },
+    {
+      "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+      "severity": "WARN",
+      "message": "Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%",
+      "location": "sheet=Trang tính6 · row=9",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 9,
+        "cells": [
+          "C10",
+          "E10",
+          "F10",
+          "G10",
+          "H10",
+          "I10"
+        ],
+        "rawText": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX601-4B0 31kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+      "parsed": {
+        "name": "Két an toàn SBX601-4B0",
+        "sku": "SBX601-4B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 15500000,
+        "listPrice": 23600000
+      },
+      "issueCodes": [
+        "price_column_uncertain"
+      ]
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KÉT PHILIPS · row=11",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12",
+          "I12",
+          "J12",
+          "K12",
+          "L12"
+        ],
+        "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+      "parsed": {
+        "name": "Két an toàn Philips SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30500000,
+        "listPrice": 49625000
+      },
+      "issueCodes": [
+        "identity_collision_review"
+      ],
+      "lineId": "line_e9htus",
+      "confidence": 0.81,
+      "raw": {
+        "productName": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+        "sku": "SBX501-5C0",
+        "unit": "Cái",
+        "price": 30500000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn Philips SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 30500000,
+        "costPrice": 30500000,
+        "listPrice": 49625000,
+        "publicPrice": 49625000,
+        "minRetailPrice": 39700000,
+        "priceMode": "fixed",
+        "specs": "Chống cháy/ Vân tay/ mật mã/chìa cơ | 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang · Giá bán lẻ thấp nhất: 39.700.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KÉT PHILIPS · row=23",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 23,
+        "cells": [
+          "A24",
+          "B24",
+          "D24",
+          "E24",
+          "F24",
+          "G24",
+          "H24",
+          "I24",
+          "K24",
+          "L24"
+        ],
+        "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+      "parsed": {
+        "name": "Két an toàn Philips SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 32000000,
+        "listPrice": 48875000
+      },
+      "issueCodes": [
+        "identity_collision_review"
+      ],
+      "lineId": "line_1dir5ya",
+      "confidence": 0.81,
+      "raw": {
+        "productName": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+        "sku": "SBX701-5B0",
+        "unit": "Cái",
+        "price": 32000000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn Philips SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 32000000,
+        "costPrice": 32000000,
+        "listPrice": 48875000,
+        "publicPrice": 48875000,
+        "minRetailPrice": 39100000,
+        "priceMode": "fixed",
+        "specs": "Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố | 550*430*400 · Giá bán lẻ thấp nhất: 39.100.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=KÉT PHILIPS · row=27",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 27,
+        "cells": [
+          "A28",
+          "B28",
+          "D28",
+          "E28",
+          "F28",
+          "G28",
+          "H28",
+          "I28",
+          "K28",
+          "L28"
+        ],
+        "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+      "parsed": {
+        "name": "Két an toàn Philips SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 25900000,
+        "listPrice": 40125000
+      },
+      "issueCodes": [
+        "identity_collision_review"
+      ],
+      "lineId": "line_uuoqib",
+      "confidence": 0.81,
+      "raw": {
+        "productName": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+        "sku": "SBX602-5CU",
+        "unit": "Cái",
+        "price": 25900000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn Philips SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 25900000,
+        "costPrice": 25900000,
+        "listPrice": 40125000,
+        "publicPrice": 40125000,
+        "minRetailPrice": 32100000,
+        "priceMode": "fixed",
+        "specs": "Vân tay / mật mã/ chìa cơ App | 570*400*360 · Giá bán lẻ thấp nhất: 32.100.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Khóa HEXA · row=4",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 4,
+        "cells": [
+          "A5",
+          "B5",
+          "D5",
+          "E5",
+          "F5",
+          "G5",
+          "H5",
+          "I5",
+          "J5"
+        ],
+        "rawText": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "P100M-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+      "parsed": {
+        "name": "Khóa thông minh Hexa P100M-Pro Max",
+        "sku": "P100M-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 7300000,
+        "listPrice": 14300000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_kivuz0",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "1 P100M-Pro Max SET Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 7300000 11400000 14300000 0.4895104895",
+        "sku": "P100M-Pro Max",
+        "unit": "SET",
+        "price": 7300000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh Hexa P100M-Pro Max",
+        "sku": "P100M-Pro Max",
+        "category": "Khóa thông minh",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "unitPrice": 7300000,
+        "costPrice": 7300000,
+        "listPrice": 14300000,
+        "publicPrice": 14300000,
+        "minRetailPrice": 11400000,
+        "priceMode": "fixed",
+        "specs": "Nhận diện gương mặt 3D/ nhận diện bàn tay/ App Hexa mở khóa từ xa/ Đàm thoại 2 chiều/ Màn hình màu 2 mặt/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ · Giá bán lẻ thấp nhất: 11.400.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Khóa HEXA · row=6",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 6,
+        "cells": [
+          "B7",
+          "D7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7",
+          "J7"
+        ],
+        "rawText": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "P100M",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+      "parsed": {
+        "name": "Khóa thông minh Hexa P100M",
+        "sku": "P100M",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 4900000,
+        "listPrice": 9800000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_hubhpo",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "P100M SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ Đen/ Đen xám/ Đồng đỏ 4900000 7800000 9800000 0.5",
+        "sku": "P100M",
+        "unit": "SET",
+        "price": 4900000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh Hexa P100M",
+        "sku": "P100M",
+        "category": "Khóa thông minh",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "unitPrice": 4900000,
+        "costPrice": 4900000,
+        "listPrice": 9800000,
+        "publicPrice": 9800000,
+        "minRetailPrice": 7800000,
+        "priceMode": "fixed",
+        "specs": "App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân khóa cơ · Giá bán lẻ thấp nhất: 7.800.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Khóa HEXA · row=9",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 9,
+        "cells": [
+          "A10",
+          "B10",
+          "D10",
+          "J10"
+        ],
+        "rawText": "3 R100-Pro Max SET #DIV/0!",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "R100-Pro Max",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "3 R100-Pro Max SET #DIV/0!",
+      "parsed": {
+        "name": "Khóa thông minh Hexa R100-Pro Max",
+        "sku": "R100-Pro Max",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 0,
+        "listPrice": 0
+      },
+      "issueCodes": [
+        "missing_price"
+      ],
+      "lineId": "line_kqt1jw",
+      "confidence": 0.58,
+      "raw": {
+        "productName": "3 R100-Pro Max SET #DIV/0!",
+        "sku": "R100-Pro Max",
+        "unit": "SET",
+        "price": 0
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh Hexa R100-Pro Max",
+        "sku": "R100-Pro Max",
+        "category": "Khóa thông minh",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "unitPrice": 0,
+        "costPrice": 0,
+        "listPrice": 0,
+        "publicPrice": 0,
+        "minRetailPrice": 0,
+        "priceMode": "markup",
+        "specs": ""
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Khóa HEXA · row=12",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 12,
+        "cells": [
+          "A13",
+          "B13",
+          "D13",
+          "E13",
+          "F13",
+          "G13",
+          "H13",
+          "I13",
+          "J13"
+        ],
+        "rawText": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "L100",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+      "parsed": {
+        "name": "Khóa thông minh Hexa L100",
+        "sku": "L100",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 3800000,
+        "listPrice": 8000000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_g183j2",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "6 L100 SET App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) Vàng 24K 3800000 6400000 8000000 0.525",
+        "sku": "L100",
+        "unit": "SET",
+        "price": 3800000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh Hexa L100",
+        "sku": "L100",
+        "category": "Khóa thông minh",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "unitPrice": 3800000,
+        "costPrice": 3800000,
+        "listPrice": 8000000,
+        "publicPrice": 8000000,
+        "minRetailPrice": 6400000,
+        "priceMode": "fixed",
+        "specs": "App Hexa mở khóa từ xa/ Vân tay/ mật mã/ thẻ từ/ chìa cơ Chống nước IP66 Thân Khóa cơ ( thân khóa 6068 ) · Giá bán lẻ thấp nhất: 6.400.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Khóa HEXA · row=16",
+      "source": {
+        "sheet": "Khóa HEXA",
+        "row": 16,
+        "cells": [
+          "A17",
+          "B17",
+          "D17",
+          "E17",
+          "F17",
+          "G17",
+          "H17",
+          "I17",
+          "J17"
+        ],
+        "rawText": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "HX12",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+      "parsed": {
+        "name": "Khóa thông minh Hexa HX12",
+        "sku": "HX12",
+        "category": "Khóa thông minh",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "costPrice": 2100000,
+        "listPrice": 4900000
+      },
+      "issueCodes": [
+        "duplicate_identity_price_conflict",
+        "duplicate_identity_price_conflict"
+      ],
+      "lineId": "line_15s754v",
+      "confidence": 0.64,
+      "raw": {
+        "productName": "13 HX12 SET Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) Đồng đỏ 2100000 3950000 4900000 0.5714285714",
+        "sku": "HX12",
+        "unit": "SET",
+        "price": 2100000
+      },
+      "parsedLine": {
+        "productName": "Khóa thông minh Hexa HX12",
+        "sku": "HX12",
+        "category": "Khóa thông minh",
+        "supplier": "SSEHOME",
+        "unit": "SET",
+        "unitPrice": 2100000,
+        "costPrice": 2100000,
+        "listPrice": 4900000,
+        "publicPrice": 4900000,
+        "minRetailPrice": 3950000,
+        "priceMode": "fixed",
+        "specs": "Vân tay/ mật mã/ thẻ từ/ chìa cơ Thân Khóa cơ ( thân khóa 6068 ) · Giá bán lẻ thấp nhất: 3.950.000đ"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Trang tính6 · row=6",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 6,
+        "cells": [
+          "C7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7"
+        ],
+        "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+      "parsed": {
+        "name": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37800000,
+        "listPrice": 47200000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review"
+      ],
+      "lineId": "line_yr32jh",
+      "confidence": 0.73,
+      "raw": {
+        "productName": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "sku": "SBX501-5C0",
+        "unit": "Cái",
+        "price": 37800000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 37800000,
+        "costPrice": 37800000,
+        "listPrice": 47200000,
+        "publicPrice": 47200000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Chống cháy/ Vân tay/ mật mã/chìa cơ | 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Trang tính6 · row=7",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 7,
+        "cells": [
+          "C8",
+          "E8",
+          "F8",
+          "G8",
+          "H8",
+          "I8"
+        ],
+        "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+      "parsed": {
+        "name": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37300000,
+        "listPrice": 46600000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review"
+      ],
+      "lineId": "line_1oupe1f",
+      "confidence": 0.73,
+      "raw": {
+        "productName": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "sku": "SBX701-5B0",
+        "unit": "Cái",
+        "price": 37300000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 37300000,
+        "costPrice": 37300000,
+        "listPrice": 46600000,
+        "publicPrice": 46600000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Vân tay/ mật mã/bảo mật cấp 2 | 550*430*400"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Trang tính6 · row=8",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 8,
+        "cells": [
+          "C9",
+          "E9",
+          "F9",
+          "G9",
+          "H9",
+          "I9"
+        ],
+        "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+      "parsed": {
+        "name": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30600000,
+        "listPrice": 38300000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review"
+      ],
+      "lineId": "line_j18wzp",
+      "confidence": 0.73,
+      "raw": {
+        "productName": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "sku": "SBX602-5CU",
+        "unit": "Cái",
+        "price": 30600000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 30600000,
+        "costPrice": 30600000,
+        "listPrice": 38300000,
+        "publicPrice": 38300000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Vân tay / mật mã/ chìa cơ App | 570*400*360"
+      }
+    },
+    {
+      "code": "ENGINE_LINE_REVIEW",
+      "severity": "WARN",
+      "message": "Canonical import line requires human review.",
+      "location": "sheet=Trang tính6 · row=9",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 9,
+        "cells": [
+          "C10",
+          "E10",
+          "F10",
+          "G10",
+          "H10",
+          "I10"
+        ],
+        "rawText": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX601-4B0 31kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+      "parsed": {
+        "name": "Két an toàn SBX601-4B0",
+        "sku": "SBX601-4B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 15500000,
+        "listPrice": 23600000
+      },
+      "issueCodes": [
+        "price_column_uncertain"
+      ],
+      "lineId": "line_1i05d1q",
+      "confidence": 0.73,
+      "raw": {
+        "productName": "SBX601-4B0 31kg Vân tay/mật mã.chìa khóa cơ Xám 450*380*560 18800000 15.500.000 23600000",
+        "sku": "SBX601-4B0",
+        "unit": "Cái",
+        "price": 15500000
+      },
+      "parsedLine": {
+        "productName": "Két an toàn SBX601-4B0",
+        "sku": "SBX601-4B0",
+        "category": "Két an toàn",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "unitPrice": 15500000,
+        "costPrice": 15500000,
+        "listPrice": 23600000,
+        "publicPrice": 23600000,
+        "minRetailPrice": 0,
+        "priceMode": "fixed",
+        "specs": "Vân tay/mật mã.chìa khóa cơ | 450*380*560"
+      }
+    },
+    {
+      "code": "IDENTITY_KEY_COLLISION_REVIEW",
+      "severity": "WARN",
+      "message": "Coarse supplier/SKU key is shared by 2 visibly distinct products; preserve rows and review, do not auto-merge.",
+      "location": "sheet=KÉT PHILIPS · row=11",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12",
+          "I12",
+          "J12",
+          "K12",
+          "L12"
+        ],
+        "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+      "parsed": {
+        "name": "Két an toàn Philips SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30500000,
+        "listPrice": 49625000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "IDENTITY_KEY_COLLISION_REVIEW",
+      "severity": "WARN",
+      "message": "Coarse supplier/SKU key is shared by 2 visibly distinct products; preserve rows and review, do not auto-merge.",
+      "location": "sheet=Trang tính6 · row=6",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 6,
+        "cells": [
+          "C7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7"
+        ],
+        "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+      "parsed": {
+        "name": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37800000,
+        "listPrice": 47200000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "IDENTITY_KEY_COLLISION_REVIEW",
+      "severity": "WARN",
+      "message": "Coarse supplier/SKU key is shared by 2 visibly distinct products; preserve rows and review, do not auto-merge.",
+      "location": "sheet=KÉT PHILIPS · row=23",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 23,
+        "cells": [
+          "A24",
+          "B24",
+          "D24",
+          "E24",
+          "F24",
+          "G24",
+          "H24",
+          "I24",
+          "K24",
+          "L24"
+        ],
+        "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+      "parsed": {
+        "name": "Két an toàn Philips SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 32000000,
+        "listPrice": 48875000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "IDENTITY_KEY_COLLISION_REVIEW",
+      "severity": "WARN",
+      "message": "Coarse supplier/SKU key is shared by 2 visibly distinct products; preserve rows and review, do not auto-merge.",
+      "location": "sheet=Trang tính6 · row=7",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 7,
+        "cells": [
+          "C8",
+          "E8",
+          "F8",
+          "G8",
+          "H8",
+          "I8"
+        ],
+        "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+      "parsed": {
+        "name": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37300000,
+        "listPrice": 46600000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "IDENTITY_KEY_COLLISION_REVIEW",
+      "severity": "WARN",
+      "message": "Coarse supplier/SKU key is shared by 2 visibly distinct products; preserve rows and review, do not auto-merge.",
+      "location": "sheet=KÉT PHILIPS · row=27",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 27,
+        "cells": [
+          "A28",
+          "B28",
+          "D28",
+          "E28",
+          "F28",
+          "G28",
+          "H28",
+          "I28",
+          "K28",
+          "L28"
+        ],
+        "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+      "parsed": {
+        "name": "Két an toàn Philips SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 25900000,
+        "listPrice": 40125000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "IDENTITY_KEY_COLLISION_REVIEW",
+      "severity": "WARN",
+      "message": "Coarse supplier/SKU key is shared by 2 visibly distinct products; preserve rows and review, do not auto-merge.",
+      "location": "sheet=Trang tính6 · row=8",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 8,
+        "cells": [
+          "C9",
+          "E9",
+          "F9",
+          "G9",
+          "H9",
+          "I9"
+        ],
+        "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+      "parsed": {
+        "name": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30600000,
+        "listPrice": 38300000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "SUPPLIER_CODE_REUSED",
+      "severity": "INFO",
+      "message": "Supplier code is reused across 2 distinct rows; do not merge by bare SKU alone.",
+      "location": "sheet=KÉT PHILIPS · row=11",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 11,
+        "cells": [
+          "A12",
+          "B12",
+          "D12",
+          "E12",
+          "F12",
+          "G12",
+          "H12",
+          "I12",
+          "J12",
+          "K12",
+          "L12"
+        ],
+        "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "2 SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Xanh ngọc lục bảo/ Thiên hà tím 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 30500000 39700000 49625000 Két sắt chống cháy tiêu chuẩn UL350-2HR 0.2 0.3853904282",
+      "parsed": {
+        "name": "Két an toàn Philips SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30500000,
+        "listPrice": 49625000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupKey": "ssehome|sbx501 5c0",
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "SUPPLIER_CODE_REUSED",
+      "severity": "INFO",
+      "message": "Supplier code is reused across 2 distinct rows; do not merge by bare SKU alone.",
+      "location": "sheet=Trang tính6 · row=6",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 6,
+        "cells": [
+          "C7",
+          "E7",
+          "F7",
+          "G7",
+          "H7",
+          "I7"
+        ],
+        "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX501-5C0 90.9kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX501-5C0 90.9kg Chống cháy/ Vân tay/ mật mã/chìa cơ Tím Galaxy 541.2*461*548.5 Tiêu chuẩn chống cháy UL350 - Mỹ Tiêu chuẩn test 1850°F/1010°C trong 120 phút/ 350°F/177°C ngăn cách 2 khoang 37800000 47200000",
+      "parsed": {
+        "name": "Két an toàn SBX501-5C0",
+        "sku": "SBX501-5C0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37800000,
+        "listPrice": 47200000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupKey": "ssehome|sbx501 5c0",
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "SUPPLIER_CODE_REUSED",
+      "severity": "INFO",
+      "message": "Supplier code is reused across 2 distinct rows; do not merge by bare SKU alone.",
+      "location": "sheet=KÉT PHILIPS · row=23",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 23,
+        "cells": [
+          "A24",
+          "B24",
+          "D24",
+          "E24",
+          "F24",
+          "G24",
+          "H24",
+          "I24",
+          "K24",
+          "L24"
+        ],
+        "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "8 SBX701-5B0 88Kg Vân tay/ Mật mã / 2 hệ thống mở khóa độc lập khi xây xảy ra sự cố Xám, Bạc 550*430*400 32000000 39100000 48875000 0.2 0.3452685422",
+      "parsed": {
+        "name": "Két an toàn Philips SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 32000000,
+        "listPrice": 48875000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupKey": "ssehome|sbx701 5b0",
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "SUPPLIER_CODE_REUSED",
+      "severity": "INFO",
+      "message": "Supplier code is reused across 2 distinct rows; do not merge by bare SKU alone.",
+      "location": "sheet=Trang tính6 · row=7",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 7,
+        "cells": [
+          "C8",
+          "E8",
+          "F8",
+          "G8",
+          "H8",
+          "I8"
+        ],
+        "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX701-5B0 88Kg",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX701-5B0 88Kg Vân tay/ mật mã/bảo mật cấp 2 Xám/bạc 550*430*400 37300000 46600000",
+      "parsed": {
+        "name": "Két an toàn SBX701-5B0",
+        "sku": "SBX701-5B0",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 37300000,
+        "listPrice": 46600000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupKey": "ssehome|sbx701 5b0",
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "SUPPLIER_CODE_REUSED",
+      "severity": "INFO",
+      "message": "Supplier code is reused across 2 distinct rows; do not merge by bare SKU alone.",
+      "location": "sheet=KÉT PHILIPS · row=27",
+      "source": {
+        "sheet": "KÉT PHILIPS",
+        "row": 27,
+        "cells": [
+          "A28",
+          "B28",
+          "D28",
+          "E28",
+          "F28",
+          "G28",
+          "H28",
+          "I28",
+          "K28",
+          "L28"
+        ],
+        "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "12 SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Vàng champagne, Xám 570*400*360 25900000 32100000 40125000 0.2 0.354517134",
+      "parsed": {
+        "name": "Két an toàn Philips SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 25900000,
+        "listPrice": 40125000
+      },
+      "issueCodes": [
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupKey": "ssehome|sbx602 5cu",
+      "groupSize": 2,
+      "distinctNames": 2
+    },
+    {
+      "code": "SUPPLIER_CODE_REUSED",
+      "severity": "INFO",
+      "message": "Supplier code is reused across 2 distinct rows; do not merge by bare SKU alone.",
+      "location": "sheet=Trang tính6 · row=8",
+      "source": {
+        "sheet": "Trang tính6",
+        "row": 8,
+        "cells": [
+          "C9",
+          "E9",
+          "F9",
+          "G9",
+          "H9",
+          "I9"
+        ],
+        "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+        "page": null,
+        "fileName": "",
+        "bbox": null,
+        "parts": [],
+        "pageWidth": null,
+        "pageHeight": null,
+        "documentCategory": "",
+        "section": "",
+        "rawSku": "SBX602-5CU 71.5KG",
+        "canonicalSkuEvidence": "mapped_sku"
+      },
+      "rawText": "SBX602-5CU 71.5KG Vân tay / mật mã/ chìa cơ App Xám/Vàng 570*400*360 30600000 38300000",
+      "parsed": {
+        "name": "Két an toàn SBX602-5CU",
+        "sku": "SBX602-5CU",
+        "category": "Két an toàn",
+        "productType": "",
+        "model": "",
+        "supplier": "SSEHOME",
+        "unit": "Cái",
+        "costPrice": 30600000,
+        "listPrice": 38300000
+      },
+      "issueCodes": [
+        "price_column_uncertain",
+        "identity_collision_review",
+        "pilot_business_duplicate_sku_in_import",
+        "identity_collision_review"
+      ],
+      "groupKey": "ssehome|sbx602 5cu",
+      "groupSize": 2,
+      "distinctNames": 2
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 10,
+      "WARN": 42,
+      "INFO": 6
+    },
+    "byCode": [
+      {
+        "code": "ENGINE_LINE_REVIEW",
+        "count": 12
+      },
+      {
+        "code": "UNSAFE_PRODUCT",
+        "count": 8
+      },
+      {
+        "code": "IDENTITY_COLLISION",
+        "count": 6
+      },
+      {
+        "code": "NEEDS_REVIEW",
+        "count": 6
+      },
+      {
+        "code": "IDENTITY_KEY_COLLISION_REVIEW",
+        "count": 6
+      },
+      {
+        "code": "SUPPLIER_CODE_REUSED",
+        "count": 6
+      },
+      {
+        "code": "DUPLICATE_PRICE_CONFLICT",
+        "count": 4
+      },
+      {
+        "code": "ENGINE_PRICE_COLUMN_UNCERTAIN",
+        "count": 4
+      },
+      {
+        "code": "ENGINE_PRICE_RECOVERED",
+        "count": 1
+      },
+      {
+        "code": "MISSING_SKU",
+        "count": 1
+      },
+      {
+        "code": "ENGINE_MISSING_SKU",
+        "count": 1
+      },
+      {
+        "code": "MISSING_PRICE",
+        "count": 1
+      },
+      {
+        "code": "ENGINE_MISSING_PRICE",
+        "count": 1
+      },
+      {
+        "code": "ENGINE_PRICE_UNREASONABLE",
+        "count": 1
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

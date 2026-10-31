@@ -19,8 +19,14 @@ export function validateItems(items) {
     else if (item.name.length > 200) issues.push(issue("name_too_long", "warning", "Tên quá dài (có thể là ghi chú)", "name"));
 
     // giá
-    if (!item.price || item.price === 0) issues.push(issue("missing_price", "error", "Thiếu giá", "costPrice"));
-    else if (item.price < 1000) issues.push(issue("price_too_low", "error", "Giá thấp bất thường (<1.000đ)", "costPrice"));
+    // RC8: some supplier sheets expose only one sell price/list price. That is
+    // incomplete cost evidence, but it is still a valid sellable row and must
+    // be held for review rather than failed/dropped before catalog conversion.
+    const alternatePrice = Number(item.listPrice ?? item.currentListPrice ?? item.publicPrice ?? 0) || 0;
+    if (!item.price || item.price === 0) {
+      if (alternatePrice > 0) issues.push(issue("missing_cost_price", "warning", "Chưa có giá nhập; có giá bán/công bố để đối chiếu", "costPrice", "Xác nhận giá nhập trước khi tự động duyệt"));
+      else issues.push(issue("missing_price", "error", "Thiếu giá", "costPrice"));
+    } else if (item.price < 1000) issues.push(issue("price_too_low", "error", "Giá thấp bất thường (<1.000đ)", "costPrice"));
     else if (item.price > 5_000_000_000) issues.push(issue("price_too_high", "error", "Giá cao bất thường (>5 tỷ)", "costPrice"));
 
     // sku
@@ -44,8 +50,11 @@ export function validateItems(items) {
         "name", "Không cần sửa nếu đây là dòng tổng/nhóm"));
     }
 
-    // trùng giá = 0 và không mã => nghi ngờ
-    if (!item.price && !item.sku) issues.push(issue("no_price_no_sku", "error", "Không giá & không mã — nghi ngờ không phải sản phẩm", "name"));
+    // Không có cả giá nhập lẫn giá bán và không có mã => nghi ngờ.
+    // Nếu nguồn có giá bán/công bố hợp lệ, giữ dòng ở REVIEW để user bổ sung giá nhập.
+    if (!item.price && !(Number(item.listPrice ?? item.currentListPrice ?? item.publicPrice ?? 0) > 0) && !item.sku) {
+      issues.push(issue("no_price_no_sku", "error", "Không giá & không mã — nghi ngờ không phải sản phẩm", "name"));
+    }
 
     return { ...item, issues };
   });

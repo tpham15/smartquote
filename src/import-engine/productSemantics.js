@@ -148,7 +148,16 @@ function gateMotorRule(product = {}, context = {}) {
     product?._meta?.source?.documentCategory ||
     ""
   );
-  const sourceName = compact(product?.attributes?.identity?.sourceName || product.name || "");
+  // RC4: when the source description still carries an explicit commercial
+  // first line, it outranks any display name synthesized earlier in the
+  // pipeline. Version/model evidence must not leak into Product Name unless
+  // the source commercial line itself contains it.
+  const sourceName = compact(
+    context.sourceCommercialName ||
+    product?.attributes?.identity?.sourceName ||
+    product.name ||
+    ""
+  );
   const sourceText = [
     sourceName,
     product.specs,
@@ -234,7 +243,7 @@ export function applyProductSemantics(product = {}, context = {}) {
   const sourceAlias = compact(
     p?.source?.rawSku || p?._meta?.source?.rawSku || existingIdentity.sourceAlias || ""
   );
-  const sourceName = compact(existingIdentity.sourceName || p.name || "");
+  const sourceName = compact(context.sourceCommercialName || existingIdentity.sourceName || p.name || "");
   const strong = semantics?.evidence?.rule && semantics.evidence.rule !== "none";
 
   if (strong && semantics.canonicalName) p.name = semantics.canonicalName;

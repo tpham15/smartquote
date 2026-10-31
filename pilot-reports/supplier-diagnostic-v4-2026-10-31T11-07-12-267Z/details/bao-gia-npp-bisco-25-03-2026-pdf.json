@@ -1,0 +1,2535 @@
+{
+  "file": "Báo giá NPP Bisco 25.03.2026.pdf",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/Báo giá NPP Bisco 25.03.2026.pdf",
+  "type": "pdf",
+  "hash": "a2e21e3eebf62802d1b98666b191fc68824ddb8bfc218fecb1218686d21e4b3b",
+  "pageCount": 1,
+  "textChars": 3468,
+  "columnModels": 1,
+  "productCount": 24,
+  "scanLike": false,
+  "golden": null,
+  "issues": [
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=31",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 31,
+        "rawText": "1 PHOX2-433 Tay điều khiển 2 nút Vulcan Cái/chiếc 1,000,000 380,000",
+        "bbox": {
+          "x": 43,
+          "y": 467.9,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "1"
+          },
+          {
+            "x": 112.6,
+            "width": 26.7,
+            "height": 5.3,
+            "str": "PHOX2-433"
+          },
+          {
+            "x": 146.3,
+            "width": 64.3,
+            "height": 5.8,
+            "str": "Tay điều khiển 2 nút Vulcan"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,000,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "380,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 31,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 112.6,
+            "y": 467.9,
+            "width": 26.69999999999999,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 467.9,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 467.9,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 467.9,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 467.9,
+            "width": 64.30000000000001,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "1 PHOX2-433 Tay điều khiển 2 nút Vulcan Cái/chiếc 1,000,000 380,000",
+      "parsed": {
+        "name": "Tay điều khiển 2 nút Vulcan",
+        "sku": "PHOX2-433",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 380000,
+        "listPrice": 1000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=32",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 32,
+        "rawText": "2 PHOX4-433 Tay điều khiển 4 nút Vulcan Cái/chiếc 1,200,000 580,000",
+        "bbox": {
+          "x": 43,
+          "y": 455.8,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "2"
+          },
+          {
+            "x": 112.6,
+            "width": 26.7,
+            "height": 5.3,
+            "str": "PHOX4-433"
+          },
+          {
+            "x": 146.3,
+            "width": 64.3,
+            "height": 5.8,
+            "str": "Tay điều khiển 4 nút Vulcan"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,200,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "580,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 32,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 112.6,
+            "y": 455.8,
+            "width": 26.69999999999999,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 455.8,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 455.8,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 455.8,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 455.8,
+            "width": 64.30000000000001,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "2 PHOX4-433 Tay điều khiển 4 nút Vulcan Cái/chiếc 1,200,000 580,000",
+      "parsed": {
+        "name": "Tay điều khiển 4 nút Vulcan",
+        "sku": "PHOX4-433",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 580000,
+        "listPrice": 1200000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=33",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 33,
+        "rawText": "3 13C002 Cảm biến an toàn Vulcan Bộ 2,000,000 650,000",
+        "bbox": {
+          "x": 43,
+          "y": 443.7,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "3"
+          },
+          {
+            "x": 117.6,
+            "width": 16.7,
+            "height": 5.3,
+            "str": "13C002"
+          },
+          {
+            "x": 146.3,
+            "width": 57.5,
+            "height": 5.8,
+            "str": "Cảm biến an toàn Vulcan"
+          },
+          {
+            "x": 323.1,
+            "width": 6.7,
+            "height": 5.8,
+            "str": "Bộ"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "2,000,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "650,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 33,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 117.6,
+            "y": 443.7,
+            "width": 16.69999999999999,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 323.1,
+            "y": 443.7,
+            "width": 6.699999999999989,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 443.7,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 443.7,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 443.7,
+            "width": 57.5,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "3 13C002 Cảm biến an toàn Vulcan Bộ 2,000,000 650,000",
+      "parsed": {
+        "name": "Cảm biến an toàn Vulcan",
+        "sku": "13C002",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Bộ",
+        "costPrice": 650000,
+        "listPrice": 2000000
+      },
+      "issueCodes": [
+        "canonical_product_name_from_semantics",
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=34",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 34,
+        "rawText": "4 MR2 Card thu phát sóng Vulcan Cái/chiếc 3,500,000 1,100,000",
+        "bbox": {
+          "x": 43,
+          "y": 431.6,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "4"
+          },
+          {
+            "x": 120.5,
+            "width": 10.8,
+            "height": 5.3,
+            "str": "MR2"
+          },
+          {
+            "x": 146.3,
+            "width": 61.1,
+            "height": 5.8,
+            "str": "Card thu phát sóng Vulcan"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "3,500,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,100,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 34,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120.5,
+            "y": 431.6,
+            "width": 10.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 431.6,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 431.6,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 431.6,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 431.6,
+            "width": 61.099999999999994,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "4 MR2 Card thu phát sóng Vulcan Cái/chiếc 3,500,000 1,100,000",
+      "parsed": {
+        "name": "Card thu phát sóng Vulcan",
+        "sku": "MR2",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 1100000,
+        "listPrice": 3500000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=35",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 35,
+        "rawText": "5 ZTBS Phụ kiện mở cổng bằng điện thoại Cái/chiếc 4,000,000 1,000,000",
+        "bbox": {
+          "x": 43,
+          "y": 419.5,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "5"
+          },
+          {
+            "x": 119.7,
+            "width": 12.7,
+            "height": 5.3,
+            "str": "ZTBS"
+          },
+          {
+            "x": 146.3,
+            "width": 77.2,
+            "height": 5.8,
+            "str": "Phụ kiện mở cổng bằng điện thoại"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "4,000,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,000,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 35,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 119.7,
+            "y": 419.5,
+            "width": 12.700000000000003,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 419.5,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 419.5,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 419.5,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 419.5,
+            "width": 77.19999999999999,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "5 ZTBS Phụ kiện mở cổng bằng điện thoại Cái/chiếc 4,000,000 1,000,000",
+      "parsed": {
+        "name": "Phụ kiện mở cổng bằng điện thoại",
+        "sku": "ZTBS",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 1000000,
+        "listPrice": 4000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=37",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 37,
+        "rawText": "7 CHT Chặn hành trình cổng tay đòn Cái/chiếc 500,000 250,000",
+        "bbox": {
+          "x": 43,
+          "y": 394.1,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "7"
+          },
+          {
+            "x": 120.7,
+            "width": 10.5,
+            "height": 5.3,
+            "str": "CHT"
+          },
+          {
+            "x": 146.3,
+            "width": 66.7,
+            "height": 5.8,
+            "str": "Chặn hành trình cổng tay đòn"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 378.6,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "500,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "250,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 37,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120.7,
+            "y": 394.1,
+            "width": 10.499999999999986,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 394.1,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 394.1,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 378.6,
+            "y": 394.1,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 394.1,
+            "width": 66.69999999999999,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "7 CHT Chặn hành trình cổng tay đòn Cái/chiếc 500,000 250,000",
+      "parsed": {
+        "name": "Chặn hành trình cổng tay đòn",
+        "sku": "CHT",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 250000,
+        "listPrice": 500000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=38",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 38,
+        "rawText": "8 CC180 Phụ kiện mở cổng 180 độ bằng bánh răng Cái/chiếc 3,000,000 1,500,000",
+        "bbox": {
+          "x": 43,
+          "y": 381.7,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "8"
+          },
+          {
+            "x": 118.5,
+            "width": 14.9,
+            "height": 5.3,
+            "str": "CC180"
+          },
+          {
+            "x": 146.3,
+            "width": 94.5,
+            "height": 5.8,
+            "str": "Phụ kiện mở cổng 180 độ bằng bánh răng"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "3,000,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,500,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 38,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 118.5,
+            "y": 381.7,
+            "width": 14.900000000000006,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 381.7,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 381.7,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 381.7,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 381.7,
+            "width": 94.5,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "8 CC180 Phụ kiện mở cổng 180 độ bằng bánh răng Cái/chiếc 3,000,000 1,500,000",
+      "parsed": {
+        "name": "Phụ kiện mở cổng 180 độ bằng bánh răng",
+        "sku": "CC180",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 1500000,
+        "listPrice": 3000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=39",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 39,
+        "rawText": "9 D001 Đế thép nắp thép Cái/chiếc 3,500,000 1,000,000",
+        "bbox": {
+          "x": 43,
+          "y": 369.5,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "9"
+          },
+          {
+            "x": 120,
+            "width": 11.8,
+            "height": 5.3,
+            "str": "D001"
+          },
+          {
+            "x": 146.3,
+            "width": 38.6,
+            "height": 5.8,
+            "str": "Đế thép nắp thép"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "3,500,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,000,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 39,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120,
+            "y": 369.5,
+            "width": 11.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 369.5,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 369.5,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 369.5,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 369.5,
+            "width": 38.599999999999994,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "9 D001 Đế thép nắp thép Cái/chiếc 3,500,000 1,000,000",
+      "parsed": {
+        "name": "Đế thép nắp thép",
+        "sku": "D001",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 1000000,
+        "listPrice": 3500000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=40",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 40,
+        "rawText": "10 D003 Đế nắp Inox 201 Cái/chiếc 4,500,000 1,600,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 357.4,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "10"
+          },
+          {
+            "x": 120,
+            "width": 11.8,
+            "height": 5.3,
+            "str": "D003"
+          },
+          {
+            "x": 146.3,
+            "width": 38,
+            "height": 5.8,
+            "str": "Đế nắp Inox 201"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "4,500,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,600,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 40,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120,
+            "y": 357.4,
+            "width": 11.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 357.4,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 357.4,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 357.4,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 357.4,
+            "width": 38,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "10 D003 Đế nắp Inox 201 Cái/chiếc 4,500,000 1,600,000",
+      "parsed": {
+        "name": "Đế nắp Inox 201",
+        "sku": "D003",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 1600000,
+        "listPrice": 4500000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=41",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 41,
+        "rawText": "11 D004 Đế nắp Inox 304 Cái/chiếc 5,500,000 2,100,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 345.3,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "11"
+          },
+          {
+            "x": 120,
+            "width": 11.8,
+            "height": 5.3,
+            "str": "D004"
+          },
+          {
+            "x": 146.3,
+            "width": 38,
+            "height": 5.8,
+            "str": "Đế nắp Inox 304"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "5,500,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "2,100,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 41,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120,
+            "y": 345.3,
+            "width": 11.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 345.3,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 345.3,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 345.3,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 345.3,
+            "width": 38,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "11 D004 Đế nắp Inox 304 Cái/chiếc 5,500,000 2,100,000",
+      "parsed": {
+        "name": "Đế nắp Inox 304",
+        "sku": "D004",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 2100000,
+        "listPrice": 5500000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=42",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 42,
+        "rawText": "12 N110 Ngõng 110 độ Cái/chiếc 1,000,000 350,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 333.2,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "12"
+          },
+          {
+            "x": 120,
+            "width": 11.8,
+            "height": 5.3,
+            "str": "N110"
+          },
+          {
+            "x": 146.3,
+            "width": 32.9,
+            "height": 5.8,
+            "str": "Ngõng 110 độ"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,000,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "350,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 42,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120,
+            "y": 333.2,
+            "width": 11.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 333.2,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 333.2,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 333.2,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 333.2,
+            "width": 32.900000000000006,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "12 N110 Ngõng 110 độ Cái/chiếc 1,000,000 350,000",
+      "parsed": {
+        "name": "Ngõng 110 độ",
+        "sku": "N110",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 350000,
+        "listPrice": 1000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=43",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 43,
+        "rawText": "13 TBK Tay bắt khóa, bi Cái/chiếc 1,000,000 300,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 321.1,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "13"
+          },
+          {
+            "x": 120.7,
+            "width": 10.4,
+            "height": 5.3,
+            "str": "TBK"
+          },
+          {
+            "x": 146.3,
+            "width": 36.8,
+            "height": 5.8,
+            "str": "Tay bắt khóa, bi"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,000,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "300,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 43,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120.7,
+            "y": 321.1,
+            "width": 10.399999999999991,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 321.1,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 321.1,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 321.1,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 321.1,
+            "width": 36.80000000000001,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "13 TBK Tay bắt khóa, bi Cái/chiếc 1,000,000 300,000",
+      "parsed": {
+        "name": "Tay bắt khóa, bi",
+        "sku": "TBK",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 300000,
+        "listPrice": 1000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=44",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 44,
+        "rawText": "14 K001 Ổ Khóa chìa Cái/chiếc 2,000,000 750,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 308.9,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "14"
+          },
+          {
+            "x": 120,
+            "width": 11.8,
+            "height": 5.3,
+            "str": "K001"
+          },
+          {
+            "x": 146.3,
+            "width": 28.8,
+            "height": 5.8,
+            "str": "Ổ Khóa chìa"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "2,000,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "750,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 44,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120,
+            "y": 308.9,
+            "width": 11.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 308.9,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 308.9,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 308.9,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 308.9,
+            "width": 28.80000000000001,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "14 K001 Ổ Khóa chìa Cái/chiếc 2,000,000 750,000",
+      "parsed": {
+        "name": "Ổ Khóa chìa",
+        "sku": "K001",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 750000,
+        "listPrice": 2000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=45",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 45,
+        "rawText": "15 K002 Ổ Khóa lục Cái/chiếc 1,750,000 500,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 296.8,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "15"
+          },
+          {
+            "x": 120,
+            "width": 11.8,
+            "height": 5.3,
+            "str": "K002"
+          },
+          {
+            "x": 146.3,
+            "width": 26.3,
+            "height": 5.8,
+            "str": "Ổ Khóa lục"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "1,750,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "500,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 45,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 120,
+            "y": 296.8,
+            "width": 11.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 296.8,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 296.8,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 296.8,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 296.8,
+            "width": 26.30000000000001,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "15 K002 Ổ Khóa lục Cái/chiếc 1,750,000 500,000",
+      "parsed": {
+        "name": "Ổ Khóa lục",
+        "sku": "K002",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 500000,
+        "listPrice": 1750000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=47",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 47,
+        "rawText": "17 TPK Túi Phụ kiện Bộ 300,000 100,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 272.5,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "17"
+          },
+          {
+            "x": 121,
+            "width": 9.8,
+            "height": 5.3,
+            "str": "TPK"
+          },
+          {
+            "x": 146.3,
+            "width": 29.2,
+            "height": 5.8,
+            "str": "Túi Phụ kiện"
+          },
+          {
+            "x": 323.1,
+            "width": 6.7,
+            "height": 5.8,
+            "str": "Bộ"
+          },
+          {
+            "x": 378.6,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "300,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "100,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 47,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 121,
+            "y": 272.5,
+            "width": 9.800000000000011,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 323.1,
+            "y": 272.5,
+            "width": 6.699999999999989,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 441.7,
+            "y": 272.5,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 378.6,
+            "y": 272.5,
+            "width": 18.69999999999999,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 272.5,
+            "width": 29.19999999999999,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "17 TPK Túi Phụ kiện Bộ 300,000 100,000",
+      "parsed": {
+        "name": "Túi Phụ kiện Bộ",
+        "sku": "TPK",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Bộ",
+        "costPrice": 100000,
+        "listPrice": 300000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=48",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 48,
+        "rawText": "19 22F005 Motor Vulcan 24V (Cơ cấu chuyển động Việt) Cái/chiếc 12,000,000 6,000,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 260.4,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "19"
+          },
+          {
+            "x": 117.9,
+            "width": 16.1,
+            "height": 5.3,
+            "str": "22F005"
+          },
+          {
+            "x": 146.3,
+            "width": 107.6,
+            "height": 5.8,
+            "str": "Motor Vulcan 24V (Cơ cấu chuyển động Việt)"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 371.4,
+            "width": 25.9,
+            "height": 5.8,
+            "str": "12,000,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "6,000,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 48,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 117.9,
+            "y": 260.4,
+            "width": 16.099999999999994,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 260.4,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 260.4,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 371.4,
+            "y": 260.4,
+            "width": 25.899999999999977,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 260.4,
+            "width": 107.6,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "19 22F005 Motor Vulcan 24V (Cơ cấu chuyển động Việt) Cái/chiếc 12,000,000 6,000,000",
+      "parsed": {
+        "name": "Motor Vulcan 24V (Cơ cấu chuyển động Việt)",
+        "sku": "22F005",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "VULCAN 24V",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 6000000,
+        "listPrice": 12000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=49",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 49,
+        "rawText": "21 M230 Mạch Vulcan 230V Cái/chiếc 8,000,000 3,500,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 248.3,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "21"
+          },
+          {
+            "x": 119.7,
+            "width": 12.6,
+            "height": 5.3,
+            "str": "M230"
+          },
+          {
+            "x": 146.3,
+            "width": 45,
+            "height": 5.8,
+            "str": "Mạch Vulcan 230V"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 374.2,
+            "width": 23,
+            "height": 5.8,
+            "str": "8,000,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "3,500,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 49,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 119.7,
+            "y": 248.3,
+            "width": 12.600000000000009,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 248.3,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 248.3,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 374.2,
+            "y": 248.3,
+            "width": 23,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 248.3,
+            "width": 45,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "21 M230 Mạch Vulcan 230V Cái/chiếc 8,000,000 3,500,000",
+      "parsed": {
+        "name": "Mạch Vulcan 230V",
+        "sku": "M230",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "VULCAN 230V",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 3500000,
+        "listPrice": 8000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+      "severity": "WARN",
+      "message": "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+      "location": "page=1 · row=50",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 50,
+        "rawText": "22 M24 Mạch Vulcan 24V Cái/chiếc 10,000,000 4,000,000",
+        "bbox": {
+          "x": 41.5,
+          "y": 236.2,
+          "width": 418.9,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 41.5,
+            "width": 5.8,
+            "height": 5.8,
+            "str": "22"
+          },
+          {
+            "x": 121,
+            "width": 10,
+            "height": 5.3,
+            "str": "M24"
+          },
+          {
+            "x": 146.3,
+            "width": 42.1,
+            "height": 5.8,
+            "str": "Mạch Vulcan 24V"
+          },
+          {
+            "x": 315.9,
+            "width": 21.2,
+            "height": 5.8,
+            "str": "Cái/chiếc"
+          },
+          {
+            "x": 371.4,
+            "width": 25.9,
+            "height": 5.8,
+            "str": "10,000,000"
+          },
+          {
+            "x": 437.4,
+            "width": 23,
+            "height": 5.8,
+            "str": "4,000,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": true,
+        "layoutRowIndex": 50,
+        "rowSourceKind": "column_model_row",
+        "fieldBboxes": {
+          "name": null,
+          "sku": {
+            "x": 121,
+            "y": 236.2,
+            "width": 10,
+            "height": 5.3
+          },
+          "supplier": null,
+          "brand": null,
+          "origin": null,
+          "unit": {
+            "x": 315.9,
+            "y": 236.2,
+            "width": 21.19999999999999,
+            "height": 5.8
+          },
+          "quantity": null,
+          "unitPrice": {
+            "x": 437.4,
+            "y": 236.2,
+            "width": 23,
+            "height": 5.8
+          },
+          "listPrice": {
+            "x": 371.4,
+            "y": 236.2,
+            "width": 25.899999999999977,
+            "height": 5.8
+          },
+          "total": null,
+          "specs": {
+            "x": 146.3,
+            "y": 236.2,
+            "width": 42.099999999999994,
+            "height": 5.8
+          }
+        },
+        "priceRole": "dealer"
+      },
+      "rawText": "22 M24 Mạch Vulcan 24V Cái/chiếc 10,000,000 4,000,000",
+      "parsed": {
+        "name": "Mạch Vulcan 24V",
+        "sku": "M24",
+        "category": "Cổng tự động",
+        "productType": "Thiết bị cổng tự động",
+        "model": "VULCAN 24V",
+        "supplier": "PDF Catalog",
+        "unit": "Cái/chiếc",
+        "costPrice": 4000000,
+        "listPrice": 10000000
+      },
+      "issueCodes": [
+        "pdf_name_recovered_from_raw_row"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "page=1 · row=12",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 12,
+        "rawText": "1 CỔNG ÂM SÀN (Cơ cấu chuyển động Việt, Vỏ nhựa Việt, Đế Nắp Inox 201, khóa Bộ 41,900,000 19,765,000 Đế Inox 304 : Thêm 650K/bộ",
+        "bbox": {
+          "x": 43,
+          "y": 594.7,
+          "width": 501.5,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "1"
+          },
+          {
+            "x": 60.5,
+            "width": 41.3,
+            "height": 5.8,
+            "str": "CỔNG ÂM SÀN"
+          },
+          {
+            "x": 146.3,
+            "width": 150.1,
+            "height": 5.8,
+            "str": "(Cơ cấu chuyển động Việt, Vỏ nhựa Việt, Đế Nắp Inox 201, khóa"
+          },
+          {
+            "x": 323.1,
+            "width": 6.7,
+            "height": 5.8,
+            "str": "Bộ"
+          },
+          {
+            "x": 371.4,
+            "width": 25.9,
+            "height": 5.8,
+            "str": "41,900,000"
+          },
+          {
+            "x": 432.3,
+            "width": 25.9,
+            "height": 5.8,
+            "str": "19,765,000"
+          },
+          {
+            "x": 477.2,
+            "width": 67.3,
+            "height": 5.8,
+            "str": "Đế Inox 304 : Thêm 650K/bộ"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "1 CỔNG ÂM SÀN (Cơ cấu chuyển động Việt, Vỏ nhựa Việt, Đế Nắp Inox 201, khóa Bộ 41,900,000 19,765,000 Đế Inox 304 : Thêm 650K/bộ",
+      "parsed": {
+        "name": "Cổng xoay tự động âm sàn",
+        "sku": "650K/B",
+        "category": "Cổng âm sàn tự động",
+        "productType": "Cổng xoay tự động âm sàn",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái",
+        "costPrice": 19765000,
+        "listPrice": 41900000
+      },
+      "issueCodes": [
+        "sku_extracted_from_text",
+        "canonical_product_name_from_semantics",
+        "pdf_ocr_uncertain"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_OCR_UNCERTAIN",
+      "severity": "WARN",
+      "message": "PDF/OCR không chắc — kiểm tra lại tên/giá trước khi nhập",
+      "location": "page=1 · row=12",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 12,
+        "rawText": "1 CỔNG ÂM SÀN (Cơ cấu chuyển động Việt, Vỏ nhựa Việt, Đế Nắp Inox 201, khóa Bộ 41,900,000 19,765,000 Đế Inox 304 : Thêm 650K/bộ",
+        "bbox": {
+          "x": 43,
+          "y": 594.7,
+          "width": 501.5,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "1"
+          },
+          {
+            "x": 60.5,
+            "width": 41.3,
+            "height": 5.8,
+            "str": "CỔNG ÂM SÀN"
+          },
+          {
+            "x": 146.3,
+            "width": 150.1,
+            "height": 5.8,
+            "str": "(Cơ cấu chuyển động Việt, Vỏ nhựa Việt, Đế Nắp Inox 201, khóa"
+          },
+          {
+            "x": 323.1,
+            "width": 6.7,
+            "height": 5.8,
+            "str": "Bộ"
+          },
+          {
+            "x": 371.4,
+            "width": 25.9,
+            "height": 5.8,
+            "str": "41,900,000"
+          },
+          {
+            "x": 432.3,
+            "width": 25.9,
+            "height": 5.8,
+            "str": "19,765,000"
+          },
+          {
+            "x": 477.2,
+            "width": 67.3,
+            "height": 5.8,
+            "str": "Đế Inox 304 : Thêm 650K/bộ"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "1 CỔNG ÂM SÀN (Cơ cấu chuyển động Việt, Vỏ nhựa Việt, Đế Nắp Inox 201, khóa Bộ 41,900,000 19,765,000 Đế Inox 304 : Thêm 650K/bộ",
+      "parsed": {
+        "name": "Cổng xoay tự động âm sàn",
+        "sku": "650K/B",
+        "category": "Cổng âm sàn tự động",
+        "productType": "Cổng xoay tự động âm sàn",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái",
+        "costPrice": 19765000,
+        "listPrice": 41900000
+      },
+      "issueCodes": [
+        "sku_extracted_from_text",
+        "canonical_product_name_from_semantics",
+        "pdf_ocr_uncertain"
+      ]
+    },
+    {
+      "code": "NEEDS_REVIEW",
+      "severity": "WARN",
+      "message": "Product is intentionally held for human review; no hard corruption proven.",
+      "location": "page=1 · row=36",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 36,
+        "rawText": "6 TR Thanh răng chuyển động bằng thép md 250,000 150,000",
+        "bbox": {
+          "x": 43,
+          "y": 407,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "6"
+          },
+          {
+            "x": 122.7,
+            "width": 6.6,
+            "height": 5.3,
+            "str": "TR"
+          },
+          {
+            "x": 146.3,
+            "width": 79.7,
+            "height": 5.8,
+            "str": "Thanh răng chuyển động bằng thép"
+          },
+          {
+            "x": 322.8,
+            "width": 7.3,
+            "height": 5.8,
+            "str": "md"
+          },
+          {
+            "x": 378.6,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "250,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "150,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "6 TR Thanh răng chuyển động bằng thép md 250,000 150,000",
+      "parsed": {
+        "name": "TR Thanh răng chuyển động bằng thép md",
+        "sku": "",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái",
+        "costPrice": 150000,
+        "listPrice": 250000
+      },
+      "issueCodes": [
+        "pdf_ocr_uncertain"
+      ]
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "page=1 · row=36",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 36,
+        "rawText": "6 TR Thanh răng chuyển động bằng thép md 250,000 150,000",
+        "bbox": {
+          "x": 43,
+          "y": 407,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "6"
+          },
+          {
+            "x": 122.7,
+            "width": 6.6,
+            "height": 5.3,
+            "str": "TR"
+          },
+          {
+            "x": 146.3,
+            "width": 79.7,
+            "height": 5.8,
+            "str": "Thanh răng chuyển động bằng thép"
+          },
+          {
+            "x": 322.8,
+            "width": 7.3,
+            "height": 5.8,
+            "str": "md"
+          },
+          {
+            "x": 378.6,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "250,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "150,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "6 TR Thanh răng chuyển động bằng thép md 250,000 150,000",
+      "parsed": {
+        "name": "TR Thanh răng chuyển động bằng thép md",
+        "sku": "",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái",
+        "costPrice": 150000,
+        "listPrice": 250000
+      },
+      "issueCodes": [
+        "pdf_ocr_uncertain"
+      ]
+    },
+    {
+      "code": "ENGINE_PDF_OCR_UNCERTAIN",
+      "severity": "WARN",
+      "message": "PDF chưa đủ chắc chắn — vui lòng đối chiếu tên, mã và giá với nguồn",
+      "location": "page=1 · row=36",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 36,
+        "rawText": "6 TR Thanh răng chuyển động bằng thép md 250,000 150,000",
+        "bbox": {
+          "x": 43,
+          "y": 407,
+          "width": 417.4,
+          "height": 5.8
+        },
+        "parts": [
+          {
+            "x": 43,
+            "width": 2.9,
+            "height": 5.8,
+            "str": "6"
+          },
+          {
+            "x": 122.7,
+            "width": 6.6,
+            "height": 5.3,
+            "str": "TR"
+          },
+          {
+            "x": 146.3,
+            "width": 79.7,
+            "height": 5.8,
+            "str": "Thanh răng chuyển động bằng thép"
+          },
+          {
+            "x": 322.8,
+            "width": 7.3,
+            "height": 5.8,
+            "str": "md"
+          },
+          {
+            "x": 378.6,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "250,000"
+          },
+          {
+            "x": 441.7,
+            "width": 18.7,
+            "height": 5.8,
+            "str": "150,000"
+          }
+        ],
+        "pageWidth": 595.2,
+        "pageHeight": 841.7,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "6 TR Thanh răng chuyển động bằng thép md 250,000 150,000",
+      "parsed": {
+        "name": "TR Thanh răng chuyển động bằng thép md",
+        "sku": "",
+        "category": "B PHỤ KIỆN MUA THÊM",
+        "productType": "",
+        "model": "",
+        "supplier": "PDF Catalog",
+        "unit": "Cái",
+        "costPrice": 150000,
+        "listPrice": 250000
+      },
+      "issueCodes": [
+        "pdf_ocr_uncertain"
+      ]
+    },
+    {
+      "code": "SOURCE_STT_GAP",
+      "severity": "WARN",
+      "message": "PDF source STT gaps: 6, 16, 18, 20",
+      "location": "document",
+      "rawText": "",
+      "parsed": null,
+      "missingStt": [
+        6,
+        16,
+        18,
+        20
+      ]
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 24,
+      "INFO": 0
+    },
+    "byCode": [
+      {
+        "code": "ENGINE_PDF_NAME_RECOVERED_FROM_RAW_ROW",
+        "count": 18
+      },
+      {
+        "code": "NEEDS_REVIEW",
+        "count": 2
+      },
+      {
+        "code": "ENGINE_PDF_OCR_UNCERTAIN",
+        "count": 2
+      },
+      {
+        "code": "MISSING_SKU",
+        "count": 1
+      },
+      {
+        "code": "SOURCE_STT_GAP",
+        "count": 1
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

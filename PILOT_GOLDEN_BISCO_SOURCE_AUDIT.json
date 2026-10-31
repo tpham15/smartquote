@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "sq-bisco-golden-source-v1",
+  "sha256": "9ab80ab5fe1bf92c6c3f9875fdcb13a46234b6eec082d0ddf55daa4f8f3f09ae",
+  "sheetCount": 9,
+  "sheets": [
+    "VUCAN - 24V",
+    "VUCAN - 230V",
+    "TORQ 500D - 24V",
+    "AYROS 1000D-24V",
+    "NYK - 24V",
+    "STAR K3 -24V",
+    "AYROS 650",
+    "AYROS 650 V2",
+    "STARK600"
+  ],
+  "products": [
+    {
+      "sheet": "VUCAN - 24V",
+      "quoteSpecification": "Cổng  Âm sàn tự động",
+      "row": 18,
+      "sourceNameLine": "Cổng xoay tự động âm sàn V2 - VULCAN 24V",
+      "sourceSkuCell": "Vulcan - 24V\n(29G020)",
+      "explicitModelLabel": "29G020",
+      "unitPrice": 42900000
+    },
+    {
+      "sheet": "VUCAN - 230V",
+      "quoteSpecification": "Cổng Âm sàn tự động",
+      "row": 18,
+      "sourceNameLine": "Cổng xoay tự động âm sàn V2 VULCAN 230V",
+      "sourceSkuCell": "Vulcan - 230V\n(29G019)",
+      "explicitModelLabel": "29G019",
+      "unitPrice": 34900000
+    },
+    {
+      "sheet": "TORQ 500D - 24V",
+      "quoteSpecification": "Cổng trượt tự động",
+      "row": 18,
+      "sourceNameLine": "MÔ TƠ CỔNG TRƯỢT V2 - TORQ - 500D",
+      "sourceSkuCell": "TORQ 500D",
+      "explicitModelLabel": "30C109",
+      "unitPrice": 24900000
+    },
+    {
+      "sheet": "AYROS 1000D-24V",
+      "quoteSpecification": "Cổng trượt tự động",
+      "row": 18,
+      "sourceNameLine": "MÔ TƠ CỔNG TRƯỢT V2 - AYROS - 1000D",
+      "sourceSkuCell": "AYROS\n1000D\n(30C074)",
+      "explicitModelLabel": "30C-074",
+      "unitPrice": 29900000
+    },
+    {
+      "sheet": "NYK - 24V",
+      "quoteSpecification": "Cổng tay đòn tự động",
+      "row": 19,
+      "sourceNameLine": "Mô tơ cổng Mở xoay tự động NYK - 24V",
+      "sourceSkuCell": "NYK - 24V",
+      "explicitModelLabel": "29H001",
+      "unitPrice": 29900000
+    },
+    {
+      "sheet": "STAR K3 -24V",
+      "quoteSpecification": "Cổng tay đòn tự động",
+      "row": 19,
+      "sourceNameLine": "Mô tơ cổng Mở xoay tự động STAR K3 - 24V",
+      "sourceSkuCell": "STAR K3- 24V",
+      "explicitModelLabel": "29H003",
+      "unitPrice": 34900000
+    },
+    {
+      "sheet": "AYROS 650",
+      "quoteSpecification": "Cổng trượt tự động",
+      "row": 18,
+      "sourceNameLine": "MÔ TƠ CỔNG TRƯỢT AYROS 650",
+      "sourceSkuCell": "AYROS\n650\n(30C065)",
+      "explicitModelLabel": "30C-065",
+      "unitPrice": 25950000
+    },
+    {
+      "sheet": "AYROS 650 V2",
+      "quoteSpecification": "Cổng trượt tự động",
+      "row": 18,
+      "sourceNameLine": "MÔ TƠ CỔNG TRƯỢT AYROS 650",
+      "sourceSkuCell": "AYROS\n650\n(30C065V2)",
+      "explicitModelLabel": "30C-065 V2",
+      "unitPrice": 27900000
+    },
+    {
+      "sheet": "STARK600",
+      "quoteSpecification": "Cổng tay đòn tự động",
+      "row": 19,
+      "sourceNameLine": "Mô tơ cổng Mở xoay tự động STARK 600 V2",
+      "sourceSkuCell": "29H006V2",
+      "explicitModelLabel": "29H006V2",
+      "unitPrice": 32900000
+    }
+  ]
+}

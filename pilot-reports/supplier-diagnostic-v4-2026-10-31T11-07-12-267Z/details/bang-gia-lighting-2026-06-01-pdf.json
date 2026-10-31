@@ -1,0 +1,36 @@
+{
+  "file": "Bảng giá Lighting 2026.06.01.pdf",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/Bảng giá Lighting 2026.06.01.pdf",
+  "type": "pdf",
+  "hash": "08224afb16a727bfee11f1a846ee373b1fc68f38da460ffbee29d031fb631b67",
+  "pageCount": 7,
+  "textChars": 0,
+  "columnModels": 0,
+  "productCount": 0,
+  "scanLike": true,
+  "golden": null,
+  "issues": [
+    {
+      "code": "SCAN_OR_IMAGE_PDF",
+      "severity": "WARN",
+      "message": "PDF has little/no selectable text; deterministic text parser cannot verify the catalog. Route to OCR/vision + human review.",
+      "location": "document",
+      "rawText": "",
+      "parsed": null
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 1,
+      "INFO": 0
+    },
+    "byCode": [
+      {
+        "code": "SCAN_OR_IMAGE_PDF",
+        "count": 1
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

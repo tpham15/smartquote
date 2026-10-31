@@ -221,6 +221,184 @@ function looksLikeSpecsOnly(v) {
   return /Phương thức|mở khóa|Vân tay|Mật mã|Thẻ từ|Chìa cơ|Bluetooth|Gateway|Wifi|Camera|Face|Nguồn|Công suất|Kích thước|Qui cách|Quy cách|Chất liệu|Màu sắc/i.test(s) || /(?:^|\b)[LWH]?\s*\d{2,4}(?:[.,]\d+)?\s*[*x×]\s*[LWH]?\s*\d{2,4}/i.test(s) || s.length > 115;
 }
 
+function looksLikeSourceCommercialLabel(v) {
+  const s = compactText(v);
+  if (!s || s.length < 2 || s.length > 90) return false;
+  if (looksLikeColorOnly(s)) return false;
+  if (/^[\d.,%+\-\s]+$/.test(s)) return false;
+  if (/^(cái|chiếc|bộ|set|m2|m3|m|md|pcs?|vnd|vnđ)$/i.test(s)) return false;
+  // Strong technical sentences belong in specs, not in the display name.
+  if (/^(nguồn|công suất|kích thước|điện áp|màu sắc|chất liệu|bảo hành|xuất xứ|thông số|tính năng|phương thức)\b/i.test(s)) return false;
+  return /[A-Za-zÀ-ỹ]/.test(s);
+}
+
+function looksLikeNaturalLanguageSku(v) {
+  const s = compactText(v);
+  if (!s) return false;
+  // A supplier "Mã" column is sometimes abused to hold the product name.
+  // Preserve code-like values, but reject obvious prose such as
+  // "Thẻ từ Mifare 13.56Mhz" or "Chặn cửa bán nguyệt" as canonical SKU.
+  //
+  // RC7 regression guard: historical supplier aliases may legitimately mix a
+  // commercial model with a canonical code in parentheses, e.g.
+  // "Vulcan - 24V (29G020)" or "AYROS 1000D (30C074)".  Those are identity
+  // evidence, not prose.  Keep the raw alias so the quote importer can recover
+  // both the canonical SKU and the source commercial name.
+  const bracketedCode = s.match(/\(([A-Z0-9][A-Z0-9._\-/ ]{2,24})\)/i)?.[1]?.trim() || "";
+  if (bracketedCode && /[A-Za-z]/.test(bracketedCode) && /\d/.test(bracketedCode)) return false;
+
+  // Short ASCII commercial model aliases can legitimately contain separators
+  // and spaces without a parenthesized code: "NYK - 24V", "STAR K3 - 24V",
+  // "R100-Pro Max".  They are still identity evidence, not prose.
+  const asciiAlias = /^[A-Za-z0-9][A-Za-z0-9._\-/ ]{1,36}$/.test(s)
+    && /\d/.test(s)
+    && /[-/]/.test(s)
+    && s.split(/\s+/).filter((x) => x && !/^[-/]+$/.test(x)).length <= 4;
+  if (asciiAlias) return false;
+
+  const words = s.split(/\s+/).filter(Boolean);
+  const codeish = /^[A-Z0-9][A-Z0-9._\-/ ]{1,32}$/i.test(s) && words.length <= 2;
+  if (codeish) return false;
+  return words.length >= 3 && /[A-Za-zÀ-ỹ]/.test(s);
+}
+
+function looksLikeUnlabelledFeatureSku(v, map = {}) {
+  const s = compactText(v).toUpperCase();
+  if (!s) return false;
+
+  // RC8: some workbooks expose feature/configuration columns through a header
+  // that the profiler can mistake for SKU. These tokens are technical evidence
+  // even when the selected column itself looked explicit. Do not let them poison
+  // identity; a later grounded scan may still recover a real model from the row.
+  const featureParts = s.split(/[\/_-]+/).filter(Boolean);
+  const featureVocabulary = new Set(["TAY", "TH", "PIN", "IN", "CHECK", "APP", "REMOTE"]);
+  if (featureParts.length >= 2 && featureParts.every((part) => featureVocabulary.has(part))) return true;
+
+  // Electrical ranges / dimensions are specs, not product codes.
+  // Examples from real supplier rows: 12VDC-24VDC-D, 40-100MM-K.
+  if (/^\d+(?:VDC|VAC)(?:[-–—]\d+(?:VDC|VAC))?(?:[-–—][A-Z])?$/i.test(s)) return true;
+  if (/^\d+(?:[-–—]\d+)?(?:MM|CM)(?:[-–—][A-Z])?$/i.test(s)) return true;
+
+  // RC6 rule remains for inferred columns: a letter-only segmented token is
+  // weak identity unless a real SKU header explicitly supports it.
+  if (!map?._skuHeaderExplicit && !/\d/.test(s) && /^[A-ZÀ-Ỹ]{2,10}(?:[\/_-][A-ZÀ-Ỹ]{2,12})+$/.test(s)) return true;
+  return false;
+}
+
+function identityTokenKey(v = "") {
+  return compactText(v).toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function leadingSourceSkuCandidate(rawText = "") {
+  const raw = compactText(rawText).replace(/\s*[-–—]\s*/g, "-");
+  if (!raw) return "";
+  const withoutStt = raw.replace(/^\d{1,3}[.)]?\s+/, "");
+  const first = withoutStt.split(/\s+/)[0] || "";
+  const firstKey = identityTokenKey(first);
+  if (!firstKey) return "";
+  const candidates = extractSkuCandidatesFromText(withoutStt);
+  return candidates.find((candidate) => identityTokenKey(candidate) === firstKey) || "";
+}
+
+function preferMoreSpecificSourceSku(rawText = "", currentSku = "") {
+  const current = cleanModelText(currentSku);
+  if (!current) return current; // do not invent a SKU when the mapped source has none
+  const lead = cleanModelText(leadingSourceSkuCandidate(rawText));
+  if (!lead) return current;
+  const ck = identityTokenKey(current);
+  const lk = identityTokenKey(lead);
+  if (!ck || !lk || ck === lk) return current;
+  // A source-leading variant code (D001-TT / R1-001-CV / SBX202-5C0)
+  // is stronger than a shorter family/stem mapped from a later column.
+  if (lk.startsWith(ck) && lk.length >= ck.length + 2) return lead;
+  // If the mapped value is visibly a range/list rather than one sellable code,
+  // prefer the source-leading item code. Examples:
+  //   C001-C006,C011-C017 -> C002-MCS
+  //   C007-C008           -> C007-MCS
+  const simpleRange = /^[A-Z]?\d+[-–—][A-Z]?\d+$/i.test(current);
+  const leadLooksSellable = /[A-Z]/i.test(lead) && /\d/.test(lead) && !/^[A-Z]?\d+[-–—][A-Z]?\d+$/i.test(lead);
+  if ((/[;,]/.test(current) || simpleRange || /\b[A-Z]?\d+[-–][A-Z]?\d+\b.*\b[A-Z]?\d+[-–][A-Z]?\d+\b/i.test(current)) && leadLooksSellable) return lead;
+  return current;
+}
+
+function sourceNameCandidate(value = "") {
+  let s = compactText(value)
+    .replace(/^(?:bao\s*gồm|bao\s*gom)\s+/i, "")
+    .replace(/^[\-–—:;,]+|[\-–—:;,]+$/g, "")
+    .trim();
+  if (!s || s.length < 3) return "";
+
+  // RC8: a long source description can still start with a concise commercial
+  // label before technical detail. Preserve that leading phrase instead of
+  // giving up and falling back to `Sản phẩm <SKU>`.
+  if (s.length > 90) {
+    const head = compactText(s.split(/[,;]|\b(?:vỏ\s+cáp|kich\s*thuoc|kích\s*thước|thông\s*số|tính\s*năng|nguồn\s*điện|công\s*suất)\b/i)[0]);
+    if (head.length >= 3 && head.length <= 90) s = head;
+  }
+  if (s.length > 90) return "";
+  if (looksLikeColorOnly(s) || looksLikeSpecsOnly(s)) return "";
+  if (/^(?:set|cái|chiếc|bộ|m2|m3|m|md|pcs?)$/i.test(s)) return "";
+  if (!/[A-Za-zÀ-ỹ]/.test(s)) return "";
+  return s;
+}
+
+function recoverCommercialNameFromRow(rawText = "", sku = "") {
+  const raw = compactText(rawText).replace(/\s*[-–—]\s*/g, "-");
+  const cleanSku = cleanModelText(sku);
+  if (!raw || !cleanSku) return "";
+  const body = raw.replace(/^\d{1,3}[.)]?\s+/, "");
+  const re = new RegExp(escapeRegExp(cleanSku).replace(/\\-/g, "[-–—]"), "i");
+  const m = re.exec(body);
+  if (!m) return "";
+
+  const before = sourceNameCandidate(body.slice(0, m.index));
+  if (before) {
+    const bk = normalizeAscii(before);
+    const sk = normalizeAscii(cleanSku);
+    return bk.includes(sk) ? before : `${before} ${cleanSku}`;
+  }
+
+  let after = body.slice(m.index + m[0].length)
+    .replace(/^\s*\d{1,3}[.)]?\s+/, "")
+    .trim();
+  // Stop before a repeated SKU, sell unit, quantity-price tail, or explicit price.
+  const secondSku = re.exec(after);
+  if (secondSku && secondSku.index > 0) after = after.slice(0, secondSku.index);
+  after = after.split(/\b(?:cái|chiếc|bộ|set|pcs?|m2|m3|md)\b/i)[0];
+  after = after.replace(/\b\d{1,3}(?:[.,]\d{3}){1,4}\b.*$/, "").trim();
+  const candidate = sourceNameCandidate(after);
+  if (!candidate) return "";
+  const ck = normalizeAscii(candidate);
+  const sk = normalizeAscii(cleanSku);
+  return ck.includes(sk) ? candidate : `${candidate} ${cleanSku}`;
+}
+
+function shouldRecoverNameFromRaw(name = "", sku = "") {
+  const n = compactText(name);
+  if (!n) return true;
+  if (/^sản phẩm(?:\s*[-–—])?\s+/i.test(n)) return true;
+  if (sku && identityTokenKey(n) === identityTokenKey(sku)) return true;
+  if (looksLikeSpecsOnly(n)) return true;
+  return false;
+}
+
+function isTaxOrSummaryPseudoProduct(name = "", sku = "", rawText = "") {
+  const n = normalizeAscii(name);
+  const s = normalizeAscii(sku);
+  const raw = normalizeAscii(rawText);
+  const pseudo = /^(?:san pham\s+)?(?:thue(?:\s*\d+(?:[.,]\d+)?\s*%)?|vat(?:\s*\d+(?:[.,]\d+)?\s*%)?|tong|tong cong|tong gia tri|tam tinh)$/;
+  if (pseudo.test(n) || pseudo.test(s)) return true;
+  if (/^(?:thue(?:\s*\d+(?:[.,]\d+)?\s*%)?\s*){2,}/.test(raw) || /^(?:vat(?:\s*\d+(?:[.,]\d+)?\s*%)?\s*){2,}/.test(raw)) return true;
+  if (/^(?:tong\s*){2,}/.test(raw)) return true;
+
+  // Accounting carry-over rows are document metadata, not catalog products.
+  // They often contain amounts and bank-account fragments that can otherwise
+  // be mistaken for SKU/price evidence.
+  if (/^no\s*(?:dau\s*ky|phat\s*sinh|cuoi\s*ky)\b/.test(raw)) return true;
+  if (/\bno\s*phat\s*sinh\b/.test(raw) && /\b(ngan\s*hang|techcombank|vietcombank|bidv|mbbank|acb)\b/.test(raw)) return true;
+  return false;
+}
+
 // Tên chỉ là LOẠI sản phẩm chung (không có model/chi tiết) → nghi là dòng tổng nhóm.
 // Vd: "Công tắc thông minh", "Camera", "Khóa thông minh", "Cảm biến", "Két an toàn".
 // KHÔNG tính các tên có thêm chi tiết: "Công tắc cơ thông minh 1 nút", "Camera DS-2CD...".
@@ -285,8 +463,19 @@ function buildFeatureDisplayName({ row, map, sku, sheetName, sectionName, suppli
   const type = inferProductTypeFromContext(sheetName, sectionName, [specs, feature].filter(Boolean).join(" "), model || sku, category);
   const brand = inferBrandFromContext(sheetName, sectionName, supplier);
 
-  // ƯU TIÊN tên NGẮN khi có SKU/model tốt: type + brand + model.
-  // Feature/thông số KHÔNG nhét vào name (sẽ nằm ở specs).
+  // RC5 source-name authority: if the source exposes a concise commercial label
+  // (e.g. PLAIN, CUTIE, "Nút chuông cửa nhận diện khuôn mặt"), preserve it
+  // instead of generating the opaque fallback "Sản phẩm <SKU>".
+  if (model && model.length >= 4 && looksLikeSourceCommercialLabel(feature) && !looksLikeSpecsOnly(feature)) {
+    const featureNorm = normalizeAscii(feature);
+    const modelNorm = normalizeAscii(model);
+    const withModel = modelNorm && !featureNorm.includes(modelNorm)
+      ? `${feature} ${model}`
+      : feature;
+    return compactText(withModel);
+  }
+
+  // If no usable source commercial label exists, fall back to type + brand + model.
   if (model && model.length >= 4) {
     const parts = [];
     parts.push(type && type !== "Sản phẩm" ? type : "Sản phẩm");
@@ -295,14 +484,15 @@ function buildFeatureDisplayName({ row, map, sku, sheetName, sectionName, suppli
     return parts.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
   }
 
-  // KHÔNG có SKU/model: mới dùng feature làm tên (đây là trường hợp duy nhất feature vào name).
-  const parts = [];
-  parts.push(type && type !== "Sản phẩm" ? type : "Sản phẩm");
-  if (brand) parts.push(brand);
-  if (feature && feature.length >= 4 && !looksLikeColorOnly(feature)) {
-    // giới hạn feature trong name ở mức ngắn để tên không quá dài
-    parts.push(shortenFeatureForName(feature));
+  // KHÔNG có SKU/model: the source phrase itself is stronger than a synthetic
+  // "Sản phẩm - ..." prefix. Preserve the sellable label when it is concise.
+  if (looksLikeSourceCommercialLabel(feature) && !looksLikeSpecsOnly(feature)) {
+    return shortenFeatureForName(feature);
   }
+  const parts = [];
+  if (type && type !== "Sản phẩm") parts.push(type);
+  if (brand) parts.push(brand);
+  if (feature && feature.length >= 4 && !looksLikeColorOnly(feature)) parts.push(shortenFeatureForName(feature));
   return parts.filter(Boolean).join(" - ").replace(/\s+/g, " ").trim();
 }
 
@@ -380,7 +570,22 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
   };
 
   let name = get("name");
-  const rawSkuCell = get("sku");
+  let rawSkuCell = get("sku");
+  let skuWasNaturalLanguageName = false;
+  if (looksLikeUnlabelledFeatureSku(rawSkuCell, map)) {
+    rawSkuCell = "";
+    // RC8: unlike prose masquerading as an SKU, technical feature tokens may
+    // coexist with a real model elsewhere in the row. Allow grounded re-scan;
+    // productSanitizer rejects the same feature token as an SKU candidate.
+  }
+  // RC5: some supplier sheets label a free-text product-name column as "Mã".
+  // Do not poison canonical identity with a prose phrase. When no stronger name
+  // exists, preserve that source phrase as the product name and leave SKU empty.
+  if (looksLikeNaturalLanguageSku(rawSkuCell)) {
+    if (!name || name === rawSkuCell) name = rawSkuCell;
+    rawSkuCell = "";
+    skuWasNaturalLanguageName = true;
+  }
   let schemaDriftRecovery = null;
   if (map?._quoteTable) {
     schemaDriftRecovery = recoverQuoteSectionSchemaIdentity({ name, sku: rawSkuCell, specs: get("specs") });
@@ -400,6 +605,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
       })
     : { sku: schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell, sourceSku: rawSkuCell, evidence: "mapped_sku", changed: false };
   let sku = cleanModelText(quoteIdentity.sku);
+  sku = preferMoreSpecificSourceSku(row.joined, sku);
   const hiddenSku = extractSkuFromHiddenCells(row, map);
   if (!sku && hiddenSku) sku = hiddenSku;
   const issues = [];
@@ -530,7 +736,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
     specs = (specs ? specs + " · " : "") + "Giá bán lẻ thấp nhất: " + minRetailPrice.toLocaleString("vi-VN") + "đ";
   }
 
-  if (!sku) {
+  if (!sku && !skuWasNaturalLanguageName) {
     sku = cleanModelText(extractSkuFromHiddenCells(row, map) || extractSkuFromText([name, specs, row.joined].filter(Boolean).join(" ")));
   }
 
@@ -558,6 +764,27 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
     const derived = buildDisplayName({ name, sku, sheetName, sectionName, supplier: fileSupplier, specs, category: earlyCategory });
     if (derived) name = derived;
   }
+
+  // RC6 row-grounded recovery: when mapping still produced a generic or
+  // specification-like display name, recover the concise phrase adjacent to the
+  // mapped SKU from the original row. This fixes source patterns such as
+  // "Thiết bị liên lạc tại cửa AV-08FBL ..." and "PA091 3 PLAIN PA091 ...".
+  const syntheticOrCodeOnlyName = /^sản phẩm(?:\s*[-–—])?\s+/i.test(compactText(name))
+    || (sku && identityTokenKey(name) === identityTokenKey(sku));
+  if (sku && (!map?._lockedName || syntheticOrCodeOnlyName) && shouldRecoverNameFromRaw(name, sku)) {
+    const groundedName = recoverCommercialNameFromRow(row.joined, sku);
+    if (groundedName) name = groundedName;
+  }
+
+  // If a previous no-SKU fallback still generated "Sản phẩm - <source label>",
+  // remove only the synthetic prefix; never rewrite the source label itself.
+  if (!sku && /^sản phẩm\s*[-–—]\s*/i.test(compactText(name))) {
+    const grounded = compactText(name).replace(/^sản phẩm\s*[-–—]\s*/i, "");
+    if (sourceNameCandidate(grounded)) name = grounded;
+  }
+
+  // Tax/subtotal labels are document economics, never catalog identities.
+  if (isTaxOrSummaryPseudoProduct(name, sku, row.joined)) return null;
 
   if (!name && specs && !sku) name = specs.slice(0, 60);
   if (name && name.length < 6 && sku) name = buildDisplayName({ name, sku, sheetName, sectionName, supplier: fileSupplier, specs, category: earlyCategory });

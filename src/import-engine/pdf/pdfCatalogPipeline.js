@@ -12,6 +12,7 @@
 // ============================================================
 import { callClaudeText, callClaudeStructured, PDF_CATALOG_OUTPUT_SCHEMA, extractCatalogPdfWithClaude } from "../legacy/legacyClaudeMapper.js";
 import { sanitizeCatalogProduct, sanitizeCatalogProducts } from "../productSanitizer.js";
+import { recoverPdfProductNameFromRawRow } from "./pdfIdentityRecovery.js";
 import { buildPdfProbe, planDocumentRoute } from "../documentRouter.js";
 import { assessPdfPositiveEvidence, assessPdfVisionTrust, findPdfRowEvidence, inferPdfQuoteRowEconomics, classifyPdfStructuralRow } from "./pdfEvidence.js";
 import { normalizeSellableVariants, normalizePdfTableSemantics } from "./pdfVariants.js";
@@ -1113,12 +1114,16 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
       const contextKey = normalizeVietnameseKey([rawText, specs, it.name].join(" "));
       const priceLooksLikeLifeHours = (costPrice === 50000 || costPrice === 25000) && /tuoi tho/.test(contextKey);
       if (priceLooksLikeLifeHours) costPrice = 0;
-      const name = stripLightingVariantFromName(normalizeText(it.name));
       const variantSku = variants.map((v) => v.sku).filter(Boolean).join(" / ");
+      const normalizedSku = normalizePdfSku(it.sku) || variantSku;
+      let name = stripLightingVariantFromName(normalizeText(it.name));
+      const collapsedIdentity = !!(name && normalizedSku && normalizeVietnameseKey(name) === normalizeVietnameseKey(normalizedSku));
+      const recoveredPdfName = collapsedIdentity ? recoverPdfProductNameFromRawRow(rawText, normalizedSku) : "";
+      if (recoveredPdfName) name = recoveredPdfName;
       const sanitized = sanitizeCatalogProduct({
         id: uid("imp"),
         name,
-        sku: normalizePdfSku(it.sku) || variantSku,
+        sku: normalizedSku,
         category: normalizeText(it.category) || "Chung",
         supplier: normalizeText(it.supplier) || supplierGuess,
         brand: normalizeText(it.brand),
@@ -1164,6 +1169,15 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
           engine,
         },
       }, { defaultSupplier: supplierGuess });
+      if (recoveredPdfName) {
+        sanitized._meta = sanitized._meta || {};
+        sanitized._meta.issues = [...(sanitized._meta.issues || []), simpleIssue(
+          "pdf_name_recovered_from_raw_row",
+          "info",
+          "Đã khôi phục tên sản phẩm từ mô tả cùng hàng thay vì dùng Mã SP làm tên",
+          "name"
+        )];
+      }
       const validBoundVariants = variants.filter((v) => hasClearSku(v?.sku) && Number(v?.price || 0) >= 1000);
       if (visibleSkuCount >= 2 && validBoundVariants.length < visibleSkuCount) {
         sanitized._meta = sanitized._meta || {};
@@ -1451,6 +1465,24 @@ function isStrongQuoteTableBaseline(items = []) {
   return arithmetic >= 3 && arithmetic / active.length >= 0.7 && grounded / active.length >= 0.7;
 }
 
+function productNamesCompatibleForDedupe(a = "", b = "") {
+  const an = canonicalProductNameKey(a);
+  const bn = canonicalProductNameKey(b);
+  if (!an || !bn) return true;
+  if (an === bn) return true;
+  const shorter = an.length <= bn.length ? an : bn;
+  const longer = an.length > bn.length ? an : bn;
+  return shorter.length >= 12 && longer.includes(shorter);
+}
+
+function samePdfSourceRow(a = {}, b = {}) {
+  const ap = Number(a?._meta?.source?.page || a?.sourcePage || 0);
+  const bp = Number(b?._meta?.source?.page || b?.sourcePage || 0);
+  const ar = Number(a?._meta?.source?.row || a?.sourceRow || 0);
+  const br = Number(b?._meta?.source?.row || b?.sourceRow || 0);
+  return !!(ar && br && ar === br && (!ap || !bp || ap === bp));
+}
+
 function findCompatibleProductIndex(items = [], item = {}) {
   const sku = normalizePdfSku(item?.sku);
   const name = canonicalProductNameKey(item?.name);
@@ -1460,11 +1492,22 @@ function findCompatibleProductIndex(items = [], item = {}) {
     const existing = items[i];
     const existingSku = normalizePdfSku(existing?.sku);
     const existingName = canonicalProductNameKey(existing?.name);
+    const exactSku = !!(sku && existingSku && skuIdentityKey(sku) === skuIdentityKey(existingSku));
+    const compatibleSku = !!(sku && existingSku && skuIdentityCompatible(sku, existingSku));
+    const nameCompatible = productNamesCompatibleForDedupe(item?.name, existing?.name);
+
+    // Same supplier code is not globally unique in real supplier PDFs. Roger,
+    // for example, reuses "FU" for multiple sellable base variants. Never let
+    // an exact SKU alone collapse visibly different products.
+    if (exactSku && !nameCompatible && !samePdfSourceRow(existing, item)) continue;
+    if (sku && existingSku && !compatibleSku && !samePdfSourceRow(existing, item)) continue;
+
     let score = 0;
-    if (sku && existingSku && skuIdentityKey(sku) === skuIdentityKey(existingSku)) score += 6;
-    else if (sku && existingSku && skuIdentityCompatible(sku, existingSku)) score += 4;
+    if (samePdfSourceRow(existing, item)) score += 8;
+    if (exactSku && nameCompatible) score += 6;
+    else if (compatibleSku && nameCompatible) score += 4;
     if (name && existingName && name === existingName) score += 5;
-    else if (name && existingName && (name.includes(existingName) || existingName.includes(name)) && Math.min(name.length, existingName.length) >= 12) score += 2;
+    else if (name && existingName && nameCompatible) score += 2;
     if (Number(item?.costPrice || 0) > 0 && Number(existing?.costPrice || 0) === Number(item?.costPrice || 0)) score += 1;
     if (score > bestScore) { bestScore = score; best = i; }
   }
@@ -1518,60 +1561,66 @@ function mergeQuoteTableCandidates(heuristicItems = [], aiItems = [], opts = {})
   return base;
 }
 
+function markSupplierSkuCollision(item = {}, existing = {}) {
+  const sku = normalizePdfSku(item?.sku || existing?.sku);
+  const collisionIssue = simpleIssue(
+    "supplier_sku_reused_for_distinct_products",
+    "warning",
+    `Nhà cung cấp dùng cùng mã ${sku || "SKU"} cho nhiều sản phẩm/cấu hình khác nhau; SmartQuote giữ riêng, không tự gộp`,
+    "sku",
+    "Đối chiếu tên/cấu hình; có thể tạo mã nội bộ riêng nếu cần"
+  );
+  const meta = { ...(item?._meta || {}) };
+  const issues = Array.isArray(meta.issues) ? [...meta.issues] : [];
+  if (!issues.some((x) => issueCodeValue(x) === collisionIssue.code)) issues.push(collisionIssue);
+  return {
+    ...item,
+    _meta: { ...meta, issues: issues.slice(0, 8), canonicalStatus: "need_review", status: "review", confidence: Math.min(Number(meta.confidence || 0.72), 0.68) },
+  };
+}
+
 function dedupeProducts(items, opts = {}) {
-  const aliasMap = new Map();
   const out = [];
+  const lumiAliases = new Map();
 
-  function keysFor(item) {
-    const sku = skuIdentityKey(item?.sku).toLowerCase();
-    const name = canonicalProductNameKey(stripLightingVariantFromName(item?.name));
-    return { sku: sku ? `sku:${sku}` : "", name: name ? `name:${name}` : "" };
-  }
-  function bindAliases(item, index) {
-    const keys = keysFor(item);
-    if (keys.sku) aliasMap.set(keys.sku, index);
-    if (keys.name) aliasMap.set(keys.name, index);
-  }
-
-  for (const item of items || []) {
-    if (!item || item?._meta?.canonicalStatus === "skipped" || item?._meta?.status === "skipped" || item?._skipReason) continue;
+  for (const rawItem of items || []) {
+    if (!rawItem || rawItem?._meta?.canonicalStatus === "skipped" || rawItem?._meta?.status === "skipped" || rawItem?._skipReason) continue;
+    let item = rawItem;
     const row = item?._meta?.source?.row || extractSourceRowNumber(item?._meta?.source?.rawText);
     const page = item?._meta?.source?.page || 0;
     const baseName = normalizeVietnameseKey(stripLightingVariantFromName(item.name));
     const lumiVariantKey = isLumiLightingContext({ fileName: opts.fileName, supplierGuess: opts.supplierGuess, category: item.category, name: item.name, rawText: item._meta?.source?.rawText })
       ? `lumi:${page || "p"}:${row || baseName}`
       : "";
-    if (lumiVariantKey && aliasMap.has(lumiVariantKey)) {
-      const idx = aliasMap.get(lumiVariantKey);
+    if (lumiVariantKey && lumiAliases.has(lumiVariantKey)) {
+      const idx = lumiAliases.get(lumiVariantKey);
       out[idx] = mergePdfRowVariants(out[idx], item);
-      bindAliases(out[idx], idx);
       continue;
     }
 
-    const keys = keysFor(item);
-    let idx = keys.sku && aliasMap.has(keys.sku) ? aliasMap.get(keys.sku) : null;
-    if (idx == null && keys.name && aliasMap.has(keys.name)) {
-      const candidateIdx = aliasMap.get(keys.name);
-      const existing = out[candidateIdx];
-      const a = normalizePdfSku(existing?.sku);
-      const b = normalizePdfSku(item?.sku);
-      // Same canonical name can merge a truncated wrapped SKU only when model
-      // stems are compatible; unrelated non-empty SKUs remain separate products.
-      if (!a || !b || skuIdentityCompatible(a, b)) idx = candidateIdx;
-    }
-
-    if (idx != null) {
+    let idx = findCompatibleProductIndex(out, item);
+    if (idx >= 0) {
       const old = out[idx];
       if (isVariantPriceRowMerge(old, item, opts)) out[idx] = mergePdfRowVariants(old, item);
       else out[idx] = mergePdfDuplicates(old, item);
-      bindAliases(out[idx], idx);
-      if (lumiVariantKey) aliasMap.set(lumiVariantKey, idx);
-    } else {
-      const newIdx = out.length;
-      out.push(item);
-      bindAliases(item, newIdx);
-      if (lumiVariantKey) aliasMap.set(lumiVariantKey, newIdx);
+      if (lumiVariantKey) lumiAliases.set(lumiVariantKey, idx);
+      continue;
     }
+
+    // If the exact SKU already exists but names conflict, preserve both rows and
+    // surface the supplier-code collision instead of silently destroying one.
+    const skuKey = skuIdentityKey(item?.sku);
+    if (skuKey) {
+      const conflictIndex = out.findIndex((existing) => skuIdentityKey(existing?.sku) === skuKey && !productNamesCompatibleForDedupe(existing?.name, item?.name));
+      if (conflictIndex >= 0) {
+        out[conflictIndex] = markSupplierSkuCollision(out[conflictIndex], item);
+        item = markSupplierSkuCollision(item, out[conflictIndex]);
+      }
+    }
+
+    const newIdx = out.length;
+    out.push(item);
+    if (lumiVariantKey) lumiAliases.set(lumiVariantKey, newIdx);
   }
   return out;
 }
@@ -1697,6 +1746,177 @@ function columnRegionCategory(page = {}, region = {}) {
   return "Chung";
 }
 
+function leadingPdfRowIndex(value = "") {
+  const m = /^\s*(\d{1,4})(?:\D|$)/.exec(normalizeText(value));
+  if (!m) return 0;
+  const n = Number(m[1]);
+  return Number.isInteger(n) && n > 0 && n <= 10000 ? n : 0;
+}
+
+function modelColumn(model = {}, role = "") {
+  return (Array.isArray(model?.columns) ? model.columns : []).find((c) => c?.role === role) || null;
+}
+
+function rawPriceForModelRole(row = {}, model = {}, role = "") {
+  const col = modelColumn(model, role);
+  if (!col) return { value: 0, part: null, distance: Infinity };
+  let best = null;
+  for (const part of Array.isArray(row?.parts) ? row.parts : []) {
+    const value = parsePdfColumnMoney(part?.str || "");
+    if (!(value >= 1000 && value <= 1_000_000_000)) continue;
+    const center = Number(part?.x || 0) + Math.max(0, Number(part?.width || 0)) / 2;
+    const distance = Math.abs(center - Number(col.center || col.anchor || 0));
+    if (!best || distance < best.distance) best = { value, part, distance };
+  }
+  const tolerance = 24;
+  return best && best.distance <= tolerance ? best : { value: 0, part: null, distance: best?.distance ?? Infinity };
+}
+
+function sparseConfigurationLabel(row = {}, model = {}) {
+  const explicit = fieldForRole(row, model, "configuration");
+  if (normalizeText(explicit.text)) return normalizeText(explicit.text);
+  const unitCol = modelColumn(model, "unit");
+  const listCol = modelColumn(model, "listPrice") || modelColumn(model, "unitPrice");
+  if (!unitCol || !listCol) return "";
+  const left = Number(unitCol.center || 0) + 6;
+  const right = Number(listCol.center || 0) - 8;
+  if (!(right > left)) return "";
+  const candidates = (Array.isArray(row?.parts) ? row.parts : [])
+    .filter((p) => {
+      const center = Number(p?.x || 0) + Math.max(0, Number(p?.width || 0)) / 2;
+      if (center < left || center > right) return false;
+      const t = normalizeText(p?.str || "");
+      if (!t || t.length > 24) return false;
+      const money = parsePdfColumnMoney(t);
+      return !(money >= 1000);
+    })
+    .map((p) => normalizeText(p?.str || ""))
+    .filter(Boolean);
+  return normalizeText(candidates.join(" "));
+}
+
+function recoverSparseHeaderIndexedProducts(page = {}, model = {}, handledRows = new Set(), supplierGuess = "") {
+  const out = [];
+  const rows = Array.isArray(page?.rows) ? page.rows : [];
+  if (!rows.length || !modelColumn(model, "rowIndex") || !modelColumn(model, "name") || !modelColumn(model, "sku")) return out;
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    if (handledRows.has(`${Number(page.page || 0)}:${rowIndex}`)) continue;
+    const row = rows[rowIndex];
+    const sourceStt = leadingPdfRowIndex(fieldForRole(row, model, "rowIndex").text);
+    if (!sourceStt) continue;
+    const skuField = fieldForRole(row, model, "sku");
+    const nameField = fieldForRole(row, model, "name");
+    const unitField = fieldForRole(row, model, "unit");
+    const sku = normalizePdfSku(skuField.text);
+    let name = normalizeText(nameField.text);
+    if (sku && name && normalizeVietnameseKey(name) === normalizeVietnameseKey(sku)) {
+      const recoveredName = cleanHeuristicName(row.text || "", sku);
+      if (recoveredName && normalizeVietnameseKey(recoveredName) !== normalizeVietnameseKey(sku)) name = recoveredName;
+    }
+    if (!sku || !name || name.length < 3) continue;
+
+    const inlineDealer = rawPriceForModelRole(row, model, "unitPrice");
+    const inlineRetail = rawPriceForModelRole(row, model, "listPrice");
+    let costPrice = inlineDealer.value;
+    let listPrice = inlineRetail.value;
+    const priceOptions = [];
+
+    if (!costPrice && !listPrice) {
+      const rowY = Number(row?.y || row?.bbox?.y || 0);
+      const rowH = Math.max(1, Number(row?.bbox?.height || row?.parts?.[0]?.height || 6));
+      const maxDy = Math.max(9, rowH * 1.55);
+      for (let j = 0; j < rows.length; j++) {
+        if (j === rowIndex) continue;
+        const candidate = rows[j];
+        const candidateY = Number(candidate?.y || candidate?.bbox?.y || 0);
+        if (Math.abs(candidateY - rowY) > maxDy) continue;
+        // A price-continuation row must not itself be another indexed product.
+        if (leadingPdfRowIndex(fieldForRole(candidate, model, "rowIndex").text)) continue;
+        const dealer = rawPriceForModelRole(candidate, model, "unitPrice");
+        const retail = rawPriceForModelRole(candidate, model, "listPrice");
+        if (!dealer.value || !retail.value) continue;
+        const label = sparseConfigurationLabel(candidate, model);
+        const key = `${label}|${retail.value}|${dealer.value}`;
+        if (!priceOptions.some((x) => x.key === key)) {
+          priceOptions.push({ key, label, listPrice: retail.value, costPrice: dealer.value, sourceRow: j + 1 });
+        }
+      }
+      if (priceOptions.length === 1) {
+        costPrice = priceOptions[0].costPrice;
+        listPrice = priceOptions[0].listPrice;
+      }
+    }
+
+    const issues = [];
+    if (priceOptions.length > 1) {
+      issues.push(columnIssue(
+        "pdf_configuration_price_options",
+        `Sản phẩm có ${priceOptions.length} cấu hình giá trong PDF; cần chọn cấu hình trước khi lưu catalog`,
+        "price",
+      ));
+    } else if (!costPrice) {
+      issues.push(columnIssue("price_column_uncertain", "Chưa xác định chắc giá đại lý cho dòng này", "price"));
+    }
+    const rawText = normalizeText(row.text || "");
+    out.push({
+      name,
+      sku,
+      category: columnRegionCategory(page, { startRowIndex: rowIndex }),
+      supplier: supplierGuess,
+      attributes: {
+        pdfSourceStt: sourceStt,
+        ...(priceOptions.length > 1 ? { pdfPriceOptions: priceOptions.map(({ key, ...x }) => x) } : {}),
+      },
+      unit: normalizeText(unitField.text) || "Cái",
+      costPrice: priceOptions.length > 1 ? 0 : costPrice,
+      listPrice: priceOptions.length > 1 ? 0 : listPrice,
+      minRetailPrice: 0,
+      specs: buildSpecsFromLine(rawText, extractMoneyValues(rawText)),
+      rawText: rawText.slice(0, 300),
+      sourcePage: page.page,
+      sourceRow: rowIndex + 1,
+      sourceBBox: row.bbox || null,
+      sourceParts: Array.isArray(row.parts) ? row.parts : [],
+      sourcePageWidth: page.pageWidth || null,
+      sourcePageHeight: page.pageHeight || null,
+      priceRole: priceOptions.length > 1 ? "configuration_options" : (costPrice ? "dealer" : "unknown"),
+      fieldBboxes: {
+        name: nameField.bbox || null,
+        sku: skuField.bbox || null,
+        unit: unitField.bbox || null,
+      },
+      fieldEvidence: {
+        name: { confidence: Math.max(Number(nameField.confidence || 0), 0.92), bbox: nameField.bbox || row.bbox || null },
+        sku: { confidence: Math.max(Number(skuField.confidence || 0), 0.92), bbox: skuField.bbox || null },
+        price: { confidence: priceOptions.length > 1 ? 0.98 : (costPrice ? 0.9 : 0), bbox: null, priceRole: priceOptions.length > 1 ? "configuration_options" : (costPrice ? "dealer" : "unknown") },
+      },
+      issues,
+      layoutGrounded: true,
+      layoutRowIndex: rowIndex + 1,
+      rowSourceKind: "column_model_sparse_row_recovery",
+      evidence: {
+        hasPrice: !!costPrice || priceOptions.length > 1,
+        hasSku: true,
+        hasProductKeyword: hasProductKeyword([name, rawText].join(" ")),
+        hasExplicitUnit: !!unitField.text,
+        hasGrounding: !!row.bbox,
+        layoutGrounded: true,
+        layoutRowIndex: rowIndex + 1,
+        rowSourceKind: "column_model_sparse_row_recovery",
+        fieldBboxes: { name: nameField.bbox || null, sku: skuField.bbox || null, unit: unitField.bbox || null },
+        priceRole: priceOptions.length > 1 ? "configuration_options" : (costPrice ? "dealer" : "unknown"),
+        quoteArithmeticMatched: false,
+        tableRegionId: model.regionId || "",
+        columnModelConfidence: model.confidence,
+        priceColumnUncertain: !costPrice && priceOptions.length <= 1,
+        sourceStt,
+      },
+    });
+    handledRows.add(`${Number(page.page || 0)}:${rowIndex}`);
+  }
+  return out;
+}
+
 function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") {
   const items = [];
   const handledRows = new Set();
@@ -1710,6 +1930,16 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
     const page = (pages || []).find((p) => Number(p?.page || 0) === Number(region.page || 0));
     if (!page || !Array.isArray(page.rows)) continue;
     const regionCategory = columnRegionCategory(page, region);
+    const hasRowIndexModel = !!modelColumn(model, "rowIndex");
+    const indexedRowsInRegion = (region.rows || []).reduce((count, rowRef) => {
+      const candidateRow = page.rows[Number(rowRef.rowIndex)];
+      if (!candidateRow) return count;
+      return count + (leadingPdfRowIndex(fieldForRole(candidateRow, model, "rowIndex").text) ? 1 : 0);
+    }, 0);
+    // If a table explicitly has STT/No. and enough indexed data rows, free-text
+    // continuation/note rows must never become products. Sparse indexed rows are
+    // recovered later by recoverSparseHeaderIndexedProducts().
+    const enforceIndexedRows = hasRowIndexModel && indexedRowsInRegion >= 3;
 
     for (const rowRef of region.rows || []) {
       const rowIndex = Number(rowRef.rowIndex);
@@ -1719,6 +1949,9 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
       if (!assigned.length) continue;
       if (assigned.some((a) => a.cell?.headerRole)) continue;
 
+      const rowIndexField = fieldForRole(row, model, "rowIndex");
+      const sourceStt = leadingPdfRowIndex(rowIndexField.text);
+      if (enforceIndexedRows && !sourceStt) continue;
       const nameField = fieldForRole(row, model, "name");
       const skuField = fieldForRole(row, model, "sku");
       const supplierField = fieldForRole(row, model, "supplier");
@@ -1734,7 +1967,14 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
 
       const sku = normalizePdfSku(skuField.text) || extractSkuFromPdfLine(row.text || "");
       let name = normalizeText(nameField.text);
-      if (!name) name = cleanHeuristicName(row.text || "", sku);
+      // RC5: a weak/shifted column model can assign the SKU cell to both `name`
+      // and `sku`. The raw row still contains the real description; recover it
+      // deterministically rather than letting UI identity collapse to the code.
+      const sameAsSku = !!(name && sku && normalizeVietnameseKey(name) === normalizeVietnameseKey(sku));
+      if (!name || sameAsSku) {
+        const recoveredName = cleanHeuristicName(row.text || "", sku);
+        if (recoveredName && normalizeVietnameseKey(recoveredName) !== normalizeVietnameseKey(sku)) name = recoveredName;
+      }
       if ((!name || name.length < 3) && sku) name = `${sku}`;
       if (!name || name.length < 3) continue;
 
@@ -1783,7 +2023,10 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
         supplier: normalizeText(supplierField.text) || supplierGuess,
         brand: normalizeText(brandField.text),
         origin: normalizeText(originField.text),
-        attributes: normalizeText(originField.text) ? { origin: normalizeText(originField.text) } : {},
+        attributes: {
+          ...(normalizeText(originField.text) ? { origin: normalizeText(originField.text) } : {}),
+          ...(sourceStt ? { pdfSourceStt: sourceStt } : {}),
+        },
         unit: normalizeText(unitField.text) || "Cái",
         costPrice,
         listPrice,
@@ -1826,10 +2069,25 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
           tableRegionId: region.id,
           columnModelConfidence: model.confidence,
           priceColumnUncertain: !!model.ambiguousPrice,
+          sourceStt: sourceStt || null,
         },
       });
       handledRows.add(`${Number(page.page || 0)}:${rowIndex}`);
     }
+  }
+
+  // Recover indexed product rows that live just outside a geometric region or
+  // use vertically split price options. This uses the strongest page-level
+  // header model, never free-form name/SKU guessing.
+  for (const page of pages || []) {
+    const pageModels = models.filter((m) => Number(m?.page || 0) === Number(page?.page || 0));
+    const scoreModel = (m) => {
+      const roles = new Set((m?.columns || []).map((c) => c?.role).filter(Boolean));
+      return ["rowIndex", "sku", "name", "unit", "listPrice", "unitPrice"].filter((r) => roles.has(r)).length * 10 + Number(m?.confidence || 0);
+    };
+    const model = [...pageModels].sort((a, b) => scoreModel(b) - scoreModel(a))[0];
+    if (!model) continue;
+    items.push(...recoverSparseHeaderIndexedProducts(page, model, handledRows, supplierGuess));
   }
 
   return { items, handledRows, regions, models };
@@ -1948,6 +2206,11 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess, options = {}
       const unitText = normalizeText(reconstructed?.unit);
       const explicitUnit = !!unitText || /\b(bộ|bo|set|cái|cai|chiếc|chiec|m|mét|met|cuộn|cuon|hộp|hop|tủ|tu)\b/i.test(clean);
       const evidence = entry.evidence || findPdfRowEvidence(page, clean);
+      const productKeyword = hasProductKeyword([name, clean, currentCategory].join(" "));
+      // Price-only continuation / note rows (e.g. "304 80,300,000 ... đã cọc...")
+      // are not catalog products. If there is no SKU, no unit and no product
+      // vocabulary, fail closed and let the structured/AI path attach the row.
+      if (!sku && !explicitUnit && !productKeyword) continue;
 
       out.push({
         name,
@@ -1971,7 +2234,7 @@ function heuristicExtractProductsFromPdfPages(pages, supplierGuess, options = {}
         evidence: {
           hasPrice: true,
           hasSku: !!sku,
-          hasProductKeyword: hasProductKeyword([name, clean, currentCategory].join(" ")),
+          hasProductKeyword: productKeyword,
           hasExplicitUnit: explicitUnit,
           hasGrounding: !!evidence?.bbox,
           quoteArithmeticMatched: quoteEconomics.matched,

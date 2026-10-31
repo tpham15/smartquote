@@ -1,0 +1,402 @@
+{
+  "file": "BBG THANH RAY KÉO TAY FOREST GSTAR VIỆT NAM 2024.pdf",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/BBG THANH RAY KÉO TAY FOREST GSTAR VIỆT NAM 2024.pdf",
+  "type": "pdf",
+  "hash": "f10565c544280b44f6003da3401add743faf6e80d82cf8970253fc8f3a74fc0f",
+  "pageCount": 3,
+  "textChars": 4155,
+  "columnModels": 0,
+  "productCount": 5,
+  "scanLike": false,
+  "golden": null,
+  "issues": [
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "page=1 · row=34",
+      "source": {
+        "type": "pdf",
+        "page": 1,
+        "row": 34,
+        "rawText": "3 Phụ kiện nắp bịt ống ray nhôm CRS loại 3 vạch đôi 1 440,000",
+        "bbox": {
+          "x": 53.6,
+          "y": 168.5,
+          "width": 342.5,
+          "height": 9.5
+        },
+        "parts": [
+          {
+            "x": 53.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "3"
+          },
+          {
+            "x": 66,
+            "width": 178.1,
+            "height": 9.5,
+            "str": "Phụ kiện nắp bịt ống ray nhôm CRS loại 3 vạch"
+          },
+          {
+            "x": 272.4,
+            "width": 12.5,
+            "height": 9.5,
+            "str": "đôi"
+          },
+          {
+            "x": 320.5,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "1"
+          },
+          {
+            "x": 365,
+            "width": 31.1,
+            "height": 9.5,
+            "str": "440,000"
+          }
+        ],
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "3 Phụ kiện nắp bịt ống ray nhôm CRS loại 3 vạch đôi 1 440,000",
+      "parsed": {
+        "name": "Phụ kiện nắp bịt ống ray nhôm CRS loại 3 vạch đôi 1",
+        "sku": "",
+        "category": "THANH RAY KÉO TAY CRS FOREST",
+        "productType": "",
+        "model": "",
+        "supplier": "Forest",
+        "unit": "Cái",
+        "costPrice": 440000,
+        "listPrice": 0
+      },
+      "issueCodes": []
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "page=2 · row=17",
+      "source": {
+        "type": "pdf",
+        "page": 2,
+        "row": 17,
+        "rawText": "3 Ph ụ kiện cho động cơ thanh ray âm tr ần bộ 1 1,800,000",
+        "bbox": {
+          "x": 53.6,
+          "y": 442.4,
+          "width": 342.5,
+          "height": 9.5
+        },
+        "parts": [
+          {
+            "x": 53.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "3"
+          },
+          {
+            "x": 66,
+            "width": 9.9,
+            "height": 9.5,
+            "str": "Ph"
+          },
+          {
+            "x": 76,
+            "width": 69.8,
+            "height": 9.5,
+            "str": "ụ kiện cho động c"
+          },
+          {
+            "x": 145.8,
+            "width": 67.6,
+            "height": 9.5,
+            "str": "ơ thanh ray âm tr"
+          },
+          {
+            "x": 213.6,
+            "width": 9.5,
+            "height": 9.5,
+            "str": "ần"
+          },
+          {
+            "x": 272.5,
+            "width": 5,
+            "height": 9.5,
+            "str": "b"
+          },
+          {
+            "x": 277.6,
+            "width": 5,
+            "height": 9.5,
+            "str": "ộ"
+          },
+          {
+            "x": 320.5,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "1"
+          },
+          {
+            "x": 357.8,
+            "width": 38.3,
+            "height": 9.5,
+            "str": "1,800,000"
+          }
+        ],
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "3 Ph ụ kiện cho động cơ thanh ray âm tr ần bộ 1 1,800,000",
+      "parsed": {
+        "name": "Ph ụ kiện cho động cơ thanh ray âm tr ần bộ 1",
+        "sku": "",
+        "category": "THANH RAY ÂM TRẨN TỰ ĐỘNG FOREST",
+        "productType": "",
+        "model": "",
+        "supplier": "Forest",
+        "unit": "Cái",
+        "costPrice": 1800000,
+        "listPrice": 0
+      },
+      "issueCodes": []
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "page=2 · row=24",
+      "source": {
+        "type": "pdf",
+        "page": 2,
+        "row": 24,
+        "rawText": "1 âm trần nhập khẩu Trung - Đi kèm động cơ md 1 400,000",
+        "bbox": {
+          "x": 53.6,
+          "y": 369.8,
+          "width": 342.5,
+          "height": 9.5
+        },
+        "parts": [
+          {
+            "x": 53.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "1"
+          },
+          {
+            "x": 66,
+            "width": 165.4,
+            "height": 9.5,
+            "str": "âm trần nhập khẩu Trung - Đi kèm động cơ"
+          },
+          {
+            "x": 272.4,
+            "width": 12.5,
+            "height": 9.5,
+            "str": "md"
+          },
+          {
+            "x": 320.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "1"
+          },
+          {
+            "x": 365,
+            "width": 31.1,
+            "height": 9.5,
+            "str": "400,000"
+          }
+        ],
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "1 âm trần nhập khẩu Trung - Đi kèm động cơ md 1 400,000",
+      "parsed": {
+        "name": "âm trần nhập khẩu Trung - Đi kèm động cơ md 1",
+        "sku": "",
+        "category": "THANH RAY ÂM TR ẨN TỰ ĐỘNG TRUNG QUỐC",
+        "productType": "",
+        "model": "",
+        "supplier": "Forest",
+        "unit": "Cái",
+        "costPrice": 400000,
+        "listPrice": 0
+      },
+      "issueCodes": []
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "page=2 · row=27",
+      "source": {
+        "type": "pdf",
+        "page": 2,
+        "row": 27,
+        "rawText": "2 hình âm trần nhập khẩu Trung - Đi kèm với động md 1 450,000",
+        "bbox": {
+          "x": 53.6,
+          "y": 333.8,
+          "width": 342.5,
+          "height": 9.5
+        },
+        "parts": [
+          {
+            "x": 53.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "2"
+          },
+          {
+            "x": 66,
+            "width": 187.4,
+            "height": 9.5,
+            "str": "hình âm trần nhập khẩu Trung - Đi kèm với động"
+          },
+          {
+            "x": 272.4,
+            "width": 12.5,
+            "height": 9.5,
+            "str": "md"
+          },
+          {
+            "x": 320.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "1"
+          },
+          {
+            "x": 365,
+            "width": 31.1,
+            "height": 9.5,
+            "str": "450,000"
+          }
+        ],
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "2 hình âm trần nhập khẩu Trung - Đi kèm với động md 1 450,000",
+      "parsed": {
+        "name": "hình âm trần nhập khẩu Trung - Đi kèm với động md 1",
+        "sku": "",
+        "category": "THANH RAY ÂM TR ẨN TỰ ĐỘNG TRUNG QUỐC",
+        "productType": "",
+        "model": "",
+        "supplier": "Forest",
+        "unit": "Cái",
+        "costPrice": 450000,
+        "listPrice": 0
+      },
+      "issueCodes": []
+    },
+    {
+      "code": "MISSING_SKU",
+      "severity": "WARN",
+      "message": "Product has no SKU/model code.",
+      "location": "page=2 · row=29",
+      "source": {
+        "type": "pdf",
+        "page": 2,
+        "row": 29,
+        "rawText": "3 Phụ kiện cho động cơ thanh ray âm trần bộ 1 220,000",
+        "bbox": {
+          "x": 53.6,
+          "y": 307.7,
+          "width": 342.5,
+          "height": 9.5
+        },
+        "parts": [
+          {
+            "x": 53.6,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "3"
+          },
+          {
+            "x": 66,
+            "width": 156.9,
+            "height": 9.5,
+            "str": "Phụ kiện cho động cơ thanh ray âm trần"
+          },
+          {
+            "x": 272.5,
+            "width": 10,
+            "height": 9.5,
+            "str": "bộ"
+          },
+          {
+            "x": 320.5,
+            "width": 4.8,
+            "height": 9.5,
+            "str": "1"
+          },
+          {
+            "x": 365,
+            "width": 31.1,
+            "height": 9.5,
+            "str": "220,000"
+          }
+        ],
+        "pageWidth": 612,
+        "pageHeight": 792,
+        "layoutGrounded": false,
+        "layoutRowIndex": null,
+        "rowSourceKind": "",
+        "fieldBboxes": null,
+        "priceRole": ""
+      },
+      "rawText": "3 Phụ kiện cho động cơ thanh ray âm trần bộ 1 220,000",
+      "parsed": {
+        "name": "Phụ kiện cho động cơ thanh ray âm trần bộ 1",
+        "sku": "",
+        "category": "THANH RAY ÂM TR ẨN TỰ ĐỘNG TRUNG QUỐC",
+        "productType": "",
+        "model": "",
+        "supplier": "Forest",
+        "unit": "Cái",
+        "costPrice": 220000,
+        "listPrice": 0
+      },
+      "issueCodes": []
+    }
+  ],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 5,
+      "INFO": 0
+    },
+    "byCode": [
+      {
+        "code": "MISSING_SKU",
+        "count": 5
+      }
+    ]
+  },
+  "status": "REVIEW"
+}

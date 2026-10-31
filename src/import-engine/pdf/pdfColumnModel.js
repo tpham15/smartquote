@@ -44,7 +44,21 @@ export function parsePdfColumnMoney(v) {
 }
 
 function moneyLike(v) {
-  return parsePdfColumnMoney(v) >= 1000;
+  const s = text(v).toLowerCase().replace(/\u00a0/g, ' ').trim();
+  if (!s) return false;
+  // Column detection must classify a PRICE CELL, not merely find a 4-digit
+  // number somewhere inside a product description (e.g. 1400kg or model 2022).
+  // Keep the permissive parser for already-known price fields, but use this
+  // strict shape check while inferring table columns.
+  const compact = s.replace(/\s+/g, ' ');
+  if (/^(?:19|20)\d{2}$/.test(compact)) return false; // likely year, not VND
+  const currencySuffix = '(?:\s*(?:đ|₫|vnd|vnđ))?';
+  const grouped = new RegExp(`^\\d{1,3}(?:[., ]\\d{3}){1,4}${currencySuffix}$`, 'i');
+  const plain = new RegExp(`^\\d{5,12}${currencySuffix}$`, 'i');
+  const shorthand = /^\d+(?:[.,]\d+)?\s*(?:k|tr|triệu|trieu)$/i;
+  const trCompact = /^\d{1,3}\s*tr\s*\d{1,3}$/i;
+  if (!(grouped.test(compact) || plain.test(compact) || shorthand.test(compact) || trCompact.test(compact))) return false;
+  return parsePdfColumnMoney(compact) >= 1000;
 }
 function integerLike(v) {
   const s = text(v).replace(/[.,\s]/g, '');
@@ -64,7 +78,8 @@ function headerRole(v) {
   const k = key(v);
   if (!k) return '';
   if (/^(stt|no|so tt|thu tu)$/.test(k)) return 'rowIndex';
-  if (/^(ten|ten hang|ten san pham|san pham|hang hoa|thiet bi|mo ta|dien giai)$/.test(k) || /\bten san pham\b/.test(k)) return 'name';
+  if (/^(loai sp|loai san pham|nhom sp|nhom san pham|category|product category)$/.test(k)) return 'category';
+  if (/^(ten|ten hang|ten san pham|san pham|thong tin san pham|thong tin hang hoa|hang hoa|thiet bi|mo ta|dien giai)$/.test(k) || /\b(?:ten|thong tin) san pham\b/.test(k)) return 'name';
   if (/^(ma|ma sp|ma san pham|sku|model|part no|part number)$/.test(k)) return 'sku';
   if (/^(ncc|nha cung cap|supplier|vendor)$/.test(k)) return 'supplier';
   if (/^(hang|thuong hieu|brand|nsx|nha san xuat|manufacturer)$/.test(k)) return 'brand';
@@ -74,6 +89,7 @@ function headerRole(v) {
   if (/thanh tien|tong tien|line total|amount/.test(k)) return 'total';
   if (/gia ban le|gia niem yet|list price|retail price|public price/.test(k)) return 'listPrice';
   if (/gia dai ly|gia npp|gia nhap|don gia|unit price|dealer price|cost price/.test(k)) return 'unitPrice';
+  if (/^(gia cap \d+|gia dai ly cap \d+|dealer price|cost price)$/.test(k)) return 'unitPrice';
   if (/^(gia|price)$/.test(k)) return 'genericPrice';
   if (/thong so|spec|specification/.test(k)) return 'specs';
   return '';
@@ -86,12 +102,24 @@ export function mergePdfRowParts(row = {}, { gap = null } = {}) {
     .sort((a, b) => a.x - b.x);
   if (!parts.length) return [];
   const typicalHeight = median(parts.map((p) => p.height)) || 8;
-  const mergeGap = Number.isFinite(Number(gap)) ? Number(gap) : Math.max(3.5, Math.min(8, typicalHeight * 0.62));
+  const hasExplicitGap = gap !== null && gap !== undefined && gap !== '' && Number.isFinite(Number(gap));
+  const mergeGap = hasExplicitGap ? Number(gap) : Math.max(3.5, Math.min(8, typicalHeight * 0.62));
   const cells = [];
   for (const part of parts) {
     const prev = cells[cells.length - 1];
     const partRight = part.x + part.width;
-    if (prev && part.x - prev.right <= mergeGap) {
+    const gapToPrev = prev ? part.x - prev.right : Infinity;
+    // Do not let a commercial price cell absorb an adjacent free-text note.
+    // Real supplier PDFs often place notes immediately after the dealer price
+    // (e.g. "1,700,000 Giá thu hồi ngõng 550k"). If merged, the cell stops
+    // being moneyLike and can be assigned to the wrong price column.
+    const prevIsMoney = !!prev && moneyLike(prev.text);
+    const partIsMoney = moneyLike(part.str);
+    const partCurrencyToken = /^(?:đ|₫|vnd|vnđ)$/i.test(text(part.str));
+    const prevCurrencyToken = !!prev && /^(?:đ|₫|vnd|vnđ)$/i.test(text(prev.text));
+    const splitAfterMoney = prevIsMoney && !partIsMoney && !partCurrencyToken;
+    const splitBeforeMoney = partIsMoney && !prevIsMoney && !prevCurrencyToken;
+    if (prev && gapToPrev <= mergeGap && !splitAfterMoney && !splitBeforeMoney) {
       prev.parts.push(part);
       prev.right = Math.max(prev.right, partRight);
       prev.text = text(`${prev.text} ${part.str}`);
@@ -167,6 +195,41 @@ export function inferTableRegions(pages = []) {
       }
     }
     close(rows.length);
+  }
+  // Attach the nearest multi-row header block as context. Supplier PDFs often
+  // have 2-4 header lines (e.g. main labels + price subheaders + year) that are
+  // separated from data by merged cells or notes, so a data region alone cannot
+  // reliably distinguish STT from quantity or retail from dealer price.
+  for (const region of regions) {
+    const page = (pages || []).find((p) => Number(p?.page || 1) === Number(region.page || 1));
+    const rows = Array.isArray(page?.rows) ? page.rows : [];
+    let anchor = -1;
+    let anchorInsideRegion = false;
+    const start = Math.max(0, Number(region.startRowIndex || 0));
+    const end = Math.min(rows.length - 1, Number(region.endRowIndex ?? start));
+    // Prefer a header that is part of this region. Without this, a second table
+    // on the same page can accidentally inherit the first table's price roles.
+    for (let i = start; i <= Math.min(end, start + 3); i++) {
+      const cells = mergePdfRowParts(rows[i] || {});
+      const roles = cells.map((c) => c.headerRole).filter(Boolean);
+      if (roles.length >= 2) { anchor = i; anchorInsideRegion = true; break; }
+    }
+    if (anchor < 0) {
+      for (let i = start - 1; i >= 0; i--) {
+        const cells = mergePdfRowParts(rows[i] || {});
+        const roles = cells.map((c) => c.headerRole).filter(Boolean);
+        if (roles.length >= 2) { anchor = i; break; }
+      }
+    }
+    if (anchor >= 0) {
+      const from = anchorInsideRegion ? anchor : Math.max(0, anchor - 2);
+      const to = anchorInsideRegion
+        ? Math.min(rows.length, anchor + 5)
+        : Math.min(start, anchor + 5);
+      region.headerRows = rows.slice(from, to).map((row, offset) => ({ rowIndex: from + offset, row, cells: mergePdfRowParts(row) }));
+    } else {
+      region.headerRows = [];
+    }
   }
   return regions;
 }
@@ -281,7 +344,44 @@ export function inferColumnModel(region = {}) {
     }
   }
 
-  const headerRowIndexes = new Set(assignments.filter((a) => a.cell.headerRole).map((a) => a.rowIndex));
+  // Also project roles from the nearest page-level header block. This is what
+  // keeps multi-line supplier headers attached to a data region even when merged
+  // cells/notes split the geometric region. Map by horizontal overlap/center and
+  // let explicit header evidence override content/structure guesses.
+  const contextualHeaderAssignments = [];
+  for (const h of Array.isArray(region.headerRows) ? region.headerRows : []) {
+    const headerCells = (h.cells || mergePdfRowParts(h.row || {}))
+      .filter((cell) => cell.headerRole)
+      .sort((a, b) => a.center - b.center);
+    for (let hi = 0; hi < headerCells.length; hi++) {
+      const cell = headerCells[hi];
+      let col = assignCellToColumn(cell, columns);
+      if (!col) {
+        // Wide text headers are commonly centered over a much wider data column,
+        // so the header center may be far from short values in that column. Use
+        // the interval between neighboring header centers as a secondary band.
+        const prev = headerCells[hi - 1];
+        const next = headerCells[hi + 1];
+        const left = prev ? (prev.center + cell.center) / 2 - 12 : -Infinity;
+        const right = next ? (cell.center + next.center) / 2 + 12 : Infinity;
+        const bandCandidates = columns
+          .filter((candidate) => candidate.center >= left && candidate.center <= right)
+          .sort((a, b) => Math.abs(a.center - cell.center) - Math.abs(b.center - cell.center));
+        col = bandCandidates[0] || null;
+      }
+      if (!col) continue;
+      contextualHeaderAssignments.push({ rowIndex: h.rowIndex, cell, col });
+      col.role = cell.headerRole;
+      col.roleSource = 'header-context';
+      col.headerText = cell.text;
+      col.confidence = 0.98;
+    }
+  }
+
+  const headerRowIndexes = new Set([
+    ...assignments.filter((a) => a.cell.headerRole).map((a) => a.rowIndex),
+    ...contextualHeaderAssignments.map((a) => a.rowIndex),
+  ]);
   for (const col of columns) {
     const vals = assignments.filter((a) => a.col.id === col.id && !headerRowIndexes.has(a.rowIndex)).map((a) => a.cell);
     const n = Math.max(1, vals.length);
@@ -374,7 +474,8 @@ export function assignCellsToColumnModel(row = {}, model = {}) {
 }
 
 export function fieldForRole(row = {}, model = {}, role = '') {
-  const matches = assignCellsToColumnModel(row, model).filter((a) => a.column.role === role);
+  const priceRole = ['unitPrice', 'listPrice', 'total', 'unknownPrice', 'genericPrice'].includes(role);
+  const matches = assignCellsToColumnModel(row, model).filter((a) => a.column.role === role && (!priceRole || a.cell.moneyLike));
   if (!matches.length) return { text: '', bbox: null, parts: [], confidence: 0 };
   const parts = matches.flatMap((m) => m.cell.parts || []).sort((a, b) => a.x - b.x);
   return {

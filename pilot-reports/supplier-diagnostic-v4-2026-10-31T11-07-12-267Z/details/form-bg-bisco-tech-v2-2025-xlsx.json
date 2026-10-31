@@ -1,0 +1,30 @@
+{
+  "file": "Form BG _Bisco Tech_V2_2025.xlsx",
+  "filePath": "/Users/vienpham/Desktop/bang-gia/Form BG _Bisco Tech_V2_2025.xlsx",
+  "type": "spreadsheet",
+  "hash": "9ab80ab5fe1bf92c6c3f9875fdcb13a46234b6eec082d0ddf55daa4f8f3f09ae",
+  "engine": "v2",
+  "sourceRows": 45,
+  "previewLines": 9,
+  "productCount": 9,
+  "dedupedCount": 0,
+  "identityConflicts": 0,
+  "scanLike": false,
+  "golden": {
+    "script": "pilot-bisco-real-file-gate.mjs",
+    "passed": true,
+    "exitCode": 0,
+    "stdout": "✓ PILOT REAL-FILE GATE PASS — Bisco XLSX file=Form BG _Bisco Tech_V2_2025.xlsx sha256=9ab80ab5fe1bf92c6c3f9875fdcb13a46234b6eec082d0ddf55daa4f8f3f09ae production engine=v2 previewLines=9 catalogProducts=9 exact identity/taxonomy/model/SKU/price/provenance: 9/9 non-product leakage: 0 legacy re-import repair: 9 -> 9, second re-import: 9 -> 9, duplicates: 0",
+    "stderr": ""
+  },
+  "issues": [],
+  "issueSummary": {
+    "bySeverity": {
+      "ERROR": 0,
+      "WARN": 0,
+      "INFO": 0
+    },
+    "byCode": []
+  },
+  "status": "PASS"
+}
