@@ -10,6 +10,7 @@ import {
   combineImportPreviewResults,
   productsToImportPreviewResult,
 } from "./previewResult.js";
+import { dedupeCatalogIdentities } from "./productSanitizer.js";
 
 /** uid đơn giản cho item import */
 let _c = 0;
@@ -49,7 +50,6 @@ export async function importManyForUI(files, opts = {}) {
   const all = [];
   const previews = [];
   const perFile = [];
-  const seen = new Map(); // sku/name key -> index trong all
 
   for (const file of files) {
     try {
@@ -65,15 +65,10 @@ export async function importManyForUI(files, opts = {}) {
         summary: preview.summary,
         preview,
       });
-      for (const p of products) {
-        const key = (p.sku || p.name || "").toLowerCase().replace(/[\s\-\/\.\_]/g, "");
-        if (key && seen.has(key)) {
-          all[seen.get(key)] = p; // bản sau ghi đè
-        } else {
-          if (key) seen.set(key, all.length);
-          all.push(p);
-        }
-      }
+      // Do not use "last file wins" by bare SKU. Keep every candidate here; the
+      // canonical identity deduper below is supplier/brand + variant aware and fails
+      // closed when evidence conflicts.
+      all.push(...products);
     } catch (e) {
       const errorPreview = productsToImportPreviewResult({
         products: [],
@@ -92,9 +87,15 @@ export async function importManyForUI(files, opts = {}) {
     engine: "mixed",
   });
 
-  const stats = preview.summary;
+  const deduped = dedupeCatalogIdentities(all);
+  const products = deduped.products;
+  const stats = {
+    ...preview.summary,
+    identityDeduped: deduped.deduped,
+    identityConflicts: deduped.conflicts,
+  };
 
-  return { products: all, preview, perFile, stats };
+  return { products, preview, perFile, stats };
 }
 
 export {

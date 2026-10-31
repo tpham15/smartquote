@@ -1121,6 +1121,9 @@ function normalizePdfItems(items, supplierGuess, engine = "pdf-v3-ai-jsonl") {
         sku: normalizePdfSku(it.sku) || variantSku,
         category: normalizeText(it.category) || "Chung",
         supplier: normalizeText(it.supplier) || supplierGuess,
+        brand: normalizeText(it.brand),
+        origin: normalizeText(it.origin),
+        attributes: normalizeText(it.origin) ? { ...(it.attributes || {}), origin: normalizeText(it.origin) } : (it.attributes || {}),
         unit: normalizeText(it.unit) || "Cái",
         costPrice,
         listPrice: (!columnAuthoritative && quoteEconomics.matched) ? 0 : normalizePrice(it.listPrice ?? it.publicPrice ?? it.salePrice),
@@ -1719,6 +1722,8 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
       const nameField = fieldForRole(row, model, "name");
       const skuField = fieldForRole(row, model, "sku");
       const supplierField = fieldForRole(row, model, "supplier");
+      const brandField = fieldForRole(row, model, "brand");
+      const originField = fieldForRole(row, model, "origin");
       const unitField = fieldForRole(row, model, "unit");
       const qtyField = fieldForRole(row, model, "qty");
       const unitPriceField = fieldForRole(row, model, "unitPrice");
@@ -1758,6 +1763,8 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
         name: nameField.bbox || null,
         sku: skuField.bbox || null,
         supplier: supplierField.bbox || null,
+        brand: brandField.bbox || null,
+        origin: originField.bbox || null,
         unit: unitField.bbox || null,
         quantity: qtyField.bbox || null,
         unitPrice: priceBBox,
@@ -1774,6 +1781,9 @@ function extractColumnAwareProductsFromPdfPages(pages = [], supplierGuess = "") 
         sku,
         category: regionCategory,
         supplier: normalizeText(supplierField.text) || supplierGuess,
+        brand: normalizeText(brandField.text),
+        origin: normalizeText(originField.text),
+        attributes: normalizeText(originField.text) ? { origin: normalizeText(originField.text) } : {},
         unit: normalizeText(unitField.text) || "Cái",
         costPrice,
         listPrice,

@@ -373,7 +373,9 @@ def analyze_template(raw: bytes, requested_sheet: str = "") -> dict:
         "specs": ["thong so", "tinh nang", "mo ta chi tiet"],
         "image": ["hinh anh", "anh"],
         "sku": ["ma thiet bi", "ma hang", "ma sp", "sku", "model"],
-        "supplier": ["xuat xu", "thuong hieu", "nha cung cap", "hang"],
+        "supplier": ["nha cung cap", "ncc", "supplier", "vendor"],
+        "brand": ["thuong hieu", "brand", "hang", "nsx", "nha san xuat"],
+        "origin": ["xuat xu", "origin", "country of origin"],
         "unit": ["dvt", "don vi tinh", "don vi"],
         "qty": ["so luong", "qty", "sl"],
         "unitPrice": ["don gia", "gia ban", "gia"],
@@ -397,7 +399,7 @@ def analyze_template(raw: bytes, requested_sheet: str = "") -> dict:
                         ok = norm == needle or norm.startswith(needle + " ")
                     elif key == "unitPrice":
                         ok = needle in norm and "thanh tien" not in norm
-                    elif key == "supplier" and needle == "hang":
+                    elif key == "brand" and needle == "hang":
                         ok = norm == "hang" or "thuong hieu" in norm
                     else:
                         ok = needle in norm
@@ -416,7 +418,7 @@ def analyze_template(raw: bytes, requested_sheet: str = "") -> dict:
         raise ValueError("Không nhận diện được dòng header sản phẩm. Hãy chọn mapping thủ công.")
 
     # Fill only low-risk conventional defaults if header omitted an optional column.
-    conventional = {"no": "A", "note": "B", "name": "C", "specs": "D", "image": "E", "sku": "F", "supplier": "G", "unit": "H", "qty": "I", "unitPrice": "J", "lineTotal": "K"}
+    conventional = {"no": "A", "note": "B", "name": "C", "specs": "D", "image": "E", "sku": "F", "unit": "H", "qty": "I", "unitPrice": "J", "lineTotal": "K"}
     for k, v in conventional.items():
         columns.setdefault(k, v)
 
@@ -586,9 +588,16 @@ def _merge_mapping(base: dict, hint: dict | None) -> dict:
                 out.setdefault(group, {})[k] = v
     hint_items = hint.get("items") or {}
     out_items = out.setdefault("items", {})
+    party_keys = {"supplier", "brand", "origin"}
     for k, v in (hint_items.get("columns") or {}).items():
         if v:
-            out_items.setdefault("columns", {})[k] = re.sub(r"[^A-Z]", "", str(v).upper())
+            col = re.sub(r"[^A-Z]", "", str(v).upper())
+            if k in party_keys:
+                claimed = {pk: pc for pk, pc in (out_items.setdefault("columns", {}) or {}).items() if pk in party_keys and pc}
+                if any(pk != k and pc == col for pk, pc in claimed.items()):
+                    # Fresh header semantics outrank stale pre-P1.5.5 supplier/origin mappings.
+                    continue
+            out_items.setdefault("columns", {})[k] = col
     # Phase 12.5.2: old saved manifests must not silently override newly-fixed structural detection.
     # Existing Phase 12.4/12.5 templates frequently carry stale templateRow/startRow values, so
     # structural rows are accepted only after the user explicitly edits them in the new UI and the

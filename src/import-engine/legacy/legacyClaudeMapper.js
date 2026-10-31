@@ -44,6 +44,8 @@ export const PDF_CATALOG_OUTPUT_SCHEMA = {
           sku: { type: "string" },
           category: { type: "string" },
           supplier: { type: "string" },
+          brand: { type: "string" },
+          origin: { type: "string" },
           unit: { type: "string" },
           costPrice: { type: "integer" },
           listPrice: { type: "integer" },
@@ -346,7 +348,8 @@ Sample data:
 ${sample}
 
 Map từng cột sang field tương ứng. Trả về JSON object:
-{"name": index_cột_hoặc_null, "sku": index, "category": index, "supplier": index, "unit": index, "costPrice": index, "specs": index}
+{"name": index_cột_hoặc_null, "sku": index, "category": index, "supplier": index, "brand": index, "origin": index, "unit": index, "costPrice": index, "specs": index}
+Quy ước: "Nhà cung cấp/NCC"→supplier; "Hãng/Thương hiệu/Brand/NSX"→brand; "Xuất xứ/Origin"→origin. Không gộp 3 khái niệm này.
 Chỉ JSON thuần.`;
 
   return callClaudeJSON({
@@ -383,8 +386,9 @@ MỤC TIÊU — đọc cấu trúc thương mại trước rồi mới đọc s�
 6) sourcePage là trang PDF (1-based); sourceRow là STT vật lý nếu nhìn thấy.
 7) Tên lấy từ cột thiết bị; SKU từ cột mã; costPrice chỉ là field tương thích cho UI cũ và có thể dùng giá variant đầu/nhỏ nhất, nhưng variants mới là source of truth khi row có nhiều SKU.
 8) Không tạo product từ header, subtotal, footer, điều khoản, tuổi thọ, điện áp, CRI/IP/CCT hoặc số trong specs.
-9) Nếu SKU/giá không chắc, dùng "" / 0 thay vì đoán.
-10) Trả đủ mọi dòng sản phẩm; không giải thích ngoài schema.`;
+9) Tách đúng supplier/brand/origin: Nhà cung cấp/NCC → supplier; Hãng/Thương hiệu → brand; Xuất xứ (vd Italia, Việt Nam, China) → origin. Tuyệt đối không ghi origin vào supplier.
+10) Nếu SKU/giá không chắc, dùng "" / 0 thay vì đoán.
+11) Trả đủ mọi dòng sản phẩm; không giải thích ngoài schema.`;
 
   const parsed = await callClaudeStructured({
     model: PDF_MODEL,

@@ -6,13 +6,15 @@
 // Quy tắc khớp field theo tên cột. Thứ tự ưu tiên quan trọng.
 const FIELD_RULES = [
   { key: "sku",      patterns: [/^mã\s*(sp|sản phẩm|hàng|vt|thiết bị)?$/i, /\bsku\b/i, /\bcode\b/i, /\bmodel\b/i, /part\s*no/i, /mã hàng/i] },
-  { key: "name",     patterns: [/tên\s*(sản phẩm|hàng|thiết bị|vật tư)?/i, /sản phẩm/i, /hàng ho[áa]/i, /diễn giải/i, /^mô tả$/i, /^thiết bị$/i, /^vật tư$/i, /tên gọi/i, /hạng\s*mục/i, /hang\s*muc/i] },
+  { key: "name",     patterns: [/tên\s*(sản phẩm|hàng|thiết bị|vật tư)?/i, /sản phẩm/i, /hàng ho[áa]/i, /diễn giải/i, /^mô tả$/i, /^thiết bị$/i, /^vật tư$/i, /tên gọi/i, /^hạng\s*mục$/i, /^hang\s*muc$/i] },
   { key: "specs",    patterns: [/thông số/i, /quy cách/i, /đặc điểm/i, /tính năng/i, /kỹ thuật/i, /mô tả (chi tiết|kỹ thuật|sản phẩm)/i, /phương thức/i, /màu sắc/i] },
   { key: "unit",     patterns: [/^đvt$/i, /đơn vị/i, /^dvt$/i, /^unit$/i] },
   { key: "quantity", patterns: [/^số\s*lượng$/i, /^so\s*luong$/i, /^sl$/i, /^qty$/i, /^quantity$/i] },
   { key: "lineTotal", patterns: [/^thành\s*tiền$/i, /^thanh\s*tien$/i, /line\s*total/i, /^amount$/i] },
-  { key: "category", patterns: [/nhóm/i, /loại\b/i, /danh mục/i, /chủng loại/i, /phân loại/i, /category/i] },
-  { key: "supplier", patterns: [/nhà cung cấp/i, /^ncc$/i, /hãng/i, /xuất xứ/i, /thương hiệu/i, /brand/i, /nsx/i] },
+  { key: "category", patterns: [/nhóm/i, /loại\b/i, /danh mục/i, /chủng loại/i, /phân loại/i, /category/i, /^hạng\s*mục$/i, /^hang\s*muc$/i] },
+  { key: "supplier", patterns: [/nhà cung cấp/i, /^ncc$/i, /^supplier$/i, /^vendor$/i] },
+  { key: "brand",    patterns: [/^hãng$/i, /thương hiệu/i, /^brand$/i, /^nsx$/i, /nhà sản xuất/i, /^manufacturer$/i] },
+  { key: "origin",   patterns: [/xuất xứ/i, /^origin$/i, /country\s*of\s*origin/i] },
   // Giá hiện hành / giá điều chỉnh: đây là giá công bố hiện tại, KHÔNG phải giá nhập.
   // Ví dụ header: "Điều chỉnh tăng 15/04/2026", "Giá mới áp dụng từ...".
   { key: "currentListPrice", patterns: [/điều\s*chỉnh\s*(tăng|giá)?/i, /dieu\s*chinh\s*(tang|gia)?/i, /giá\s*(mới|moi|điều\s*chỉnh|dieu\s*chinh)/i, /giá\s*áp\s*dụng/i, /gia\s*ap\s*dung/i, /áp\s*dụng\s*từ/i, /ap\s*dung\s*tu/i] },
@@ -190,6 +192,20 @@ export function mapColumns(headerRow, dataRows, maxCol) {
 
   // ---- Bước 1: khớp theo tên header ----
   if (headerRow) {
+    // P1.5.4: explicit product-name header outranks generic section labels such
+    // as "Hạng mục" regardless of column order. "Hạng mục" remains a valid
+    // fallback name for service-only quotes that have no product-name column.
+    const strongNameHeaderRe = /^(?:tên\s*(?:sản\s*phẩm|hàng|thiết\s*bị|vật\s*tư)|hàng\s*ho[áa]|product\s*name|tên\s*gọi)$/i;
+    for (let c = 0; c <= maxCol; c++) {
+      const label = String(headerRow.text[c] || "").trim();
+      if (label && strongNameHeaderRe.test(label)) {
+        map.name = c;
+        map._lockedName = true;
+        used.add(c);
+        break;
+      }
+    }
+
     for (const rule of FIELD_RULES) {
       for (let c = 0; c <= maxCol; c++) {
         if (used.has(c)) continue;
@@ -367,7 +383,7 @@ export function mapColumns(headerRow, dataRows, maxCol) {
       let altCol = -1;
       let altScore = -Infinity;
       for (let c = 0; c <= maxCol; c++) {
-        if (c === map.name || c === map.price || c === map.listPrice || c === map.minRetailPrice || c === map.unit || c === map.sku || c === map.category || c === map.supplier) continue;
+        if (c === map.name || c === map.price || c === map.listPrice || c === map.minRetailPrice || c === map.unit || c === map.sku || c === map.category || c === map.supplier || c === map.brand || c === map.origin) continue;
         const prof = profileColumn(dataRows, c, 12);
         if (prof.total < 3 || prof.numericRatio > 0.35 || prof.codeRatio > 0.6) continue;
         const sr = specishRatio(dataRows, c, 12);

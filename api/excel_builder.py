@@ -238,7 +238,7 @@ def build_excel(data: dict) -> bytes:
             row_h(R, 46)
 
             vals = [stt, note, p.get("name",""), p.get("specs",""),
-                    "", p.get("sku",""), p.get("supplier",""),
+                    "", p.get("sku",""), p.get("origin") or (p.get("attributes") or {}).get("origin") or p.get("supplier", ""),
                     p.get("unit","Cái"), qty, price, ""]
             for c, v in enumerate(vals, 1):
                 cell = ws.cell(R, c, v)

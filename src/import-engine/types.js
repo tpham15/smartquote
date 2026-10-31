@@ -104,11 +104,13 @@
 
 /**
  * @typedef {Object} ColumnMap
- * fieldKey -> chỉ số cột. Các field: name, sku, category, supplier, unit, price, specs, qty
+ * fieldKey -> chỉ số cột. Các field: name, sku, category, supplier, brand, origin, unit, price, specs, qty
  * @property {number} [name]
  * @property {number} [sku]
  * @property {number} [category]
  * @property {number} [supplier]
+ * @property {number} [brand]
+ * @property {number} [origin]
  * @property {number} [unit]
  * @property {number} [price]
  * @property {number} [specs]
@@ -122,6 +124,8 @@
  * @property {string}   sku
  * @property {string}   category
  * @property {string}   supplier
+ * @property {string}   brand
+ * @property {string}   origin
  * @property {string}   unit
  * @property {number}   price
  * @property {string}   specs
@@ -163,7 +167,7 @@
  * @property {Object}   [templateMap]    - map templateId -> ColumnMap đã lưu
  */
 
-export const FIELD_KEYS = ['name', 'sku', 'category', 'supplier', 'unit', 'price', 'specs'];
+export const FIELD_KEYS = ['name', 'sku', 'category', 'supplier', 'brand', 'origin', 'unit', 'price', 'specs'];
 
 export const ROW_CLASS = {
   PRODUCT: 'product',

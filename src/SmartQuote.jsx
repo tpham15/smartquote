@@ -11,7 +11,8 @@ import { buildQuoteCompletenessAssessment, getCompletenessRecommendationProductI
 import { rememberQuoteCompletenessDecision } from "./import-engine/bom/quoteCompletenessLearning.js";
 import { mapBomRowsWithClaude, mapTakeoffColumnsWithClaude, autoMapCatalogColumnsWithClaude } from "./import-engine/legacy/legacyClaudeMapper.js";
 import { parsePdfCatalogWithClaude, parseSupplierPriceFile, guessCatalogColumnsByName, buildCatalogPreview, readCatalogRowsForManualMapping } from "./import-engine/legacy/legacyCatalogImport.js";
-import { sanitizeCatalogProducts, isUnsafeImportedProduct, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
+import { sanitizeCatalogProducts, dedupeCatalogIdentities, isUnsafeImportedProduct, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
+import { productIdentityKey, canAutoMergeIdentity } from "./import-engine/productIdentity.js";
 import { webScrapeItemsToProducts } from "./import-engine/web/webCatalogImport.js";
 import { loadCloudState, saveCloudState } from "./supabase/cloudState.js";
 import { listCloudCatalog, syncCloudCatalogSnapshot, logCloudCatalogImport, serializeProductsForCatalog, deleteCloudCatalogItems, replaceCloudCatalog } from "./supabase/catalogStore.js";
@@ -95,7 +96,7 @@ const DEFAULT_EXCEL_QUOTE_TEMPLATE_MAPPING = {
       specs: "D",
       image: "E",
       sku: "F",
-      supplier: "G",
+      origin: "G",
       unit: "H",
       qty: "I",
       unitPrice: "J",
@@ -315,7 +316,9 @@ function detectExcelQuoteTemplateMapping(buffer, fileName = "") {
     { key: "specs", any: ["thong so", "tinh nang", "mo ta chi tiet"] },
     { key: "image", any: ["hinh anh", "anh"] },
     { key: "sku", any: ["ma thiet bi", "ma hang", "ma sp", "sku", "model"] },
-    { key: "supplier", any: ["xuat xu", "hang", "thuong hieu", "nha cung cap"] },
+    { key: "supplier", any: ["nha cung cap", "ncc", "supplier", "vendor"] },
+    { key: "brand", any: ["hang", "thuong hieu", "brand", "nsx", "nha san xuat"] },
+    { key: "origin", any: ["xuat xu", "origin", "country of origin"] },
     { key: "unit", any: ["dvt", "don vi", "don vi tinh"] },
     { key: "qty", any: ["so luong", "sl", "qty"] },
     { key: "unitPrice", any: ["don gia", "gia ban", "gia"] },
@@ -334,6 +337,7 @@ function detectExcelQuoteTemplateMapping(buffer, fileName = "") {
         const ok = m.any.some((needle) => {
           if (m.key === "no") return norm === needle || norm.startsWith(`${needle} `);
           if (m.key === "unitPrice") return norm.includes(needle) && !norm.includes("thanh tien");
+          if (m.key === "brand" && needle === "hang") return norm === "hang" || norm.includes("thuong hieu");
           return norm.includes(needle);
         });
         if (ok) {
@@ -347,6 +351,15 @@ function detectExcelQuoteTemplateMapping(buffer, fileName = "") {
   }
 
   const columns = { ...DEFAULT_EXCEL_QUOTE_TEMPLATE_MAPPING.items.columns, ...(bestHeader.columns || {}) };
+  // P1.5.5: identity-party headers are semantic, not interchangeable. If the actual
+  // workbook explicitly maps G to Supplier/Brand, remove the built-in Origin=G fallback.
+  for (const partyKey of ["supplier", "brand", "origin"]) {
+    const detectedCol = bestHeader.columns?.[partyKey];
+    if (!detectedCol) continue;
+    for (const otherKey of ["supplier", "brand", "origin"]) {
+      if (otherKey !== partyKey && !bestHeader.columns?.[otherKey] && columns[otherKey] === detectedCol) delete columns[otherKey];
+    }
+  }
   let sectionRow = null;
   let startRow = bestHeader.row > 0 ? bestHeader.row + 1 : DEFAULT_EXCEL_QUOTE_TEMPLATE_MAPPING.items.startRow;
   let templateRow = startRow;
@@ -485,7 +498,9 @@ function buildQuoteExportRows({ rooms = [], productById = {}, lineSalePrice }) {
         name: p.name || "",
         sku: p.sku || "",
         specs: excelSafeDisplayText(p.specs || p.description || ""),
-        supplier: p.supplier || p.brand || "",
+        supplier: p.supplier || "",
+        brand: p.brand || "",
+        origin: p.origin || p.attributes?.origin || "",
         unit: p.unit || "Cái",
         qty,
         unitPrice,
@@ -515,7 +530,9 @@ function buildQuoteExportSections({ rooms = [], productById = {}, lineSalePrice 
             name: p.name || "",
             sku: p.sku || "",
             specs: p.specs || p.description || "",
-            supplier: p.supplier || p.brand || "",
+            supplier: p.supplier || "",
+            brand: p.brand || "",
+            origin: p.origin || p.attributes?.origin || "",
             unit: p.unit || "Cái",
             qty,
             unitPrice,
@@ -5669,6 +5686,8 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     { key: "sku",       label: "Mã SKU",          required: false },
     { key: "category",  label: "Nhóm / Danh mục", required: false },
     { key: "supplier",  label: "Nhà cung cấp",    required: false },
+    { key: "brand",     label: "Hãng / Thương hiệu", required: false },
+    { key: "origin",    label: "Xuất xứ",          required: false },
     { key: "unit",      label: "Đơn vị tính",     required: false },
     { key: "costPrice", label: "Giá nhập / Giá gốc", required: false },
     { key: "currentListPrice", label: "Giá hiện hành / Điều chỉnh", required: false },
@@ -5790,14 +5809,14 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
     if (!isCurrentImportRun(runId)) return;
 
-    // Khử trùng theo SKU (giữ bản cuối)
-    const seen = {};
-    const deduped = [];
-    allProducts.forEach(p => {
-      const key = (p.sku || p.name || "").toLowerCase().trim();
-      if (key && seen[key] !== undefined) deduped[seen[key]] = p;
-      else { seen[key] = deduped.length; deduped.push(p); }
-    });
+    // P1.5.4 identity safety: batch import never uses bare-SKU last-file-wins.
+    // Supplier/brand + SKU + variant evidence decides whether rows can be merged;
+    // conflicts remain separate and are marked for review.
+    const identityBatch = dedupeCatalogIdentities(allProducts);
+    const deduped = identityBatch.products;
+    if (identityBatch.conflicts > 0) {
+      fileLog.push(`⚠ ${identityBatch.conflicts} xung đột nhận diện được giữ riêng để kiểm tra`);
+    }
 
     const cleanDedupedAll = sanitizeImportedProducts(deduped, { fileName: `${fileList.length} files` });
     const cleanDedupedSplit = splitCatalogPreviewProducts(cleanDedupedAll);
@@ -6559,12 +6578,13 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
 
     const nextProductCount = (() => {
       if (mergeMode === "replace") return finalItems.length;
-      const existingKeys = new Set(products.map((p) => String(p.sku || p.name || "").toLowerCase().trim()).filter(Boolean));
-      const newItems = finalItems.filter((p) => {
-        const key = String(p.sku || p.name || "").toLowerCase().trim();
-        return key && !existingKeys.has(key);
-      });
-      return products.length + newItems.length;
+      const simulated = [...products];
+      for (const np of finalItems) {
+        const key = productIdentityKey(np);
+        const candidates = key ? simulated.filter((p) => productIdentityKey(p) === key && canAutoMergeIdentity(p, np)) : [];
+        if (candidates.length !== 1) simulated.push(np);
+      }
+      return simulated.length;
     })();
     if (!guardProductCount(cloud, nextProductCount, onUpgrade)) return;
 
@@ -6574,19 +6594,25 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
     if (mergeMode === "replace") {
       setProducts(finalItems);
     } else {
-      // Merge: giữ cũ, cập nhật nếu trùng SKU, thêm mới nếu chưa có
+      // Merge by canonical identity, never by bare SKU. If the same SKU has
+      // conflicting supplier/name evidence, keep it as a separate product.
       setProducts((prev) => {
-        const skuMap = {};
-        prev.forEach(p => { if (p.sku) skuMap[p.sku.toLowerCase()] = p.id; });
         const updated = [...prev];
         finalItems.forEach(np => {
-          const key = (np.sku || "").toLowerCase();
-          const existId = key ? skuMap[key] : null;
-          if (existId) {
-            // Cập nhật giá và thông số, giữ ảnh cũ
-            const idx = updated.findIndex(p => p.id === existId);
-            if (idx >= 0) updated[idx] = {
+          const key = productIdentityKey(np);
+          const candidateIndexes = [];
+          if (key) {
+            updated.forEach((p, idx) => {
+              if (productIdentityKey(p) === key && canAutoMergeIdentity(p, np)) candidateIndexes.push(idx);
+            });
+          }
+          const idx = candidateIndexes.length === 1 ? candidateIndexes[0] : -1;
+          if (idx >= 0) {
+            // Cập nhật giá và thông số, giữ ảnh cũ. Name chỉ cập nhật khi incoming
+            // có tên rõ; identity gate ở trên đã xác nhận không xung đột.
+            updated[idx] = {
               ...updated[idx],
+              name: np.name || updated[idx].name,
               costPrice: np.costPrice || updated[idx].costPrice,
               listPrice: np.listPrice || updated[idx].listPrice || 0,
               publicPrice: np.publicPrice || np.listPrice || updated[idx].publicPrice || 0,
@@ -6596,12 +6622,12 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
               image: updated[idx].image || np.image || "",
               category: np.category || updated[idx].category,
               supplier: np.supplier || updated[idx].supplier,
+              brand: np.brand || updated[idx].brand,
               unit: np.unit || updated[idx].unit,
             };
           } else {
             const newId = uid("p");
             updated.push({ ...np, id: newId, priceMode: (np.listPrice || np.publicPrice) ? "fixed" : (np.priceMode || "markup") });
-            if (np.sku) skuMap[np.sku.toLowerCase()] = newId;
           }
         });
         return updated;
@@ -7049,6 +7075,8 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                   <label>Mã SKU<input value={editingDraft.sku || ""} onChange={(e)=>setEditingDraft(d=>({...d, sku:e.target.value}))} /></label>
                   <label>Nhóm<input value={editingDraft.category || ""} onChange={(e)=>setEditingDraft(d=>({...d, category:e.target.value}))} /></label>
                   <label>Nhà cung cấp<input value={editingDraft.supplier || ""} onChange={(e)=>setEditingDraft(d=>({...d, supplier:e.target.value}))} /></label>
+                  <label>Hãng / Thương hiệu<input value={editingDraft.brand || ""} onChange={(e)=>setEditingDraft(d=>({...d, brand:e.target.value}))} /></label>
+                  <label>Xuất xứ<input value={editingDraft.origin || editingDraft.attributes?.origin || ""} onChange={(e)=>setEditingDraft(d=>({...d, origin:e.target.value, attributes:{...(d.attributes||{}), origin:e.target.value}}))} /></label>
                   <label>ĐVT<input value={editingDraft.unit || ""} onChange={(e)=>setEditingDraft(d=>({...d, unit:e.target.value}))} /></label>
                   <label>Giá nhập<input value={editingDraft.costPrice || ""} onChange={(e)=>setEditingDraft(d=>({...d, costPrice:e.target.value}))} /></label>
                   <label>Giá công bố<input value={editingDraft.listPrice || ""} onChange={(e)=>setEditingDraft(d=>({...d, listPrice:e.target.value, publicPrice:e.target.value}))} /></label>
@@ -8137,7 +8165,7 @@ function ProductEditor({ product, suppliers, industryProfile = getIndustryProfil
 
 function ImportPreview({ preview, onApply, onCancel }) {
   const [addNew, setAddNew] = useState(true);
-  const { matched, unchanged, newItems, fileName } = preview;
+  const { matched, unchanged, newItems, ambiguousItems = [], fileName } = preview;
   const importResult = preview.importPreview;
 
   return (
@@ -8146,7 +8174,7 @@ function ImportPreview({ preview, onApply, onCancel }) {
         <h2>Xem trước cập nhật giá</h2>
         <p className="tab-intro" style={{ marginBottom: 14 }}>
           Từ file <strong>{fileName}</strong>: <strong>{matched.length}</strong> sản phẩm đổi giá,{" "}
-          <strong>{unchanged.length}</strong> giữ nguyên, <strong>{newItems.length}</strong> sản phẩm mới chưa có trong bảng giá.
+          <strong>{unchanged.length}</strong> giữ nguyên, <strong>{newItems.length}</strong> sản phẩm mới chưa có trong bảng giá{ambiguousItems.length ? `, ${ambiguousItems.length} mã trùng cần kiểm tra` : ""}.
         </p>
         {importResult && (
           <div className="ci-import-summary" style={{ marginBottom: 14 }}>
@@ -8158,6 +8186,25 @@ function ImportPreview({ preview, onApply, onCancel }) {
               <span className="muted">⏭ {importResult.summary.skipped} bỏ qua</span>
             </div>
           </div>
+        )}
+
+        {ambiguousItems.length > 0 && (
+          <>
+            <h4 className="imp-sub">⚠ Mã trùng — không tự cập nhật giá</h4>
+            <p className="tab-intro" style={{ marginBottom: 10 }}>Các mã dưới đây tồn tại ở nhiều sản phẩm. SmartQuote giữ nguyên giá hiện tại cho đến khi xác định đúng hãng/nhà cung cấp.</p>
+            <div className="imp-scroll">
+              <table className="cat-table">
+                <thead><tr><th>Mã</th><th>Tên trong file</th><th>Các sản phẩm đang có</th></tr></thead>
+                <tbody>{ambiguousItems.map((a, i) => (
+                  <tr key={`${a.item?.sku || "amb"}-${i}`}>
+                    <td className="strong">{a.item?.sku || "—"}</td>
+                    <td>{a.item?.name || "—"}</td>
+                    <td className="muted">{(a.candidates || []).map((p) => `${p.name}${p.supplier ? ` · ${p.supplier}` : ""}`).join(" | ")}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {matched.length > 0 && (
@@ -8202,7 +8249,7 @@ function ImportPreview({ preview, onApply, onCancel }) {
           </>
         )}
 
-        {matched.length === 0 && newItems.length === 0 && (
+        {matched.length === 0 && newItems.length === 0 && ambiguousItems.length === 0 && (
           <p className="empty-hint">Không có thay đổi nào để áp dụng — giá trong file giống bảng giá hiện tại.</p>
         )}
 
@@ -8490,6 +8537,9 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
     { type: "row", key: "clearUntilRow", label: "Dọn tới dòng" },
     { type: "column", key: "name", label: "Cột tên SP" },
     { type: "column", key: "sku", label: "Cột mã" },
+    { type: "column", key: "supplier", label: "Cột nhà cung cấp" },
+    { type: "column", key: "brand", label: "Cột hãng" },
+    { type: "column", key: "origin", label: "Cột xuất xứ" },
     { type: "column", key: "qty", label: "Cột SL" },
     { type: "column", key: "unitPrice", label: "Cột đơn giá" },
     { type: "column", key: "lineTotal", label: "Cột thành tiền" },
@@ -8624,7 +8674,7 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
   };
 
   const columnLabels = {
-    stt: "STT", note: "Khu vực/Ghi chú", image: "Ảnh", sku: "Mã/SKU", name: "Tên sản phẩm", spec: "Thông số/Mô tả", supplier: "Hãng/Nguồn", unit: "ĐVT", qty: "SL", unitPrice: "Đơn giá", total: "Thành tiền",
+    stt: "STT", note: "Khu vực/Ghi chú", image: "Ảnh", sku: "Mã/SKU", name: "Tên sản phẩm", spec: "Thông số/Mô tả", supplier: "Nhà cung cấp", brand: "Hãng/Thương hiệu", origin: "Xuất xứ", unit: "ĐVT", qty: "SL", unitPrice: "Đơn giá", total: "Thành tiền",
   };
 
   return (
@@ -8767,7 +8817,9 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
                       <Field label="Cột mã/SKU" value={selectedExcelTemplate?.mapping?.items?.columns?.sku || ""} onChange={(v) => updateExcelColumnMapping("sku", cleanExcelCellRef(v))} />
                       <Field label="Cột thông số" value={selectedExcelTemplate?.mapping?.items?.columns?.specs || ""} onChange={(v) => updateExcelColumnMapping("specs", cleanExcelCellRef(v))} />
                       <Field label="Cột hình ảnh" value={selectedExcelTemplate?.mapping?.items?.columns?.image || ""} onChange={(v) => updateExcelColumnMapping("image", cleanExcelCellRef(v))} />
-                      <Field label="Cột hãng" value={selectedExcelTemplate?.mapping?.items?.columns?.supplier || ""} onChange={(v) => updateExcelColumnMapping("supplier", cleanExcelCellRef(v))} />
+                      <Field label="Cột nhà cung cấp" value={selectedExcelTemplate?.mapping?.items?.columns?.supplier || ""} onChange={(v) => updateExcelColumnMapping("supplier", cleanExcelCellRef(v))} />
+                      <Field label="Cột hãng / thương hiệu" value={selectedExcelTemplate?.mapping?.items?.columns?.brand || ""} onChange={(v) => updateExcelColumnMapping("brand", cleanExcelCellRef(v))} />
+                      <Field label="Cột xuất xứ" value={selectedExcelTemplate?.mapping?.items?.columns?.origin || ""} onChange={(v) => updateExcelColumnMapping("origin", cleanExcelCellRef(v))} />
                       <Field label="Cột ĐVT" value={selectedExcelTemplate?.mapping?.items?.columns?.unit || ""} onChange={(v) => updateExcelColumnMapping("unit", cleanExcelCellRef(v))} />
                       <Field label="Cột SL" value={selectedExcelTemplate?.mapping?.items?.columns?.qty || ""} onChange={(v) => updateExcelColumnMapping("qty", cleanExcelCellRef(v))} />
                       <Field label="Cột đơn giá" value={selectedExcelTemplate?.mapping?.items?.columns?.unitPrice || ""} onChange={(v) => updateExcelColumnMapping("unitPrice", cleanExcelCellRef(v))} />
@@ -9094,6 +9146,20 @@ function Row({ label, value }) {
   return <div className="sum-row"><span>{label}</span><span>{value}</span></div>;
 }
 
+function quotePartyValueForLabel(product = {}, label = "") {
+  const normalized = normalizeExcelTemplateText(label);
+  const origin = product.origin || product.attributes?.origin || "";
+  const brand = product.brand || "";
+  const supplier = product.supplier || "";
+  if (normalized.includes("xuat xu") || normalized === "origin" || normalized.includes("country of origin")) {
+    return origin || supplier || brand || ""; // supplier fallback only for legacy catalog rows.
+  }
+  if (normalized === "hang" || normalized.includes("thuong hieu") || normalized.includes("brand") || normalized.includes("nha san xuat")) {
+    return brand || supplier || "";
+  }
+  return supplier || brand || origin || "";
+}
+
 // ============================================================
 // Tạo trang HTML đẹp để in/lưu PDF (đúng dấu tiếng Việt, có màu/viền)
 // ============================================================
@@ -9130,7 +9196,7 @@ function buildQuotePrintHTML({ company, customer, rooms, productById, lineSalePr
     { key: "sku", label: template.labels?.sku || "Mã", style: "width:65px", render: (p) => esc(p.sku || "") },
     { key: "name", label: template.labels?.itemName || "Tên hàng hoá / Mô tả", render: (p) => `<strong>${esc(p.name)}</strong>${isVisual && p.specs ? `<div class="desc">${esc(p.specs)}</div>` : ""}` },
     { key: "spec", label: template.labels?.spec || "Thông số", render: (p) => `<span class="muted-small">${p.specs ? esc(p.specs) : ""}</span>` },
-    { key: "supplier", label: template.labels?.supplier || "Hãng", style: "width:56px", render: (p) => esc(p.supplier || "") },
+    { key: "supplier", label: template.labels?.supplier || "Hãng", style: "width:56px", render: (p) => esc(quotePartyValueForLabel(p, template.labels?.supplier || "Hãng")) },
     { key: "unit", label: "ĐVT", cls: "c", style: "width:38px", render: (p) => esc(p.unit || "Cái") },
     { key: "qty", label: "SL", cls: "c", style: "width:32px", render: (_p, l) => String(l.qty || 0) },
     { key: "unitPrice", label: "Đơn giá", cls: "r", style: "width:78px", render: (p, l) => vnd(lineSalePrice(p, l)) },
@@ -9305,6 +9371,8 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
                     name: p.name,
                     sku: p.sku || "",
                     supplier: p.supplier || "",
+                    brand: p.brand || "",
+                    origin: p.origin || p.attributes?.origin || "",
                     unit: p.unit || "Cái",
                     specs: p.specs || "",
                     image: p.image || "",
@@ -9399,7 +9467,7 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
       const lineTotal = sp * l.qty;
       sectionSum += lineTotal;
       const er = R + 1;
-      push([sttGlobal, l.note || "", p.name, p.specs || "", p.image || "", p.sku || "", p.supplier || "", p.unit || "Cái", l.qty, sp, ""]);
+      push([sttGlobal, l.note || "", p.name, p.specs || "", p.image || "", p.sku || "", p.origin || p.attributes?.origin || p.supplier || "", p.unit || "Cái", l.qty, sp, ""]);
       formulas.push({ r: R-1, c: 10, f: `I${er}*J${er}`, v: lineTotal });
       money.push([R-1, 9]); money.push([R-1, 10]);
     });

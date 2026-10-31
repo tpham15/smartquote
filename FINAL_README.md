@@ -1,3 +1,13 @@
+# SmartQuote P1.5.5 — P1 Identity Learning Safety
+
+P1.5.5 adds variant-safe fuzzy matching, exact-SKU precedence over stale corrections, supplier/brand-scoped correction learning, and end-to-end separation of Supplier / Brand / Origin. See `P1.5.5_RELEASE_NOTES.md`, `P1.5.5_TEST_REPORT.md`, and `PILOT_P1_5_5_START_HERE.md`.
+
+No new SQL migration is required on top of the existing P1.5.3.1 pilot master SQL.
+
+# SmartQuote P1.5.4 — P0 Identity Safety
+
+P1.5.4 hardens product identity matching/deduplication before pilot. See `P1.5.4_RELEASE_NOTES.md` and `P1.5.4_TEST_REPORT.md`. No new SQL migration is required.
+
 # SmartQuote FINAL — P1.5.3.1 Assisted Pilot
 
 This build includes P0 through P1.5.3 plus the P1.5.3.1 pilot-finalization hotfix.
@@ -33,3 +43,6 @@ npm run build
 ```
 
 The real/private golden corpus is intentionally not shipped. Do not commit `.env`, service-role keys, private customer files, `node_modules` or `dist`.
+
+## P1.5.3.2 — Bisco product identity hotfix
+For quotation imports with a long `Thông số sản phẩm` cell, SmartQuote now preserves the first commercial product line as the product name. `Cổng tự động` remains a category only. No new SQL migration is required. Re-import any catalog rows already saved with the wrong derived name.

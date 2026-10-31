@@ -66,7 +66,9 @@ function headerRole(v) {
   if (/^(stt|no|so tt|thu tu)$/.test(k)) return 'rowIndex';
   if (/^(ten|ten hang|ten san pham|san pham|hang hoa|thiet bi|mo ta|dien giai)$/.test(k) || /\bten san pham\b/.test(k)) return 'name';
   if (/^(ma|ma sp|ma san pham|sku|model|part no|part number)$/.test(k)) return 'sku';
-  if (/^(ncc|nha cung cap|hang|thuong hieu|brand|xuat xu)$/.test(k)) return 'supplier';
+  if (/^(ncc|nha cung cap|supplier|vendor)$/.test(k)) return 'supplier';
+  if (/^(hang|thuong hieu|brand|nsx|nha san xuat|manufacturer)$/.test(k)) return 'brand';
+  if (/^(xuat xu|origin|country of origin)$/.test(k)) return 'origin';
   if (/^(dvt|don vi|unit)$/.test(k)) return 'unit';
   if (/^(sl|so luong|qty|quantity)$/.test(k)) return 'qty';
   if (/thanh tien|tong tien|line total|amount/.test(k)) return 'total';

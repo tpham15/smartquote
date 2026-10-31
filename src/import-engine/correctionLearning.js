@@ -1,4 +1,5 @@
 import { tenantStorageGetItem, tenantStorageSetItem, tenantStorageRemoveItem } from "../storage/tenantStorage.js";
+import { compositeLearningSkuKey, learningPartyKey } from "./productIdentity.js";
 
 // ============================================================
 // correctionLearning — Phase 3 local learning layer.
@@ -8,7 +9,7 @@ import { tenantStorageGetItem, tenantStorageSetItem, tenantStorageRemoveItem } f
 // Browser/localStorage first. Sau này có thể thay bằng backend per-account.
 // ============================================================
 
-const LEARNING_KEY = "sq_correction_learning_v1";
+const LEARNING_KEY = "sq_correction_learning_v2";
 const MAX_SKU_RULES = 5000;
 const MAX_RAW_RULES = 5000;
 const MAX_SUPPLIER_PROFILES = 300;
@@ -34,7 +35,7 @@ function now() { return Date.now(); }
 
 function emptyDb() {
   return {
-    version: 1,
+    version: 2,
     bySku: {},
     byRaw: {},
     supplierProfiles: {},
@@ -96,6 +97,8 @@ function toLearnedFields(product = {}) {
     sku: String(product.sku || "").trim(),
     category: String(product.category || "").trim(),
     supplier: String(product.supplier || "").trim(),
+    brand: String(product.brand || "").trim(),
+    origin: String(product.origin || product.attributes?.origin || "").trim(),
     unit: String(product.unit || "").trim(),
     costPrice: Number(product.costPrice || product.price || 0) || 0,
     listPrice: Number(product.listPrice || product.publicPrice || 0) || 0,
@@ -129,8 +132,15 @@ export function saveProductLearning(product, meta = {}) {
   if (!fields.name && !fields.sku) return { ok: false, reason: "empty_product" };
 
   const db = loadCorrectionLearning();
-  const skuKey = normalizeSkuKey(fields.sku);
-  const rawKey = compactLearningKey(sourceRaw(product));
+  const identityForLearning = { ...product, ...fields };
+  const partyKey = learningPartyKey(identityForLearning);
+  // Identity learning must never create a global "unknown supplier" memory bucket.
+  // Without supplier/brand evidence, keep the row unlearned rather than risking
+  // cross-supplier contamination on the next import.
+  const hasScopedParty = partyKey !== "unknown";
+  const skuKey = hasScopedParty ? compositeLearningSkuKey(identityForLearning) : "";
+  const rawBaseKey = compactLearningKey(sourceRaw(product));
+  const rawKey = hasScopedParty && rawBaseKey ? `${partyKey}:${rawBaseKey}` : "";
   const source = product?._meta?.source || product?.source || {};
   const baseMeta = { ...meta, source };
 
@@ -189,6 +199,12 @@ function applyFields(product, fields, source) {
   if (!p.sku && fields.sku) { p.sku = fields.sku; applied = true; }
   if (isPlaceholderCategory(p.category) && fields.category) { p.category = fields.category; applied = true; }
   if (!p.supplier && fields.supplier) { p.supplier = fields.supplier; applied = true; }
+  if (!p.brand && fields.brand) { p.brand = fields.brand; applied = true; }
+  if (!p.origin && fields.origin) {
+    p.origin = fields.origin;
+    p.attributes = { ...(p.attributes || {}), origin: fields.origin };
+    applied = true;
+  }
   if ((!p.unit || normalizeLearningText(p.unit) === "cai") && fields.unit) { p.unit = fields.unit; applied = true; }
   if (!(Number(p.costPrice) > 0) && Number(fields.costPrice) > 0) { p.costPrice = fields.costPrice; applied = true; }
   if (!(Number(p.listPrice || p.publicPrice) > 0) && Number(fields.listPrice) > 0) {
@@ -208,7 +224,7 @@ function applyFields(product, fields, source) {
       issues,
       correctionApplied: true,
       correctionSource: source,
-      confidence: Math.max(Number(p._meta.confidence || 0), source === "sku" ? 0.95 : 0.9),
+      confidence: Math.max(Number(p._meta.confidence || 0), source === "sku_scoped" ? 0.95 : 0.9),
     };
   }
   return { product: p, applied };
@@ -218,11 +234,14 @@ export function applyCorrectionLearning(products = [], context = {}) {
   const db = loadCorrectionLearning();
   let hits = 0;
   const corrected = (products || []).map((product) => {
-    const skuKey = normalizeSkuKey(product?.sku);
-    const rawKey = compactLearningKey(sourceRaw(product));
+    const partyKey = learningPartyKey(product || {});
+    const hasScopedParty = partyKey !== "unknown";
+    const skuKey = hasScopedParty ? compositeLearningSkuKey(product || {}) : "";
+    const rawBaseKey = compactLearningKey(sourceRaw(product));
+    const rawKey = hasScopedParty && rawBaseKey ? `${partyKey}:${rawBaseKey}` : "";
     let result = { product, applied: false };
-    if (skuKey && db.bySku[skuKey]?.fields) result = applyFields(result.product, db.bySku[skuKey].fields, "sku");
-    if (!result.applied && rawKey && db.byRaw[rawKey]?.fields) result = applyFields(result.product, db.byRaw[rawKey].fields, "raw_text");
+    if (skuKey && db.bySku[skuKey]?.fields) result = applyFields(result.product, db.bySku[skuKey].fields, "sku_scoped");
+    if (!result.applied && rawKey && db.byRaw[rawKey]?.fields) result = applyFields(result.product, db.byRaw[rawKey].fields, "raw_text_scoped");
     if (result.applied) hits += 1;
     return result.product;
   });

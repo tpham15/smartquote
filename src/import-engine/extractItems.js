@@ -387,15 +387,42 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   let listPrice = currentListPrice || oldListPrice;
   let minRetailPrice = parsePrice(get("minRetailPrice"), priceScaleForKey(map, "minRetailPrice"));
   let specs = get("specs");
+  let quoteCommercialNameRecovered = false;
 
-  // Historical quotation sheets often store the commercial product name and
-  // the entire technical description in the same "Thông số sản phẩm" cell.
-  // Keep the first descriptive line as the product identity instead of
-  // replacing it with an inferred category + SKU.
+  // Historical quotation sheets such as Bisco often have a long column named
+  // "Thông số sản phẩm" that contains BOTH the commercial product name on the
+  // first line and the technical specification below it. The column profiler
+  // may correctly move that long column from `name` to `specs`; when it does,
+  // do not fall back to `category + SKU` (for example "Cổng tự động TORQ 500D").
+  // Recover the first descriptive line as the product identity before any
+  // category/SKU-derived naming logic runs.
+  if (map?._quoteTable && !name) {
+    const quoteNameSource = firstTextFromCols(row, map?._nameSourceCols || [])
+      || firstTextFromCols(row, map?._featureCols || []);
+    if (quoteNameSource) {
+      const quoteDescription = splitQuoteProductDescription(quoteNameSource);
+      if (quoteDescription.changed && quoteDescription.name && !isLikelyOldQuoteSectionRow(quoteDescription.name)) {
+        name = quoteDescription.name;
+        quoteCommercialNameRecovered = true;
+        if (quoteDescription.specs) specs = quoteDescription.specs;
+        issues.push(issue(
+          "quote_product_name_recovered_from_specs",
+          "info",
+          "Đã khôi phục tên thương mại từ dòng đầu của cột Thông số sản phẩm",
+          "name"
+        ));
+      }
+    }
+  }
+
+  // Historical quotation sheets also store the commercial product name and
+  // the entire technical description in the same cell when that column remains
+  // mapped directly as `name`. Keep the first descriptive line as identity.
   if (map?._quoteTable && name) {
     const quoteDescription = splitQuoteProductDescription(name);
     if (quoteDescription.changed) {
       name = quoteDescription.name;
+      quoteCommercialNameRecovered = true;
       if (quoteDescription.specs) {
         specs = [quoteDescription.specs, specs].filter(Boolean).join("\n");
       }
@@ -487,7 +514,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   // Nếu file không có cột tên sản phẩm thật nhưng có cột Tính năng/Thông số,
   // dựng tên từ feature trước; phù hợp file có header: STT | Hình ảnh | Thông số | Tính năng | Giá.
   let featureNameDerived = false;
-  if ((!name || map._deriveNameFromFeature) && (map._featureCols || map._nameSourceCols)) {
+  if (!quoteCommercialNameRecovered && (!name || map._deriveNameFromFeature) && (map._featureCols || map._nameSourceCols)) {
     const derivedFeatureName = buildFeatureDisplayName({ row, map, sku, sheetName, sectionName, supplier: fileSupplier, specs, category: earlyCategory });
     if (derivedFeatureName && derivedFeatureName.length >= 6) {
       name = derivedFeatureName;
@@ -497,7 +524,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
 
   // Nếu file không có cột tên sản phẩm thật (chỉ có Mã sản phẩm + specs/màu),
   // dựng tên thân thiện từ loại sheet + brand + model. Không dùng màu/thông số làm name.
-  if (!featureNameDerived && shouldDeriveName(name, sku, map)) {
+  if (!quoteCommercialNameRecovered && !featureNameDerived && shouldDeriveName(name, sku, map)) {
     const derived = buildDisplayName({ name, sku, sheetName, sectionName, supplier: fileSupplier, specs, category: earlyCategory });
     if (derived) name = derived;
   }
@@ -554,7 +581,10 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
     sku,
     kind,
     category: kind === "service" ? (earlyCategory || "Dịch vụ / Nhân công") : earlyCategory,
-    supplier: get("supplier") || inferBrandFromContext(sheetName, sectionName, fileSupplier) || fileSupplier,
+    supplier: get("supplier") || fileSupplier || "",
+    brand: get("brand") || inferBrandFromContext(sheetName, sectionName, get("supplier") || fileSupplier) || "",
+    origin: get("origin") || "",
+    attributes: get("origin") ? { origin: get("origin") } : {},
     unit: get("unit") || "Cái",
     price,
     costPrice: price,

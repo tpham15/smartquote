@@ -106,7 +106,7 @@
     "smoke:phase14.2": "node scripts/phase142-universal-pdf-framework-smoke.mjs && node scripts/phase141a-semantic-variant-binding-smoke.mjs && node scripts/phase141-pdf-engine-v6-smoke.mjs",
     "smoke:pilot-p0": "node scripts/pilot-p0-commercial-safety-smoke.mjs",
     "smoke:phase15": "node scripts/phase15-quote-completeness-smoke.mjs",
-    "smoke:pilot": "npm run smoke:pilot-p15.3.1 && npm run smoke:pilot-p15.3 && npm run smoke:pilot-p15.2 && npm run smoke:pilot-p15.1 && npm run smoke:pilot-p15 && npm run smoke:pilot-p14 && npm run smoke:pilot-security && npm run smoke:pilot-p13 && npm run smoke:pilot-p12 && npm run smoke:pilot-p11 && npm run smoke:pilot-p0 && npm run smoke:phase15 && npm run smoke:phase14.2 && npm run smoke:phase14.0:vat && npm run smoke:tenant && npm run smoke:plan-limits && npm run smoke:white-label && npm run smoke:phase12.4.1 && npm run smoke:quotes && npm run smoke:api-auth && npm run qa:production",
+    "smoke:pilot": "npm run smoke:pilot-p15.5 && npm run smoke:pilot-p15.4 && npm run smoke:pilot-p15.3.2 && npm run smoke:pilot-p15.3.1 && npm run smoke:pilot-p15.3 && npm run smoke:pilot-p15.2 && npm run smoke:pilot-p15.1 && npm run smoke:pilot-p15 && npm run smoke:pilot-p14 && npm run smoke:pilot-security && npm run smoke:pilot-p13 && npm run smoke:pilot-p12 && npm run smoke:pilot-p11 && npm run smoke:pilot-p0 && npm run smoke:phase15 && npm run smoke:phase14.2 && npm run smoke:phase14.0:vat && npm run smoke:tenant && npm run smoke:plan-limits && npm run smoke:white-label && npm run smoke:phase12.4.1 && npm run smoke:quotes && npm run smoke:api-auth && npm run qa:production",
     "smoke:pilot-p11": "node scripts/pilot-p11-final-quote-lifecycle-smoke.mjs",
     "smoke:pilot-p12": "node scripts/pilot-p12-golden-freeze-smoke.mjs && node scripts/pilot-p12-commercial-golden-smoke.mjs && node scripts/pilot-p12-private-golden-gate.mjs",
     "smoke:pilot-p12:file": "node scripts/pilot-p12-file-commercial-e2e.mjs",
@@ -121,7 +121,10 @@
     "smoke:pilot-p15.1": "node scripts/pilot-p151-gate-motor-regression-smoke.mjs",
     "smoke:pilot-p15.2": "node scripts/pilot-p152-dealer-image-override-smoke.mjs",
     "smoke:pilot-p15.3": "node scripts/pilot-p153-release-hardening-smoke.mjs",
-    "smoke:pilot-p15.3.1": "node scripts/pilot-p1531-finalization-smoke.mjs"
+    "smoke:pilot-p15.3.1": "node scripts/pilot-p1531-finalization-smoke.mjs",
+    "smoke:pilot-p15.3.2": "node scripts/pilot-p1532-product-identity-smoke.mjs",
+    "smoke:pilot-p15.4": "node scripts/pilot-p154-identity-safety-smoke.mjs",
+    "smoke:pilot-p15.5": "node scripts/pilot-p155-identity-learning-safety-smoke.mjs && python3 scripts/pilot-p155-origin-export-smoke.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",

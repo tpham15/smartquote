@@ -14,7 +14,9 @@ function guessColumnsByName(hdrs) {
     if (!m.name && /tên|sản phẩm|hàng ho[áa]|mô tả|thiết bị|vật tư|diễn giải/.test(label)) m.name = i;
     else if (!m.sku && /mã|sku|code|model/.test(label)) m.sku = i;
     else if (!m.category && /nhóm|loại|danh mục|phân loại/.test(label)) m.category = i;
-    else if (!m.supplier && /nhà cung cấp|ncc|hãng|xuất xứ/.test(label)) m.supplier = i;
+    else if (!m.supplier && /nhà cung cấp|ncc|supplier|vendor/.test(label)) m.supplier = i;
+    else if (!m.brand && /hãng|thương hiệu|brand|nsx|nhà sản xuất/.test(label)) m.brand = i;
+    else if (!m.origin && /xuất xứ|origin|country of origin/.test(label)) m.origin = i;
     else if (!m.unit && /đvt|đơn vị|unit/.test(label)) m.unit = i;
     else if (!m.price && /giá|price|đơn giá|thành tiền/.test(label)) m.price = i;
     else if (!m.specs && /thông số|kỹ thuật|quy cách/.test(label)) m.specs = i;
@@ -69,6 +71,9 @@ export function legacyParse(buf, fileName) {
         name, sku: get(row, "sku"),
         category: get(row, "category") || "Chung",
         supplier: get(row, "supplier") || fileSupplier,
+        brand: get(row, "brand"),
+        origin: get(row, "origin"),
+        attributes: get(row, "origin") ? { origin: get(row, "origin") } : {},
         unit: get(row, "unit") || "Cái",
         price, specs: get(row, "specs"),
         source: { sheet: sheetName, rowIndex: -1, cellRefs: [], rawText: row.join(" ") },

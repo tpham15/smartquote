@@ -1,3 +1,9 @@
+# FINAL TEST REPORT — SmartQuote P1.5.5
+
+Latest identity-learning gate: `npm run smoke:pilot-p15.5` PASS. P1.5.4, Bisco P1.5.3.2, tenant isolation, Phase 12.4/12.5 lossless Excel, P1.2 public golden, P1.1 and P0 regressions also PASS.
+
+Build is **not claimed in this container** because `npm ci` timed out and left incomplete dependencies. See `P1.5.5_TEST_REPORT.md` for the exact PASS / not-run breakdown.
+
 # SmartQuote FINAL P1.5.3.1 — Test Report
 
 ## Changes in this hotfix

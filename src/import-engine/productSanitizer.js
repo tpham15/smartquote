@@ -1,4 +1,5 @@
 import { inferCategoryForProduct } from "./categoryInference.js";
+import { productIdentityKey, canAutoMergeIdentity, appendIdentityReviewIssue, normalizeIdentitySku } from "./productIdentity.js";
 
 // ============================================================
 // Product sanitizer — guardrail cho dữ liệu import catalog/PDF.
@@ -85,14 +86,18 @@ function splitNameAndSpecs(rawName, rawSpecs) {
   if (m && m.index > 6) {
     const head = name.slice(0, m.index).trim();
     const tail = name.slice(m.index).trim();
-    // Chỉ split nếu phần đầu còn giống tên sản phẩm thật
-    if (head.length >= 4) {
+    // P1.5.4 identity safety: a short technical token can be the variant identity
+    // itself (12W vs 18W, 3000K vs 4000K, 2.8mm vs 3.6mm). Only split a
+    // genuine spec block, never a single short identity-bearing attribute.
+    const keywordHits = [...tail.matchAll(new RegExp(SPEC_KEYWORD_RE.source, "gi"))].length;
+    const looksLikeSpecBlock = tail.length >= 42 || keywordHits >= 2 || /(?:\||;|•|\n)/.test(tail);
+    if (head.length >= 4 && looksLikeSpecBlock) {
       name = head;
       specs = [tail, specs].filter(Boolean).join(" | ");
       issues.push(issue(
         "split_specs_from_name",
         "info",
-        "Đã tách thông số kỹ thuật khỏi tên sản phẩm",
+        "Đã tách khối thông số kỹ thuật khỏi tên sản phẩm",
         "name"
       ));
     }
@@ -335,7 +340,7 @@ export function isWarrantyPseudoSku(value = "") {
   return /^(?:bh|bao\s*hanh)\s*\d{1,3}\s*(?:thang|nam|months?|years?)$/.test(s);
 }
 
-function descriptiveNameFromSpecs(rawSpecs = "") {
+export function extractCommercialNameFromSpecs(rawSpecs = "") {
   const cleanLine = (x) => String(x || "")
     .replace(/^[\s"'“”‘’*•\-–—]+/, "")
     .replace(/[\s"'“”‘’]+$/, "")
@@ -382,7 +387,7 @@ export function recoverQuoteSectionSchemaIdentity({ name = "", sku = "", specs =
     return { name: rawName, sku: rawSku, specs: text(specs), recovered: false, warranty: "" };
   }
 
-  const descriptive = descriptiveNameFromSpecs(specs);
+  const descriptive = extractCommercialNameFromSpecs(specs);
   // Với case SKU lặp ở hai cột, chỉ rewrite tên khi Specs thực sự có tên mô tả.
   // Không đoán tên generic nếu file không cung cấp bằng chứng.
   if (duplicatedSkuAcrossNameAndSku && !descriptive) {
@@ -398,30 +403,12 @@ export function recoverQuoteSectionSchemaIdentity({ name = "", sku = "", specs =
   };
 }
 
-function stableCatalogSkuKey(value = "") {
-  const raw = text(value);
-  if (!raw || /^(?:n\/?a|na|null|none|—|-|khong\s*co)$/i.test(asciiFold(raw))) return "";
-  if (isWarrantyPseudoSku(raw)) return "";
-  return asciiFold(raw).replace(/[^a-z0-9]+/g, "");
-}
-
-function stableCatalogNameKey(product = {}) {
-  const name = asciiFold(product?.name || "").replace(/[^a-z0-9]+/g, " ").trim();
-  if (!name || name.length < 4) return "";
-  const supplier = asciiFold(product?.supplier || "").replace(/[^a-z0-9]+/g, " ").trim();
-  return `${supplier}|${name}`;
-}
-
-function catalogIdentityKey(product = {}) {
-  const sku = stableCatalogSkuKey(product?.sku);
-  if (sku) return `sku:${sku}`;
-  const name = stableCatalogNameKey(product);
-  return name ? `name:${name}` : "";
-}
+// P1.5.4: canonical identity logic lives in productIdentity.js so matching,
+// dedupe, multi-file import and UI merge share the same safety rules.
 
 function productEvidenceScore(product = {}) {
   let score = Number(product?.confidence || product?._meta?.confidence || 0) * 20;
-  const sku = stableCatalogSkuKey(product?.sku);
+  const sku = normalizeIdentitySku(product?.sku);
   if (sku) score += 12;
   if (text(product?.name).length >= 6) score += 6;
   if (text(product?.specs).length >= 20) score += 4;
@@ -458,16 +445,26 @@ export function dedupeCatalogIdentities(products = []) {
   for (const original of products || []) {
     if (!original) continue;
     const item = { ...original };
-    const key = catalogIdentityKey(item);
+    const key = productIdentityKey(item);
     if (!key || !byKey.has(key)) {
       if (key) byKey.set(key, out.length);
       out.push(item);
       continue;
     }
 
-    deduped += 1;
     const idx = byKey.get(key);
     const previous = out[idx];
+    if (!canAutoMergeIdentity(previous, item)) {
+      // Same coarse key but conflicting visible identity: preserve both and force review.
+      const reviewedPrevious = appendIdentityReviewIssue(previous);
+      const reviewedItem = appendIdentityReviewIssue(item);
+      out[idx] = reviewedPrevious;
+      out.push(reviewedItem);
+      conflicts += 1;
+      continue;
+    }
+
+    deduped += 1;
     const winner = productEvidenceScore(item) > productEvidenceScore(previous) ? item : previous;
     const loser = winner === item ? previous : item;
     const previousPrice = Number(previous?.costPrice ?? previous?.price ?? 0) || 0;

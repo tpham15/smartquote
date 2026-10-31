@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import { parsePdfCatalogWithPipeline } from "../pdf/pdfCatalogPipeline.js";
 import { expandPdfSellableVariants } from "../pdf/pdfVariants.js";
 import { priceUpdatePreviewFromLegacy, productsToImportPreviewResult } from "../previewResult.js";
-import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities } from "../productSanitizer.js";
+import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities, extractCommercialNameFromSpecs } from "../productSanitizer.js";
 import { inferCategory } from "../categoryInference.js";
 
 const uid = (p = "imp") => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -28,7 +28,9 @@ export function guessCatalogColumnsByName(headers) {
     if (!m.name && /tên|sản phẩm|hàng hoá|hàng hóa|mô tả|thiết bị|vật tư|product|name|diễn giải/.test(label)) m.name = idx;
     else if (!m.sku && /mã|sku|code|model|part|mã hàng|mã sp|mã vt/.test(label)) m.sku = idx;
     else if (!m.category && /nhóm|loại|danh mục|category|phân loại|chủng loại/.test(label)) m.category = idx;
-    else if (!m.supplier && /nhà cung cấp|ncc|hãng|supplier|brand|thương hiệu|xuất xứ|nsx/.test(label)) m.supplier = idx;
+    else if (!m.supplier && /nhà cung cấp|ncc|supplier|vendor/.test(label)) m.supplier = idx;
+    else if (!m.brand && /^(hãng|hang)$|brand|thương hiệu|thuong hieu|nsx|nhà sản xuất|nha san xuat|manufacturer/.test(label)) m.brand = idx;
+    else if (!m.origin && /xuất xứ|xuat xu|origin|country of origin/.test(label)) m.origin = idx;
     else if (!m.unit && /đơn vị|đvt|unit|dvt|đv/.test(label)) m.unit = idx;
     else if (!m.currentListPrice && /(điều\s*chỉnh\s*(tăng|giá)?|dieu\s*chinh\s*(tang|gia)?|giá\s*(mới|moi|điều\s*chỉnh|dieu\s*chinh)|giá\s*áp\s*dụng|gia\s*ap\s*dung|áp\s*dụng\s*từ|ap\s*dung\s*tu)/.test(label)) m.currentListPrice = idx;
     else if (!m.listPrice && /(giá\s*(công bố|cong bo|niêm yết|niem yet)|giá\s*bán\s*lẻ\s*công\s*bố|gia\s*ban\s*le\s*cong\s*bo|public|list\s*price|msrp)/.test(label)) m.listPrice = idx;
@@ -60,8 +62,14 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
     if (opts.quoteTable && isWarrantyPseudoSku(rawSku) && !schemaRecovery.recovered) return null;
     const sku = schemaRecovery.recovered ? schemaRecovery.sku : (rawSku || extractSkuFromText(rowText));
     const supplier = cleanSupplierName(get("supplier"), opts.defaultSupplier || "");
-    const category = inferCategory({ category: get("category"), name: schemaRecovery.name || get("name"), sku, specs: schemaRecovery.specs || get("specs"), supplier, rawText: rowText, sheetName: opts.sheetName }, "Chung");
-    const displayName = schemaRecovery.name || get("name") || (sku ? `${category !== "Chung" ? category : "Sản phẩm"} ${sku}` : "");
+    const brand = cleanSupplierName(get("brand"), "");
+    const origin = get("origin");
+    const category = inferCategory({ category: get("category"), name: schemaRecovery.name || get("name"), sku, specs: schemaRecovery.specs || get("specs"), supplier: brand || supplier, rawText: rowText, sheetName: opts.sheetName }, "Chung");
+    // Identity safety: category is grouping metadata, never a product name.
+    // If user maps a quote description to Specs, recover the commercial first line;
+    // otherwise fall back to a neutral SKU label instead of `category + SKU`.
+    const recoveredSpecName = extractCommercialNameFromSpecs(schemaRecovery.specs || get("specs"));
+    const displayName = schemaRecovery.name || get("name") || recoveredSpecName || (sku ? `Sản phẩm ${sku}` : "");
     const oldListPrice = parseMappedPriceCell(get("listPrice"), rowText);
     const currentListPrice = parseMappedPriceCell(get("currentListPrice"), rowText);
     const effectiveListPrice = currentListPrice || oldListPrice;
@@ -86,6 +94,9 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       sku,
       category,
       supplier,
+      brand,
+      origin,
+      attributes: origin ? { origin } : {},
       unit: get("unit") || "Cái",
       costPrice,
       listPrice: finalListPrice,
@@ -125,15 +136,32 @@ export async function parseSupplierPriceFile(file, products) {
   const parsed = parseSupplierSheetRows(rows);
   if (parsed.error) return { error: parsed.error };
 
-  const skuMap = {};
-  products.forEach((p) => { if (p.sku) skuMap[p.sku.trim().toLowerCase()] = p; });
+  const skuMap = new Map();
+  const normSku = (v) => String(v || "").trim().toLowerCase().replace(/[\s\-\/\.\_]/g, "");
+  const normName = (v) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  products.forEach((p) => {
+    const key = normSku(p.sku);
+    if (!key) return;
+    if (!skuMap.has(key)) skuMap.set(key, []);
+    skuMap.get(key).push(p);
+  });
 
   const matched = [];
   const unchanged = [];
   const newItems = [];
+  const ambiguousItems = [];
   parsed.items.forEach((it) => {
-    const key = (it.sku || "").trim().toLowerCase();
-    const existing = key ? skuMap[key] : null;
+    const key = normSku(it.sku);
+    const candidates = key ? (skuMap.get(key) || []) : [];
+    let existing = candidates.length === 1 ? candidates[0] : null;
+    if (!existing && candidates.length > 1 && it.name) {
+      const exactName = candidates.filter((p) => normName(p.name) === normName(it.name));
+      if (exactName.length === 1) existing = exactName[0];
+    }
+    if (!existing && candidates.length > 1) {
+      ambiguousItems.push({ item: it, candidates });
+      return;
+    }
     if (existing) {
       if (Math.round(existing.costPrice || 0) !== Math.round(it.costPrice)) {
         matched.push({ existing, newCost: it.costPrice, name: it.name || existing.name });
@@ -146,7 +174,7 @@ export async function parseSupplierPriceFile(file, products) {
   });
 
   const importPreview = priceUpdatePreviewFromLegacy({ fileName: file.name, matched, unchanged, newItems });
-  return { matched, unchanged, newItems, fileName: file.name, importPreview };
+  return { matched, unchanged, newItems, ambiguousItems, fileName: file.name, importPreview };
 }
 
 /** Parse rows file giá NCC. */

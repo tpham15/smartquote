@@ -46,7 +46,7 @@ setTenantStorageScope("dealer-A");
 assert(tenantScopedStorageKey("sq_ai_quota") === "sq_dealer_dealer-A_ai_quota", "should scope sq_ai_quota");
 tenantStorageSetItem("sq_pdf_cache_hash1", JSON.stringify([1]));
 saveCorrection("Dòng A", "product-A");
-saveProductLearning({ id: "pA", name: "Công tắc A", sku: "A-001", _meta: { source: { rawText: "raw A" } } }, { userEdited: true });
+saveProductLearning({ id: "pA", name: "Công tắc A", sku: "A-001", supplier: "Supplier A", _meta: { source: { rawText: "raw A" } } }, { userEdited: true });
 saveBomMatchLearning({ name: "công tắc A", model: "A-001" }, { id: "pA", sku: "A-001", name: "Công tắc A" });
 saveCatalogTemplate({ headers: ["Tên", "Mã", "Giá"], fileName: "bang-gia-a.xlsx", colMap: { name: 0, sku: 1, costPrice: 2 } });
 
@@ -65,7 +65,7 @@ assert(Object.keys(loadBomMatchLearning().byModel || {}).length === 0, "dealer B
 assert(listCatalogTemplates().length === 0, "dealer B templates should start empty");
 
 saveCorrection("Dòng B", "product-B");
-saveProductLearning({ id: "pB", name: "Công tắc B", sku: "B-001", _meta: { source: { rawText: "raw B" } } }, { userEdited: true });
+saveProductLearning({ id: "pB", name: "Công tắc B", sku: "B-001", supplier: "Supplier B", _meta: { source: { rawText: "raw B" } } }, { userEdited: true });
 assert(keys().some((k) => k.startsWith("sq_dealer_dealer-A_")) && keys().some((k) => k.startsWith("sq_dealer_dealer-B_")), "both dealers should have isolated namespaces");
 
 setTenantStorageScope("dealer-A");

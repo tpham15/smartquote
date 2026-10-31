@@ -1,22 +1,30 @@
 // ============================================================
-// matchCatalog — khớp item với catalog hiện có (DETERMINISTIC)
-// Thứ tự: correction đã học → SKU chính xác → tên chuẩn hoá → fuzzy.
-// AI KHÔNG tham gia ở bước này.
+// matchCatalog — deterministic catalog matching.
+// P1.5.4 P0 identity safety: exact SKU is supplier/brand aware and
+// ambiguous identities fail closed instead of taking the last catalog row.
 // ============================================================
 import { STATUS } from "./types.js";
+import {
+  normalizeIdentitySku,
+  normalizeIdentityParty,
+  normalizeIdentityName,
+  technicalVariantsCompatible,
+  partyEvidenceMatch,
+  hasIdentityPartyEvidence,
+} from "./productIdentity.js";
 
 /** Chuẩn hoá chuỗi để so khớp: bỏ dấu, ký tự đặc biệt, lowercase */
 function norm(s) {
   return String(s || "")
     .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // bỏ dấu tiếng Việt
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d")
     .replace(/[^a-z0-9]/g, "");
 }
 
 /** Chuẩn hoá SKU: giữ chữ-số, bỏ phân cách */
 function normSku(s) {
-  return String(s || "").toLowerCase().replace(/[\s\-\/\.\_]/g, "");
+  return normalizeIdentitySku(s);
 }
 
 /** Độ tương đồng đơn giản (Dice coefficient trên bigram) */
@@ -36,37 +44,127 @@ function similarity(a, b) {
   return (2 * inter) / (A.size + B.size);
 }
 
+function pushIndex(map, key, product) {
+  if (!key) return;
+  if (!map.has(key)) map.set(key, []);
+  map.get(key).push(product);
+}
+
+function uniqueCandidate(candidates = [], item = {}) {
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length <= 1) return null;
+  const itemName = normalizeIdentityName(item.name);
+  if (!itemName) return null;
+  const exactName = candidates.filter((p) => normalizeIdentityName(p.name) === itemName);
+  return exactName.length === 1 ? exactName[0] : null;
+}
+
+function exactSkuCandidate(item, indexes) {
+  const sku = normalizeIdentitySku(item.sku);
+  if (!sku) return { product: null, ambiguous: false };
+  const party = normalizeIdentityParty(item);
+  const all = indexes.bySku.get(sku) || [];
+  if (!all.length) return { product: null, ambiguous: false };
+
+  if (party) {
+    const scoped = all.filter((p) => partyEvidenceMatch(item, p) === true);
+    const exact = uniqueCandidate(scoped, item);
+    if (exact) return { product: exact, ambiguous: false };
+    if (scoped.length > 1) return { product: null, ambiguous: true };
+
+    // A completely unknown-party catalog row may be used only when it is the
+    // sole SKU candidate. Known-but-noncomparable or conflicting party evidence
+    // never wins automatically.
+    if (all.length === 1 && !hasIdentityPartyEvidence(all[0])) {
+      return { product: all[0], ambiguous: false };
+    }
+    return { product: null, ambiguous: all.length > 0 };
+  }
+
+  const exact = uniqueCandidate(all, item);
+  if (exact) return { product: exact, ambiguous: false };
+  return { product: null, ambiguous: all.length > 1 };
+}
+
+function exactNameCandidate(item, indexes) {
+  const name = normalizeIdentityName(item.name);
+  if (!name) return { product: null, ambiguous: false };
+  const party = normalizeIdentityParty(item);
+  const all = indexes.byName.get(name) || [];
+  if (!all.length) return { product: null, ambiguous: false };
+  if (party) {
+    const scoped = all.filter((p) => partyEvidenceMatch(item, p) === true);
+    if (scoped.length === 1) return { product: scoped[0], ambiguous: false };
+    if (scoped.length > 1) return { product: null, ambiguous: true };
+    if (all.length === 1 && !hasIdentityPartyEvidence(all[0])) return { product: all[0], ambiguous: false };
+    return { product: null, ambiguous: all.length > 0 };
+  }
+  return all.length === 1 ? { product: all[0], ambiguous: false } : { product: null, ambiguous: true };
+}
+
 /**
  * Khớp 1 item với catalog.
- * @param {Object} item
- * @param {Object} indexes - {bySku, byName, catalog}
- * @param {Object} corrections - rawText(normalized) -> productId
- * @returns {{matchedProductId: ?string, matchType: string, score: number}}
+ * Correction order is intentionally unchanged in P0; learning precedence is P1.
+ */
+function correctionCandidate(item, indexes, corrections) {
+  const rawKey = norm(item.source?.rawText || item.name);
+  const targetId = corrections && corrections[rawKey];
+  if (!targetId) return { product: null, valid: false };
+
+  const target = indexes.catalog.find((p) => String(p.id) === String(targetId));
+  if (!target) return { product: null, valid: false };
+
+  const itemSku = normalizeIdentitySku(item.sku);
+  const targetSku = normalizeIdentitySku(target.sku);
+  if (itemSku && targetSku && itemSku !== targetSku) return { product: null, valid: false };
+
+  const itemParty = normalizeIdentityParty(item);
+  const targetParty = normalizeIdentityParty(target);
+  const partyMatch = partyEvidenceMatch(item, target);
+  if (partyMatch === false) return { product: null, valid: false };
+  if (itemParty && targetParty && partyMatch === null) return { product: null, valid: false };
+
+  if (!technicalVariantsCompatible(item, target)) return { product: null, valid: false };
+  return { product: target, valid: true };
+}
+
+/**
+ * Match precedence:
+ * 1) exact supplier/brand-aware SKU
+ * 2) validated correction memory
+ * 3) exact name
+ * 4) variant-safe fuzzy suggestion
  */
 function matchOne(item, indexes, corrections) {
-  // 1. Correction đã học (người dùng sửa trước đó)
-  const rawKey = norm(item.source?.rawText || item.name);
-  if (corrections && corrections[rawKey]) {
-    return { matchedProductId: corrections[rawKey], matchType: "correction", score: 1 };
+  const skuMatch = exactSkuCandidate(item, indexes);
+  if (skuMatch.product) {
+    return { matchedProductId: skuMatch.product.id, matchType: "sku", score: 1 };
   }
 
-  // 2. SKU chính xác
-  if (item.sku) {
-    const key = normSku(item.sku);
-    if (key && indexes.bySku.has(key)) {
-      return { matchedProductId: indexes.bySku.get(key), matchType: "sku", score: 1 };
-    }
+  const correction = correctionCandidate(item, indexes, corrections);
+  if (correction.valid) {
+    return { matchedProductId: correction.product.id, matchType: "correction", score: 0.98 };
   }
 
-  // 3. Tên chuẩn hoá trùng khớp
-  const nameKey = norm(item.name);
-  if (nameKey && indexes.byName.has(nameKey)) {
-    return { matchedProductId: indexes.byName.get(nameKey), matchType: "name", score: 0.95 };
+  if (skuMatch.ambiguous) {
+    return { matchedProductId: null, matchType: "ambiguous_sku", score: 0 };
   }
 
-  // 4. Fuzzy theo tên (ngưỡng cao để tránh sai)
+  const nameMatch = exactNameCandidate(item, indexes);
+  if (nameMatch.product) {
+    return { matchedProductId: nameMatch.product.id, matchType: "name", score: 0.95 };
+  }
+  if (nameMatch.ambiguous) {
+    return { matchedProductId: null, matchType: "ambiguous_name", score: 0 };
+  }
+
+  const party = normalizeIdentityParty(item);
+  const candidates = party
+    ? indexes.catalog.filter((p) => partyEvidenceMatch(item, p) === true || !hasIdentityPartyEvidence(p))
+    : indexes.catalog;
   let best = null, bestScore = 0.82;
-  for (const p of indexes.catalog) {
+  for (const p of candidates) {
+    if (!technicalVariantsCompatible(item, p)) continue;
     const s = similarity(item.name, p.name);
     if (s > bestScore) { bestScore = s; best = p; }
   }
@@ -75,20 +173,12 @@ function matchOne(item, indexes, corrections) {
   return { matchedProductId: null, matchType: "none", score: 0 };
 }
 
-/**
- * Khớp toàn bộ items.
- * @param {Object[]} items
- * @param {Array} catalog
- * @param {Object} corrections
- * @returns {Object[]} items có thêm matchedProductId, _matchType, _matchScore
- */
 export function matchCatalog(items, catalog = [], corrections = {}) {
-  // build index
   const bySku = new Map();
   const byName = new Map();
   for (const p of catalog) {
-    if (p.sku) bySku.set(normSku(p.sku), p.id);
-    if (p.name) byName.set(norm(p.name), p.id);
+    if (p.sku) pushIndex(bySku, normalizeIdentitySku(p.sku), p);
+    if (p.name) pushIndex(byName, normalizeIdentityName(p.name), p);
   }
   const indexes = { bySku, byName, catalog };
 
