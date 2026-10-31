@@ -753,6 +753,7 @@ export function sanitizeCatalogProduct(product, opts = {}) {
     category: p.category,
     sheetName: p.source?.sheet || p._meta?.source?.sheet || "",
     sectionName: p.source?.section || p._meta?.source?.section || "",
+    documentCategory: p.source?.documentCategory || p._meta?.source?.documentCategory || "",
     rawSku: p.source?.rawSku || p._meta?.source?.rawSku || "",
   });
   Object.assign(p, semanticProduct);

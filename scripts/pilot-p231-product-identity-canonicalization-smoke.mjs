@@ -115,7 +115,7 @@ const screenshotShape = sanitizeCatalogProduct({
   _meta: { source: { rawText: "Form BG Bisco Tech VUCAN - 24V dòng 17" } },
 }, { oldQuoteMode: true });
 assert.equal(screenshotShape.sku, "29G020", "sanitizer must fix the exact bad preview shape shown in the screenshot");
-assert.equal(screenshotShape.name, "Động cơ cổng tự động âm sàn VULCAN 24V", "semantic canonicalization must name the sellable product, not the broad gate category");
+assert.equal(screenshotShape.name, "Cổng xoay tự động âm sàn V2 - VULCAN 24V", "semantic canonicalization must preserve the source sellable product terminology");
 
 const resolved = resolveCanonicalQuoteIdentity({
   rawSku: "Vulcan - 24V (29G020)",

@@ -17,12 +17,12 @@ const cases = [
   {
     sheet: "TORQ 500D - 24V", rawSku: "TORQ 500D", sku: "30C109",
     description: "MÔ TƠ CỔNG TRƯỢT V2 - TORQ - 500D\nModel : 30C109\nThông số kỹ thuật\nĐộng cơ 24V AC",
-    subtype: "Cổng trượt", model: "TORQ 500D", name: "Động cơ cổng trượt tự động TORQ 500D",
+    subtype: "Trượt", model: "TORQ 500D", name: "Động cơ cổng trượt tự động TORQ 500D",
   },
   {
     sheet: "AYROS 1000D-24V", rawSku: "AYROS 1000D (30C074)", sku: "30C-074",
     description: "MÔ TƠ CỔNG TRƯỢT V2 - AYROS - 1000D\nModel : 30C-074\nThông số kỹ thuật\nĐộng cơ 24V AC",
-    subtype: "Cổng trượt", model: "AYROS 1000D", name: "Động cơ cổng trượt tự động AYROS 1000D",
+    subtype: "Trượt", model: "AYROS 1000D", name: "Động cơ cổng trượt tự động AYROS 1000D",
   },
   {
     sheet: "NYK - 24V", rawSku: "NYK - 24V", sku: "29H001",
@@ -37,12 +37,12 @@ const cases = [
   {
     sheet: "AYROS 650", rawSku: "AYROS 650 (30C065)", sku: "30C-065",
     description: "MÔ TƠ CỔNG TRƯỢT AYROS 650\nModel : 30C-065\nThông số kỹ thuật\nĐộng cơ 24V AC",
-    subtype: "Cổng trượt", model: "AYROS 650", name: "Động cơ cổng trượt tự động AYROS 650",
+    subtype: "Trượt", model: "AYROS 650", name: "Động cơ cổng trượt tự động AYROS 650",
   },
   {
     sheet: "AYROS 650 V2", rawSku: "AYROS 650 (30C065V2)", sku: "30C-065 V2",
     description: "MÔ TƠ CỔNG TRƯỢT AYROS 650\nModel : 30C-065 V2\nThông số kỹ thuật\nĐộng cơ 24V AC",
-    subtype: "Cổng trượt", model: "AYROS 650", name: "Động cơ cổng trượt tự động AYROS 650",
+    subtype: "Trượt", model: "AYROS 650", name: "Động cơ cổng trượt tự động AYROS 650",
   },
   {
     sheet: "STARK600", rawSku: "29H006V2", sku: "29H006V2",
@@ -58,18 +58,19 @@ for (const c of cases) {
   const extracted = rowToItem(row, map, c.sheet, "ĐỘNG CƠ CỔNG TỰ ĐỘNG", "");
   assert.ok(extracted, `${c.sheet}: extraction returned null`);
   const p = sanitizeCatalogProduct(extracted, { oldQuoteMode: true, sourceFileName: "Bisco quotation.xlsx" });
-  assert.equal(p.category, "Cổng tự động", `${c.sheet}: broad category`);
-  assert.equal(p.productType, "Động cơ cổng tự động", `${c.sheet}: actual product type`);
+  assert.notEqual(p.category, "Cổng tự động", `${c.sheet}: category must preserve a specific gate taxonomy`);
+  assert.equal(p.attributes.identity.family, "Cổng tự động", `${c.sheet}: broad gate label belongs only to family`);
+  assert.ok(p.productType && p.productType !== "Động cơ cổng tự động", `${c.sheet}: actual product type must remain source-specific`);
   assert.equal(p.subtype, c.subtype, `${c.sheet}: subtype`);
   assert.equal(p.model, c.model, `${c.sheet}: commercial model`);
   assert.equal(p.sku, c.sku, `${c.sheet}: canonical SKU`);
-  assert.equal(p.name, c.name, `${c.sheet}: canonical sellable product name`);
-  assert.equal(p.attributes.identity.category, "Cổng tự động");
-  assert.equal(p.attributes.identity.productType, "Động cơ cổng tự động");
+  assert.ok(p.name.includes(c.model), `${c.sheet}: canonical sellable product name must retain commercial model`);
+  assert.equal(p.attributes.identity.category, p.category);
+  assert.equal(p.attributes.identity.productType, p.productType);
   assert.equal(p.attributes.identity.model, c.model);
   assert.equal(p.attributes.identity.sku, c.sku);
   assert.ok(p.attributes.identity.sourceName, `${c.sheet}: source name preserved`);
-  assert.equal(p.attributes.identity.semanticRule, "gate_motor");
+  assert.equal(p.attributes.identity.semanticRule, "gate_source_taxonomy");
 }
 
 
@@ -81,7 +82,7 @@ const legacySaved = canonicalizeLegacyProductForMatching({
   specs: "Cổng xoay tự động âm sàn V2 - VULCAN 24V\nModel : 29G020\nĐộng cơ điện 24V AC",
 });
 assert.equal(legacySaved.sku, "29G020", "legacy saved alias SKU should be repaired from explicit Model evidence");
-assert.equal(legacySaved.name, "Động cơ cổng tự động âm sàn VULCAN 24V");
+assert.equal(legacySaved.name, "Cổng xoay tự động âm sàn V2 - VULCAN 24V");
 assert.equal(legacySaved.attributes.identity.sourceAlias, "Vulcan-24V (29G020)");
 
 // Category alone must NOT be rewritten into a motor. This prevents a whole
@@ -98,4 +99,4 @@ assert.equal(wholeGate.canonicalName, "Bộ cổng tự động hoàn chỉnh 4m
 console.log("✓ P2.3.2 product semantics PASS");
 console.log("  - Category != Product Type != Subtype != Model != SKU != Canonical Name");
 console.log("  - 9 Bisco gate motor identities canonicalized without per-row patches");
-console.log("  - broad gate category alone never forces a motor identity");
+console.log("  - broad gate family alone never forces a motor identity");

@@ -162,9 +162,14 @@ function inferProductTypeFromContext(sheetName = "", sectionName = "", specs = "
   // gate motor/opener, name the actual sellable item instead of the broad
   // category "Cổng tự động".
   const gateCtxNorm = normalizeAscii([category, sheetName, sectionName, specs, sku].filter(Boolean).join(" "));
-  const gateEvidence = /cong\s*(?:tu\s*dong|truot|xoay)|gate|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(gateCtxNorm);
+  const gateEvidence = /cong\s*(?:tu\s*dong|truot|xoay|tay\s*don)|gate|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(gateCtxNorm);
   const motorEvidence = /mo\s*to|moto|motor|dong\s*co|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(gateCtxNorm);
-  if (gateEvidence && motorEvidence) return "Động cơ cổng tự động";
+  if (gateEvidence && motorEvidence) {
+    if (/am\s*san/.test(gateCtxNorm)) return "Cổng xoay tự động âm sàn";
+    if (/cong\s*truot|ayros|torq/.test(gateCtxNorm)) return "Mô tơ cổng trượt";
+    if (/mo\s*xoay|tay\s*don|nyk|star\s*k3|stark\s*600/.test(gateCtxNorm)) return "Mô tơ cổng mở xoay tự động";
+    return "Thiết bị cổng tự động";
+  }
 
   // 1) Category đã được infer đúng (vd "Két an toàn") → dùng luôn, độ tin cậy cao nhất.
   const catNorm = normalizeAscii(category);
@@ -368,7 +373,7 @@ function isExplicitCostColumn(map) {
  * @param {string} fileSupplier
  * @returns {?Object} raw item (chưa validate/match)
  */
-function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
+function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentContext = {}) {
   const get = (key) => {
     const idx = map[key];
     return idx != null && row.text[idx] != null ? String(row.text[idx]).trim() : "";
@@ -632,6 +637,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
     _subtotalSuspect: isSubtotalSuspect,
     source: {
       sheet: sheetName,
+      documentCategory: compactText(documentContext?.quoteSpecification || ""),
       rowIndex: row.r,
       cellRefs,
       rawText: row.joined,
@@ -683,7 +689,7 @@ export function extractItemsWithStats(sheet, region, map, headerSourceRow, fileS
     if (cls === ROW_CLASS.HEADER) { stats.headers += 1; stats.skipped += 1; continue; }
     if (cls !== ROW_CLASS.PRODUCT) { stats.skipped += 1; continue; }
 
-    const item = rowToItem(row, map, sheet.name, sectionName, fileSupplier);
+    const item = rowToItem(row, map, sheet.name, sectionName, fileSupplier, sheet.documentContext || {});
     if (item) { items.push(item); stats.products += 1; }
     else stats.skipped += 1;
   }

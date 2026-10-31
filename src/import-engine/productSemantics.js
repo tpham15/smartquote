@@ -1,5 +1,5 @@
 // ============================================================
-// P2.3.2 Product semantics
+// P2.3.3 Source taxonomy + product semantics
 // Keep Category, Product Type, Subtype, Commercial Model, SKU and
 // Canonical Name as separate concepts. Rules are conservative: a rule may
 // rewrite a display name only when there is strong evidence for the actual
@@ -94,17 +94,66 @@ function extractGateCommercialModel(product = {}, context = {}) {
 function detectGateSubtype(text = "") {
   const n = fold(text);
   if (/am\s*san|underground|floor\s*gate/.test(n)) return { key: "underground", label: "Âm sàn" };
-  if (/cong\s*truot|gate\s*slid|sliding|\bayros\b|\btorq\b/.test(n)) return { key: "sliding", label: "Cổng trượt" };
+  if (/cong\s*truot|gate\s*slid|sliding|\bayros\b|\btorq\b/.test(n)) return { key: "sliding", label: "Trượt" };
   if (/tay\s*don|mo\s*xoay|swing|\bnyk\b|\bstar\s*k3\b|\bstark\s*600\b/.test(n)) return { key: "swing_arm", label: "Tay đòn / mở xoay" };
   return { key: "", label: "" };
 }
 
+function normalizeGateDocumentCategory(value = "", subtypeKey = "") {
+  const n = fold(value);
+  if (/cong\s*(?:xoay\s*)?am\s*san/.test(n)) return "Cổng âm sàn tự động";
+  if (/cong\s*truot/.test(n)) return "Cổng trượt tự động";
+  if (/cong\s*tay\s*don/.test(n)) return "Cổng tay đòn tự động";
+  if (/cong\s*(?:mo\s*)?xoay/.test(n)) return "Cổng mở xoay tự động";
+  if (subtypeKey === "underground") return "Cổng âm sàn tự động";
+  if (subtypeKey === "sliding") return "Cổng trượt tự động";
+  if (subtypeKey === "swing_arm") return "Cổng mở xoay tự động";
+  return "Cổng tự động";
+}
+
+function gateProductTypeFromSource(sourceName = "", subtypeKey = "") {
+  const n = fold(sourceName);
+  if (/cong\s*xoay\s*tu\s*dong\s*am\s*san/.test(n)) return "Cổng xoay tự động âm sàn";
+  if (/mo\s*to\s*cong\s*truot|moto\s*cong\s*truot|motor\s*cong\s*truot/.test(n)) return "Mô tơ cổng trượt";
+  if (/dong\s*co\s*cong\s*truot/.test(n)) return "Động cơ cổng trượt";
+  if (/mo\s*to\s*cong.*mo\s*xoay|moto\s*cong.*mo\s*xoay|motor\s*cong.*mo\s*xoay/.test(n)) return "Mô tơ cổng mở xoay tự động";
+  if (/dong\s*co\s*cong.*mo\s*xoay/.test(n)) return "Động cơ cổng mở xoay tự động";
+  if (subtypeKey === "underground") return "Cổng xoay tự động âm sàn";
+  if (subtypeKey === "sliding") return "Mô tơ cổng trượt";
+  if (subtypeKey === "swing_arm") return "Mô tơ cổng mở xoay tự động";
+  return "Thiết bị cổng tự động";
+}
+
+function canonicalGateName(sourceName = "", productType = "", model = "", subtypeKey = "", sourceEvidence = "") {
+  const commercialEvidence = compact(sourceEvidence).split(/\b(?:model|thông\s*số|thong\s*so)\b/i)[0] || "";
+  const n = fold([sourceName, commercialEvidence].filter(Boolean).join(" "));
+  const hasSourceV2 = /\bv2\b/.test(n);
+  if (subtypeKey === "underground") {
+    return [productType, hasSourceV2 ? "V2" : "", model ? `- ${model}` : ""].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  }
+  if (subtypeKey === "sliding") {
+    return [productType, hasSourceV2 ? "V2" : "", model ? `${hasSourceV2 ? "- " : ""}${model}` : ""].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  }
+  if (subtypeKey === "swing_arm") {
+    return [productType, model].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  }
+  return compact(sourceName) || [productType, model].filter(Boolean).join(" ").trim();
+}
+
 function gateMotorRule(product = {}, context = {}) {
-  const category = compact(product.category || context.category || "");
+  const incomingCategory = compact(product.category || context.category || "");
+  const documentCategory = compact(
+    context.documentCategory ||
+    product?.source?.documentCategory ||
+    product?._meta?.source?.documentCategory ||
+    ""
+  );
+  const sourceName = compact(product?.attributes?.identity?.sourceName || product.name || "");
   const sourceText = [
-    product.name,
+    sourceName,
     product.specs,
-    category,
+    incomingCategory,
+    documentCategory,
     context.sheetName,
     context.sectionName,
     product?.source?.sheet,
@@ -115,35 +164,36 @@ function gateMotorRule(product = {}, context = {}) {
     product?._meta?.source?.rawSku,
   ].filter(Boolean).join(" ");
   const n = fold(sourceText);
-  const gateEvidence = /cong\s*(?:tu\s*dong|truot|xoay)|gate|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(n)
-    || fold(category) === "cong tu dong";
+  const gateEvidence = /cong\s*(?:tu\s*dong|truot|xoay|tay\s*don)|gate|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(n)
+    || fold(incomingCategory) === "cong tu dong";
   if (!gateEvidence) return null;
 
-  const motorEvidence = /mo\s*to|moto|motor|dong\s*co/.test(n)
+  // Do not force accessories/whole-gate records into a motor identity. Strong
+  // evidence must come from the source product line/specification or known gate
+  // opener models.
+  const sellableEvidence = /mo\s*to|moto|motor|dong\s*co|cong\s*xoay\s*tu\s*dong\s*am\s*san/.test(n)
     || /vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(n);
-  if (!motorEvidence) return null;
+  if (!sellableEvidence) return null;
 
-  const subtype = detectGateSubtype(sourceText);
+  const subtype = detectGateSubtype([sourceName, documentCategory, sourceText].filter(Boolean).join(" "));
   const { model, evidence: modelEvidence } = extractGateCommercialModel(product, context);
-  const baseName = subtype.key === "underground"
-    ? "Động cơ cổng tự động âm sàn"
-    : subtype.key === "sliding"
-      ? "Động cơ cổng trượt tự động"
-      : subtype.key === "swing_arm"
-        ? "Động cơ cổng mở xoay tay đòn"
-        : "Động cơ cổng tự động";
-  const canonicalName = [baseName, model].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  const productType = gateProductTypeFromSource(sourceName, subtype.key);
+  const category = normalizeGateDocumentCategory(documentCategory || incomingCategory, subtype.key);
+  const canonicalName = canonicalGateName(sourceName, productType, model, subtype.key, product.specs || "");
 
   return {
-    category: category || "Cổng tự động",
-    productType: "Động cơ cổng tự động",
+    family: "Cổng tự động",
+    category,
+    productType,
     subtype: subtype.label,
     subtypeKey: subtype.key,
     model,
     canonicalName,
     evidence: {
-      rule: "gate_motor",
-      productType: "strong_context",
+      rule: "gate_source_taxonomy",
+      family: "strong_context",
+      category: documentCategory ? "quote_specification" : "source_product_line",
+      productType: "source_product_line",
       model: modelEvidence,
     },
   };
@@ -161,6 +211,7 @@ export function deriveProductSemantics(product = {}, context = {}) {
     if (result) return result;
   }
   return {
+    family: compact(product?.attributes?.identity?.family || ""),
     category: compact(product.category || context.category || ""),
     productType: compact(product.productType || product?.attributes?.identity?.productType || ""),
     subtype: compact(product.subtype || product?.attributes?.identity?.subtype || ""),
@@ -187,6 +238,7 @@ export function applyProductSemantics(product = {}, context = {}) {
   const strong = semantics?.evidence?.rule && semantics.evidence.rule !== "none";
 
   if (strong && semantics.canonicalName) p.name = semantics.canonicalName;
+  if (strong && semantics.category) p.category = semantics.category;
   p.productType = semantics.productType || p.productType || "";
   p.subtype = semantics.subtype || p.subtype || "";
   p.model = semantics.model || p.model || "";
@@ -194,6 +246,7 @@ export function applyProductSemantics(product = {}, context = {}) {
     ...(p.attributes || {}),
     identity: {
       ...existingIdentity,
+      family: semantics.family || existingIdentity.family || "",
       category: semantics.category || p.category || "",
       productType: p.productType || "",
       subtype: p.subtype || "",
@@ -256,6 +309,7 @@ export function canonicalizeLegacyProductForMatching(product = {}) {
     category: repaired.category,
     sheetName: repaired?.source?.sheet || repaired?._meta?.source?.sheet || "",
     sectionName: repaired?.source?.section || repaired?._meta?.source?.section || "",
+    documentCategory: repaired?.source?.documentCategory || repaired?._meta?.source?.documentCategory || "",
     rawSku: repaired?.attributes?.identity?.sourceAlias || repaired?.source?.rawSku || repaired?._meta?.source?.rawSku || "",
   });
 }

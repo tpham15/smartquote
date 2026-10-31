@@ -4,6 +4,7 @@
 // ============================================================
 import * as XLSX from "xlsx";
 import { cleanSupplierName } from "./productSanitizer.js";
+import { extractSheetDocumentContext } from "./sheetContext.js";
 
 function stripVietnameseMarks(s) {
   return String(s || "")
@@ -37,6 +38,8 @@ function cleanText(v) {
   if (v === null || v === undefined) return "";
   return String(v).replace(/\s+/g, " ").trim();
 }
+
+
 
 function buildMergedCellLookup(ws) {
   const lookup = new Map();
@@ -104,7 +107,7 @@ export function normalizeWorkbook(buf, fileName) {
     }
 
     if (rows.length > 0) {
-      sheets.push({ name: sheetName, rows, maxCol });
+      sheets.push({ name: sheetName, rows, maxCol, documentContext: extractSheetDocumentContext(rows) });
     }
   }
 

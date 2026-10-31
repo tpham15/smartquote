@@ -115,7 +115,8 @@ for (const testCase of cases) {
   const item = rowToItem(row, map, testCase.sheet, testCase.section, "");
   assert.ok(item, `${testCase.sheet}: item missing`);
   assert.equal(item.name, testCase.expectedName, `${testCase.sheet}: commercial identity was overwritten`);
-  assert.equal(item.category, "Cổng tự động", `${testCase.sheet}: broad catalog category may remain Cổng tự động`);
+  assert.ok(/^Cổng\s/i.test(item.category), `${testCase.sheet}: gate taxonomy should stay a gate category`);
+  assert.notEqual(item.category, "Cổng tự động", `${testCase.sheet}: source taxonomy must not collapse every gate into broad Cổng tự động`);
   assert.ok(!/^Cổng tự động\s+/i.test(item.name), `${testCase.sheet}: category must not replace product name`);
   assert.ok(!/^Khóa thông minh\s+/i.test(item.name), `${testCase.sheet}: smart-lock regression`);
   assert.ok(/Model|Thông số/i.test(item.specs || ""), `${testCase.sheet}: technical details must remain specs`);
@@ -124,4 +125,4 @@ for (const testCase of cases) {
 console.log("✓ Pilot P1.5.3.2 Bisco product-identity regression PASS");
 console.log("  - real profiler shape no longer converts every product name to 'Cổng tự động + SKU'");
 console.log("  - first descriptive line from 'Thông số sản phẩm' is the commercial product name");
-console.log("  - 'Cổng tự động' remains only the broad catalog category");
+console.log("  - source gate taxonomy remains specific instead of collapsing to broad 'Cổng tự động'");

@@ -22,6 +22,11 @@ const BAD_CATEGORY_RE = /(bang\s*bao\s*gia|bảng\s*báo\s*giá|bao\s*gia|báo\s
 
 const CATEGORY_RULES = [
   { category: "Két an toàn", patterns: [/\b(sbx|valis|safe)/i, /két\s*an\s*toàn/i, /ket\s*an\s*toan/i] },
+  // Preserve source gate taxonomy before falling back to the broad family.
+  { category: "Cổng âm sàn tự động", patterns: [/cổng\s*xoay\s*tự\s*động\s*âm\s*sàn|cong\s*xoay\s*tu\s*dong\s*am\s*san|cổng\s*âm\s*sàn\s*tự\s*động|cong\s*am\s*san\s*tu\s*dong/i] },
+  { category: "Cổng trượt tự động", patterns: [/mô\s*tơ\s*cổng\s*trượt|moto\s*cổng\s*trượt|motor\s*cổng\s*trượt|động\s*cơ\s*cổng\s*trượt|dong\s*co\s*cong\s*truot|cổng\s*trượt\s*tự\s*động|cong\s*truot\s*tu\s*dong/i] },
+  { category: "Cổng tay đòn tự động", patterns: [/cổng\s*tay\s*đòn\s*tự\s*động|cong\s*tay\s*don\s*tu\s*dong/i] },
+  { category: "Cổng mở xoay tự động", patterns: [/mô\s*tơ\s*cổng\s*mở\s*xoay\s*tự\s*động|mo\s*to\s*cong\s*mo\s*xoay\s*tu\s*dong|động\s*cơ\s*cổng\s*mở\s*xoay|dong\s*co\s*cong\s*mo\s*xoay/i] },
   // Strong gate evidence must win over incidental prose such as
   // "Có chìa khóa mở kèm". A physical key in a motor specification is not
   // evidence that the product itself is a smart lock.
