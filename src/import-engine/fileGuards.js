@@ -1,10 +1,14 @@
 // Phase 7.1 production upload guards.
 // Goal: reject unexpectedly large/untrusted files before XLSX/PDF parsers touch them.
 export const UPLOAD_LIMITS = {
-  excelBytes: Number(import.meta?.env?.VITE_SQ_MAX_EXCEL_BYTES || 8 * 1024 * 1024),
+  excelBytes: Number(import.meta?.env?.VITE_SQ_MAX_EXCEL_BYTES || 50 * 1024 * 1024),
   pdfBytes: Number(import.meta?.env?.VITE_SQ_MAX_PDF_BYTES || 18 * 1024 * 1024),
   imageBytes: Number(import.meta?.env?.VITE_SQ_MAX_IMAGE_BYTES || 4 * 1024 * 1024),
   maxBatchFiles: Number(import.meta?.env?.VITE_SQ_MAX_IMPORT_FILES || 40),
+};
+
+export const UPLOAD_WARNING_THRESHOLDS = {
+  excelBytes: Number(import.meta?.env?.VITE_SQ_WARN_EXCEL_BYTES || 20 * 1024 * 1024),
 };
 
 function formatMb(bytes) {
@@ -37,6 +41,17 @@ export function assertSmartQuoteUploadFile(file, { allow = ['excel', 'pdf', 'ima
     throw new Error(`${label} "${file.name}" quá lớn (${formatMb(size)}). Giới hạn hiện tại là ${formatMb(limit)}. Hãy tách file nhỏ hơn trước khi import.`);
   }
   return { kind, size, limit };
+}
+
+
+export function smartQuoteUploadWarning(file) {
+  if (!file) return '';
+  const kind = classifySmartQuoteFile(file);
+  const size = Number(file.size || 0);
+  if (kind === 'excel' && size > UPLOAD_WARNING_THRESHOLDS.excelBytes && size <= UPLOAD_LIMITS.excelBytes) {
+    return `Excel "${file.name}" khá lớn (${formatMb(size)}). SmartQuote vẫn hỗ trợ import, nhưng xử lý trên trình duyệt có thể lâu hơn bình thường.`;
+  }
+  return '';
 }
 
 export function filterSafeSmartQuoteFiles(files, opts = {}) {

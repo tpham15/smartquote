@@ -1,0 +1,521 @@
+{
+  "meta": {
+    "preview": {
+      "hero": "PREVIEW IMPORT\n📄 BÁO GIÁ ĐL SSEHOME.xlsx · v2\nCó 8 lỗi cần xử lý\n\n57 sản phẩm sẵn sàng nhập · 6 cần xem lại · 0 dòng đã bỏ qua\n\nXem dòng cần xem\nCần xác nhận cột giá",
+      "tabs": [
+        "Tất cả\n71",
+        "Cần xem lại\n14",
+        "Sạch\n57",
+        "Lỗi\n8",
+        "Đã duyệt/sửa\n0",
+        "Đi tới lỗi",
+        "Xem dòng cần kiểm tra"
+      ],
+      "all": 71,
+      "review": 14,
+      "clean": 57,
+      "blocking": 8,
+      "approved": 0
+    },
+    "diagnosticCount": 71
+  },
+  "rows": [
+    {
+      "index": 0,
+      "name": "Đèn Philips DDL902-MFVP-11HWS",
+      "sku": "DDL902-MFVP-11HWS",
+      "issues": "—",
+      "text": "1\n—\t\nĐèn Philips DDL902-MFVP-11HWS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 4\n\tDDL902-MFVP-11HWS\t22.200.000đ ↗ nguồn\nCông bố: 37.750.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 1,
+      "name": "Khóa thông minh Philips DDL720-MVP",
+      "sku": "DDL720-MVP",
+      "issues": "—",
+      "text": "2\n—\t\nKhóa thông minh Philips DDL720-MVP\nKhóa thông minh · SET · SSEHOME · KHÓA PHILIPS · dòng 5\n\tDDL720-MVP\t10.800.000đ ↗ nguồn\nCông bố: 10.800.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 2,
+      "name": "Khóa thông minh Philips DDL720-FVP",
+      "sku": "DDL720-FVP",
+      "issues": "—",
+      "text": "3\n—\t\nKhóa thông minh Philips DDL720-FVP\nKhóa thông minh · SET · SSEHOME · KHÓA PHILIPS · dòng 6\n\tDDL720-FVP\t11.500.000đ ↗ nguồn\nCông bố: 11.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 3,
+      "name": "Khóa thông minh Philips DDL801-5HBS",
+      "sku": "DDL801-5HBS",
+      "issues": "—",
+      "text": "4\n—\t\nKhóa thông minh Philips DDL801-5HBS\nKhóa thông minh · SET · SSEHOME · KHÓA PHILIPS · dòng 7\n\tDDL801-5HBS\t9.900.000đ ↗ nguồn\nCông bố: 17.375.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 4,
+      "name": "Đèn Philips DDL702-1HWS",
+      "sku": "DDL702-1HWS",
+      "issues": "—",
+      "text": "5\n—\t\nĐèn Philips DDL702-1HWS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 8\n\tDDL702-1HWS\t11.200.000đ ↗ nguồn\nCông bố: 18.375.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 5,
+      "name": "Đèn Philips DDL702-8HWS",
+      "sku": "DDL702-8HWS",
+      "issues": "—",
+      "text": "6\n—\t\nĐèn Philips DDL702-8HWS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 9\n\tDDL702-8HWS\t12.500.000đ ↗ nguồn\nCông bố: 12.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 6,
+      "name": "Đèn Philips DDL702E-5HWS",
+      "sku": "DDL702E-5HWS",
+      "issues": "—",
+      "text": "7\n—\t\nĐèn Philips DDL702E-5HWS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 10\n\tDDL702E-5HWS\t8.500.000đ ↗ nguồn\nCông bố: 13.875.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 7,
+      "name": "Đèn Philips DDL603E-5HWS",
+      "sku": "DDL603E-5HWS",
+      "issues": "—",
+      "text": "8\n—\t\nĐèn Philips DDL603E-5HWS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 11\n\tDDL603E-5HWS\t4.900.000đ ↗ nguồn\nCông bố: 8.250.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 8,
+      "name": "Khóa thông minh Philips DDL611S-5HBS",
+      "sku": "DDL611S-5HBS",
+      "issues": "—",
+      "text": "9\n—\t\nKhóa thông minh Philips DDL611S-5HBS\nBộ điều khiển trung tâm · SET · SSEHOME · KHÓA PHILIPS · dòng 12\n\tDDL611S-5HBS\t5.200.000đ ↗ nguồn\nCông bố: 9.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 9,
+      "name": "Đèn Philips DDL610-5HBS",
+      "sku": "DDL610-5HBS",
+      "issues": "—",
+      "text": "10\n—\t\nĐèn Philips DDL610-5HBS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 13\n\tDDL610-5HBS\t5.400.000đ ↗ nguồn\nCông bố: 9.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 10,
+      "name": "Đèn Philips DDL609-5HS",
+      "sku": "DDL609-5HS",
+      "issues": "—",
+      "text": "11\n—\t\nĐèn Philips DDL609-5HS\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 14\n\tDDL609-5HS\t3.000.000đ ↗ nguồn\nCông bố: 5.750.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 11,
+      "name": "Khóa thông minh Philips DDL615-5HBS",
+      "sku": "DDL615-5HBS",
+      "issues": "—",
+      "text": "12\n—\t\nKhóa thông minh Philips DDL615-5HBS\nKhóa thông minh · SET · SSEHOME · KHÓA PHILIPS · dòng 15\n\tDDL615-5HBS\t3.000.000đ ↗ nguồn\nCông bố: 6.000.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 12,
+      "name": "Đèn Philips 7300-5",
+      "sku": "7300-5",
+      "issues": "—",
+      "text": "13\n—\t\nĐèn Philips 7300-5\nĐèn · SET · SSEHOME · KHÓA PHILIPS · dòng 16\n\t7300-5\t7.000.000đ ↗ nguồn\nCông bố: 11.375.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 13,
+      "name": "Két an toàn Philips Valis-5BU",
+      "sku": "Valis-5BU",
+      "issues": "—",
+      "text": "14\n—\t\nKét an toàn Philips Valis-5BU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 5\n\tValis-5BU\t41.300.000đ ↗ nguồn\nCông bố: 68.250.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 14,
+      "name": "Két an toàn Philips Valis-6BU",
+      "sku": "Valis-6BU",
+      "issues": "—",
+      "text": "15\n—\t\nKét an toàn Philips Valis-6BU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 6\n\tValis-6BU\t49.300.000đ ↗ nguồn\nCông bố: 82.750.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 15,
+      "name": "Két an toàn Philips Valis-8BU",
+      "sku": "Valis-8BU",
+      "issues": "—",
+      "text": "16\n—\t\nKét an toàn Philips Valis-8BU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 7\n\tValis-8BU\t73.600.000đ ↗ nguồn\nCông bố: 122.125.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 16,
+      "name": "Két an toàn Philips Valis-Pro",
+      "sku": "Valis-Pro",
+      "issues": "—",
+      "text": "17\n—\t\nKét an toàn Philips Valis-Pro\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 8\n\tValis-Pro\t236.400.000đ ↗ nguồn\nCông bố: 392.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 17,
+      "name": "Két an toàn Philips Valis-Max",
+      "sku": "Valis-Max",
+      "issues": "—",
+      "text": "18\n—\t\nKét an toàn Philips Valis-Max\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 9\n\tValis-Max\t382.500.000đ ↗ nguồn\nCông bố: 637.875.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 18,
+      "name": "Két an toàn Philips SBX501-4C0",
+      "sku": "SBX501-4C0",
+      "issues": "—",
+      "text": "19\n—\t\nKét an toàn Philips SBX501-4C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 10\n\tSBX501-4C0\t21.300.000đ ↗ nguồn\nCông bố: 34.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 19,
+      "name": "Két an toàn Philips SBX501-5C0",
+      "sku": "SBX501-5C0",
+      "issues": "• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX501-5C0 xuất hiện 2 lần trong file import",
+      "text": "20\n—\t\nKét an toàn Philips SBX501-5C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 11\n\tSBX501-5C0\t30.500.000đ ↗ nguồn\nCông bố: 49.625.000đ\n\t\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX501-5C0 xuất hiện 2 lần trong file import\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 20,
+      "name": "Két an toàn Philips SBX501-7C0",
+      "sku": "SBX501-7C0",
+      "issues": "—",
+      "text": "21\n—\t\nKét an toàn Philips SBX501-7C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 12\n\tSBX501-7C0\t43.500.000đ ↗ nguồn\nCông bố: 70.750.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 21,
+      "name": "Két an toàn Philips SBX102 2C0",
+      "sku": "SBX102 2C0",
+      "issues": "—",
+      "text": "22\n—\t\nKét an toàn Philips SBX102 2C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 13\n\tSBX102 2C0\t5.500.000đ ↗ nguồn\nCông bố: 9.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 22,
+      "name": "Két an toàn Philips SBX202-5C0",
+      "sku": "SBX202-5C0",
+      "issues": "—",
+      "text": "23\n—\t\nKét an toàn Philips SBX202-5C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 14\n\tSBX202-5C0\t13.600.000đ ↗ nguồn\nCông bố: 22.125.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 23,
+      "name": "Két an toàn Philips SBX202-6C0",
+      "sku": "SBX202-6C0",
+      "issues": "—",
+      "text": "24\n—\t\nKét an toàn Philips SBX202-6C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 15\n\tSBX202-6C0\t16.700.000đ ↗ nguồn\nCông bố: 27.125.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 24,
+      "name": "Két an toàn Philips SBX202-7C0",
+      "sku": "SBX202-7C0",
+      "issues": "• Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "text": "25\n—\t\nKét an toàn Philips SBX202-7C0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 16\n\tSBX202-7C0\t26.700.000đ ↗ nguồn\nCông bố: 33.375.000đ\n\t\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 25,
+      "name": "Két an toàn Philips SBX702-ABX",
+      "sku": "SBX702-ABX",
+      "issues": "—",
+      "text": "26\n—\t\nKét an toàn Philips SBX702-ABX\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 17\n\tSBX702-ABX\t121.200.000đ ↗ nguồn\nCông bố: 196.875.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 26,
+      "name": "Két an toàn Philips SBX702-CBX",
+      "sku": "SBX702-CBX",
+      "issues": "—",
+      "text": "27\n—\t\nKét an toàn Philips SBX702-CBX\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 18\n\tSBX702-CBX\t140.100.000đ ↗ nguồn\nCông bố: 227.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 27,
+      "name": "Két an toàn Philips SBX302-5PC",
+      "sku": "SBX302-5PC",
+      "issues": "—",
+      "text": "28\n—\t\nKét an toàn Philips SBX302-5PC\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 19\n\tSBX302-5PC\t15.700.000đ ↗ nguồn\nCông bố: 25.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 28,
+      "name": "Két an toàn Philips SBX301-5PC",
+      "sku": "SBX301-5PC",
+      "issues": "—",
+      "text": "29\n—\t\nKét an toàn Philips SBX301-5PC\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 20\n\tSBX301-5PC\t13.000.000đ ↗ nguồn\nCông bố: 21.000.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 29,
+      "name": "Két an toàn Philips SBX300-5PC",
+      "sku": "SBX300-5PC",
+      "issues": "—",
+      "text": "30\n—\t\nKét an toàn Philips SBX300-5PC\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 21\n\tSBX300-5PC\t11.000.000đ ↗ nguồn\nCông bố: 17.875.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 30,
+      "name": "Két an toàn Philips SBX701-4B0",
+      "sku": "SBX701-4B0",
+      "issues": "—",
+      "text": "31\n—\t\nKét an toàn Philips SBX701-4B0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 22\n\tSBX701-4B0\t21.300.000đ ↗ nguồn\nCông bố: 32.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 31,
+      "name": "Két an toàn Philips SBX701-5B0",
+      "sku": "SBX701-5B0",
+      "issues": "• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX701-5B0 xuất hiện 2 lần trong file import",
+      "text": "32\n—\t\nKét an toàn Philips SBX701-5B0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 23\n\tSBX701-5B0\t32.000.000đ ↗ nguồn\nCông bố: 48.875.000đ\n\t\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX701-5B0 xuất hiện 2 lần trong file import\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 32,
+      "name": "Két an toàn Philips SBX701-6B0",
+      "sku": "SBX701-6B0",
+      "issues": "—",
+      "text": "33\n—\t\nKét an toàn Philips SBX701-6B0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 24\n\tSBX701-6B0\t37.400.000đ ↗ nguồn\nCông bố: 57.125.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 33,
+      "name": "Két an toàn Philips SBX701-7B0",
+      "sku": "SBX701-7B0",
+      "issues": "—",
+      "text": "34\n—\t\nKét an toàn Philips SBX701-7B0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 25\n\tSBX701-7B0\t42.000.000đ ↗ nguồn\nCông bố: 64.125.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 34,
+      "name": "Két an toàn Philips SBX701-8B0",
+      "sku": "SBX701-8B0",
+      "issues": "—",
+      "text": "35\n—\t\nKét an toàn Philips SBX701-8B0\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 26\n\tSBX701-8B0\t49.700.000đ ↗ nguồn\nCông bố: 75.875.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 35,
+      "name": "Két an toàn Philips SBX602-5CU",
+      "sku": "SBX602-5CU",
+      "issues": "• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX602-5CU xuất hiện 2 lần trong file import",
+      "text": "36\n—\t\nKét an toàn Philips SBX602-5CU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 27\n\tSBX602-5CU\t25.900.000đ ↗ nguồn\nCông bố: 40.125.000đ\n\t\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX602-5CU xuất hiện 2 lần trong file import\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 36,
+      "name": "Két an toàn Philips SBX602-6CU",
+      "sku": "SBX602-6CU",
+      "issues": "—",
+      "text": "37\n—\t\nKét an toàn Philips SBX602-6CU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 28\n\tSBX602-6CU\t30.500.000đ ↗ nguồn\nCông bố: 47.375.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 37,
+      "name": "Két an toàn Philips SBX602-7CU",
+      "sku": "SBX602-7CU",
+      "issues": "—",
+      "text": "38\n—\t\nKét an toàn Philips SBX602-7CU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 29\n\tSBX602-7CU\t35.900.000đ ↗ nguồn\nCông bố: 55.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 38,
+      "name": "Két an toàn Philips SBX602-8CU",
+      "sku": "SBX602-8CU",
+      "issues": "—",
+      "text": "39\n—\t\nKét an toàn Philips SBX602-8CU\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 30\n\tSBX602-8CU\t42.800.000đ ↗ nguồn\nCông bố: 66.375.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 39,
+      "name": "Kệ trưng bày Két",
+      "sku": "—",
+      "issues": "—",
+      "text": "40\n—\t\nKệ trưng bày Két\nKét an toàn · Cái · SSEHOME · KÉT PHILIPS · dòng 31\n\t—\t4.000.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 40,
+      "name": "Khóa thông minh Kaadas K20-Pro Max",
+      "sku": "K20-Pro Max",
+      "issues": "—",
+      "text": "41\n—\t\nKhóa thông minh Kaadas K20-Pro Max\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 3\n\tK20-Pro Max\t14.200.000đ ↗ nguồn\nCông bố: 22.750.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 41,
+      "name": "Khóa thông minh Kaadas K20-Pro",
+      "sku": "K20-Pro",
+      "issues": "• Giá công bố thấp hơn giá nhập, cần kiểm tra lại cột giá\n• Giá nhập 12.100.000đ cao hơn giá công bố 11.000.000đ",
+      "text": "42\n—\t\nKhóa thông minh Kaadas K20-Pro\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 4\n\tK20-Pro\t12.100.000đ ↗ nguồn\nCông bố: 11.000.000đ\n\t\n• Giá công bố thấp hơn giá nhập, cần kiểm tra lại cột giá\n• Giá nhập 12.100.000đ cao hơn giá công bố 11.000.000đ\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 42,
+      "name": "Khóa thông minh Kaadas K20F",
+      "sku": "K20F",
+      "issues": "—",
+      "text": "43\n—\t\nKhóa thông minh Kaadas K20F\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 5\n\tK20F\t10.400.000đ ↗ nguồn\nCông bố: 21.625.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 43,
+      "name": "Khóa thông minh Kaadas K9-5W",
+      "sku": "K9-5W",
+      "issues": "—",
+      "text": "44\n—\t\nKhóa thông minh Kaadas K9-5W\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 6\n\tK9-5W\t7.500.000đ ↗ nguồn\nCông bố: 11.900.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 44,
+      "name": "Khóa thông minh Kaadas K9-5",
+      "sku": "K9-5",
+      "issues": "—",
+      "text": "45\n—\t\nKhóa thông minh Kaadas K9-5\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 7\n\tK9-5\t7.200.000đ ↗ nguồn\nCông bố: 11.150.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 45,
+      "name": "Khóa thông minh Kaadas Q9-FVP",
+      "sku": "Q9-FVP",
+      "issues": "—",
+      "text": "46\n—\t\nKhóa thông minh Kaadas Q9-FVP\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 8\n\tQ9-FVP\t7.900.000đ ↗ nguồn\nCông bố: 14.900.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 46,
+      "name": "Khóa thông minh Kaadas Q3-VP",
+      "sku": "Q3-VP",
+      "issues": "—",
+      "text": "47\n—\t\nKhóa thông minh Kaadas Q3-VP\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 9\n\tQ3-VP\t5.100.000đ ↗ nguồn\nCông bố: 9.600.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 47,
+      "name": "Wooden doors Metal doors L405 Q3",
+      "sku": "Q3",
+      "issues": "—",
+      "text": "48\n—\t\nWooden doors Metal doors L405 Q3\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 10\n\tQ3\t3.950.000đ ↗ nguồn\nCông bố: 7.450.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 48,
+      "name": "Khóa thông minh - Kaadas - Vân tay Mật mã Thẻ từ Chìa cơ",
+      "sku": "M5",
+      "issues": "—",
+      "text": "49\n—\t\nKhóa thông minh - Kaadas - Vân tay Mật mã Thẻ từ Chìa cơ\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 11\n\tM5\t2.000.000đ ↗ nguồn\nCông bố: 4.400.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 49,
+      "name": "Khóa thông minh Kaadas S10-5W",
+      "sku": "S10-5W",
+      "issues": "—",
+      "text": "50\n—\t\nKhóa thông minh Kaadas S10-5W\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 12\n\tS10-5W\t2.800.000đ ↗ nguồn\nCông bố: 6.000.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 50,
+      "name": "Khóa thông minh Kaadas M7-W",
+      "sku": "M7-W",
+      "issues": "—",
+      "text": "51\n—\t\nKhóa thông minh Kaadas M7-W\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 13\n\tM7-W\t2.600.000đ ↗ nguồn\nCông bố: 5.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 51,
+      "name": "Khóa thông minh Kaadas L8-5",
+      "sku": "L8-5",
+      "issues": "—",
+      "text": "52\n—\t\nKhóa thông minh Kaadas L8-5\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 14\n\tL8-5\t2.805.000đ ↗ nguồn\nCông bố: 6.200.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 52,
+      "name": "Khóa thông minh Kaadas L7-5",
+      "sku": "L7-5",
+      "issues": "—",
+      "text": "53\n—\t\nKhóa thông minh Kaadas L7-5\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 15\n\tL7-5\t4.900.000đ ↗ nguồn\nCông bố: 7.900.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 53,
+      "name": "Khóa thông minh Kaadas S500-5W",
+      "sku": "S500-5W",
+      "issues": "—",
+      "text": "54\n—\t\nKhóa thông minh Kaadas S500-5W\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 16\n\tS500-5W\t3.900.000đ ↗ nguồn\nCông bố: 6.900.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 54,
+      "name": "Khóa thông minh Kaadas S500-C5",
+      "sku": "S500-C5",
+      "issues": "—",
+      "text": "55\n—\t\nKhóa thông minh Kaadas S500-C5\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 17\n\tS500-C5\t3.600.000đ ↗ nguồn\nCông bố: 6.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 55,
+      "name": "Khóa thông minh Kaadas 6001",
+      "sku": "6001",
+      "issues": "—",
+      "text": "56\n—\t\nKhóa thông minh Kaadas 6001\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 18\n\t6001\t15.840.000đ ↗ nguồn\nCông bố: 33.000.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 56,
+      "name": "Khóa thông minh Kaadas 6002",
+      "sku": "6002",
+      "issues": "—",
+      "text": "57\n—\t\nKhóa thông minh Kaadas 6002\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 19\n\t6002\t10.640.000đ ↗ nguồn\nCông bố: 21.700.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 57,
+      "name": "Khóa thông minh Kaadas R8-5GL",
+      "sku": "R8-5GL",
+      "issues": "—",
+      "text": "58\n—\t\nKhóa thông minh Kaadas R8-5GL\nKhóa thông minh · Cái · SSEHOME · KHÓA KAADAS · dòng 20\n\tR8-5GL\t3.900.000đ ↗ nguồn\nCông bố: 6.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 58,
+      "name": "Khóa thông minh Hexa P100M-Pro Max",
+      "sku": "P100M-Pro Max",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (7.300.000đ / 7.500.000đ)",
+      "text": "59\n—\t\nKhóa thông minh Hexa P100M-Pro Max\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 4\n\tP100M-Pro Max\t7.300.000đ ↗ nguồn\nCông bố: 14.300.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (7.300.000đ / 7.500.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 59,
+      "name": "Khóa thông minh Hexa P100M",
+      "sku": "P100M",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (4.900.000đ / 5.100.000đ)",
+      "text": "60\n—\t\nKhóa thông minh Hexa P100M\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 6\n\tP100M\t4.900.000đ ↗ nguồn\nCông bố: 9.800.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (4.900.000đ / 5.100.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 60,
+      "name": "Khóa thông minh Hexa P200-Pro Max",
+      "sku": "P200-Pro Max",
+      "issues": "—",
+      "text": "61\n—\t\nKhóa thông minh Hexa P200-Pro Max\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 8\n\tP200-Pro Max\t10.400.000đ ↗ nguồn\nCông bố: 10.400.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 61,
+      "name": "Khóa thông minh Hexa R100-Pro Max",
+      "sku": "R100-Pro Max",
+      "issues": "• Thiếu giá\n• Giá nhập bất thường hoặc bị dính nhiều cột giá",
+      "text": "62\n—\t\nKhóa thông minh Hexa R100-Pro Max\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 9\n\tR100-Pro Max\t\n—\n\t\n• Thiếu giá\n• Giá nhập bất thường hoặc bị dính nhiều cột giá\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 62,
+      "name": "Khóa thông minh Hexa P300-Pro",
+      "sku": "P300-Pro",
+      "issues": "—",
+      "text": "63\n—\t\nKhóa thông minh Hexa P300-Pro\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 10\n\tP300-Pro\t5.500.000đ ↗ nguồn\nCông bố: 11.000.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 63,
+      "name": "Khóa thông minh Hexa P300",
+      "sku": "P300",
+      "issues": "—",
+      "text": "64\n—\t\nKhóa thông minh Hexa P300\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 11\n\tP300\t5.000.000đ ↗ nguồn\nCông bố: 9.900.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 64,
+      "name": "Khóa thông minh Hexa L100",
+      "sku": "L100",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (3.800.000đ / 3.600.000đ)",
+      "text": "65\n—\t\nKhóa thông minh Hexa L100\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 12\n\tL100\t3.800.000đ ↗ nguồn\nCông bố: 8.000.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (3.800.000đ / 3.600.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 65,
+      "name": "Khóa thông minh Hexa HX12",
+      "sku": "HX12",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (1.850.000đ / 2.000.000đ)\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (1.850.000đ / 2.100.000đ)",
+      "text": "66\n—\t\nKhóa thông minh Hexa HX12\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 16\n\tHX12\t2.100.000đ ↗ nguồn\nCông bố: 4.900.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (1.850.000đ / 2.000.000đ)\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (1.850.000đ / 2.100.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 66,
+      "name": "Khóa thông minh Hexa A100",
+      "sku": "A100",
+      "issues": "—",
+      "text": "67\n—\t\nKhóa thông minh Hexa A100\nKhóa thông minh · SET · SSEHOME · Khóa HEXA · dòng 17\n\tA100\t2.800.000đ ↗ nguồn\nCông bố: 6.000.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 67,
+      "name": "Két an toàn SBX501-5C0",
+      "sku": "SBX501-5C0",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX501-5C0 xuất hiện 2 lần trong file import",
+      "text": "68\n—\t\nKét an toàn SBX501-5C0\nKét an toàn · Cái · SSEHOME · Trang tính6 · dòng 6\n\tSBX501-5C0\t37.800.000đ ↗ nguồn\nCông bố: 47.200.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX501-5C0 xuất hiện 2 lần trong file import\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 68,
+      "name": "Két an toàn SBX701-5B0",
+      "sku": "SBX701-5B0",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX701-5B0 xuất hiện 2 lần trong file import",
+      "text": "69\n—\t\nKét an toàn SBX701-5B0\nKét an toàn · Cái · SSEHOME · Trang tính6 · dòng 7\n\tSBX701-5B0\t37.300.000đ ↗ nguồn\nCông bố: 46.600.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX701-5B0 xuất hiện 2 lần trong file import\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 69,
+      "name": "Két an toàn SBX602-5CU",
+      "sku": "SBX602-5CU",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX602-5CU xuất hiện 2 lần trong file import",
+      "text": "70\n—\t\nKét an toàn SBX602-5CU\nKét an toàn · Cái · SSEHOME · Trang tính6 · dòng 8\n\tSBX602-5CU\t30.600.000đ ↗ nguồn\nCông bố: 38.300.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n• Trùng mã nhưng khác bằng chứng nhận diện; SmartQuote giữ riêng để kiểm tra\n• SKU SBX602-5CU xuất hiện 2 lần trong file import\n\t\nSửa lỗi\nXóa"
+    },
+    {
+      "index": 70,
+      "name": "Két an toàn SBX601-4B0",
+      "sku": "SBX601-4B0",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%",
+      "text": "71\n—\t\nKét an toàn SBX601-4B0\nKét an toàn · Cái · SSEHOME · Trang tính6 · dòng 9\n\tSBX601-4B0\t15.500.000đ ↗ nguồn\nCông bố: 23.600.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: Giá khuyến mãi 20%\n\t\nSửa\nDuyệt\nXóa"
+    }
+  ]
+}

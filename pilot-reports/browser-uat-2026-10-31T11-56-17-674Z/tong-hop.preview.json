@@ -1,0 +1,723 @@
+{
+  "meta": {
+    "preview": {
+      "hero": "PREVIEW IMPORT\n📄 Tổng hợp báo giá.xlsx · v2\nCần xem lại 12 dòng\n\n88 sản phẩm sẵn sàng nhập · 12 cần xem lại · 4 dòng đã bỏ qua\n\nXem dòng cần duyệt\nCần xác nhận cột giá",
+      "tabs": [
+        "Tất cả\n100",
+        "Cần xem lại\n12",
+        "Sạch\n88",
+        "Lỗi\n0",
+        "Đã duyệt/sửa\n0",
+        "Xem dòng cần kiểm tra"
+      ],
+      "all": 100,
+      "review": 12,
+      "clean": 88,
+      "blocking": 0,
+      "approved": 0
+    },
+    "diagnosticCount": 100
+  },
+  "rows": [
+    {
+      "index": 0,
+      "name": "Cảm biến - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "1\n—\t\nCảm biến - Mật khẩu/Vân tay/Thẻ từ...\nCảm biến · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 6\n\t—\t39.890.000đ ↗ nguồn\nCông bố: 39.890.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 1,
+      "name": "Cảm biến - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "2\n—\t\nCảm biến - Mật khẩu/Vân tay/Thẻ từ...\nCảm biến · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 7\n\t—\t38.190.000đ ↗ nguồn\nCông bố: 38.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 2,
+      "name": "Khóa thông minh OSN-KBT06",
+      "sku": "OSN-KBT06",
+      "issues": "—",
+      "text": "3\n—\t\nKhóa thông minh OSN-KBT06\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 8\n\tOSN-KBT06\t70.990.000đ ↗ nguồn\nCông bố: 70.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 3,
+      "name": "Cảm biến LIVE-SCAN",
+      "sku": "LIVE-SCAN",
+      "issues": "—",
+      "text": "4\n—\t\nCảm biến LIVE-SCAN\nCảm biến · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 9\n\tLIVE-SCAN\t36.290.000đ ↗ nguồn\nCông bố: 36.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 4,
+      "name": "Khóa thông minh OSN-KBT02",
+      "sku": "OSN-KBT02",
+      "issues": "—",
+      "text": "5\n—\t\nKhóa thông minh OSN-KBT02\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 10\n\tOSN-KBT02\t37.990.000đ ↗ nguồn\nCông bố: 37.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 5,
+      "name": "Khóa thông minh OSN-KBT09",
+      "sku": "OSN-KBT09",
+      "issues": "—",
+      "text": "6\n—\t\nKhóa thông minh OSN-KBT09\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 11\n\tOSN-KBT09\t29.790.000đ ↗ nguồn\nCông bố: 29.790.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 6,
+      "name": "Khóa thông minh OSN-KBT10",
+      "sku": "OSN-KBT10",
+      "issues": "—",
+      "text": "7\n—\t\nKhóa thông minh OSN-KBT10\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 12\n\tOSN-KBT10\t18.890.000đ ↗ nguồn\nCông bố: 18.890.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 7,
+      "name": "Khóa thông minh OSN-KBT11",
+      "sku": "OSN-KBT11",
+      "issues": "—",
+      "text": "8\n—\t\nKhóa thông minh OSN-KBT11\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA BIỆT THỰ · dòng 13\n\tOSN-KBT11\t53.190.000đ ↗ nguồn\nCông bố: 53.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 8,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "9\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 6\n\t—\t4.990.000đ ↗ nguồn\nCông bố: 4.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 9,
+      "name": "Khóa thông minh OSN-KTP05",
+      "sku": "OSN-KTP05",
+      "issues": "—",
+      "text": "10\n—\t\nKhóa thông minh OSN-KTP05\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 7\n\tOSN-KTP05\t3.590.000đ ↗ nguồn\nCông bố: 3.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 10,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "11\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 8\n\t—\t4.190.000đ ↗ nguồn\nCông bố: 4.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 11,
+      "name": "Khóa thông minh OSN-3325",
+      "sku": "OSN-3325",
+      "issues": "—",
+      "text": "12\n—\t\nKhóa thông minh OSN-3325\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 9\n\tOSN-3325\t4.590.000đ ↗ nguồn\nCông bố: 4.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 12,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "13\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 10\n\t—\t3.990.000đ ↗ nguồn\nCông bố: 3.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 13,
+      "name": "Khóa thông minh OSN-3602",
+      "sku": "OSN-3602",
+      "issues": "—",
+      "text": "14\n—\t\nKhóa thông minh OSN-3602\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 11\n\tOSN-3602\t3.990.000đ ↗ nguồn\nCông bố: 3.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 14,
+      "name": "Khóa thông minh OSN-3603",
+      "sku": "OSN-3603",
+      "issues": "—",
+      "text": "15\n—\t\nKhóa thông minh OSN-3603\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 12\n\tOSN-3603\t3.590.000đ ↗ nguồn\nCông bố: 3.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 15,
+      "name": "Khóa thông minh OSN-3601",
+      "sku": "OSN-3601",
+      "issues": "—",
+      "text": "16\n—\t\nKhóa thông minh OSN-3601\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 13\n\tOSN-3601\t3.590.000đ ↗ nguồn\nCông bố: 3.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 16,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "17\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 14\n\t—\t5.490.000đ ↗ nguồn\nCông bố: 5.490.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 17,
+      "name": "Khóa thông minh OSN-3303",
+      "sku": "OSN-3303",
+      "issues": "—",
+      "text": "18\n—\t\nKhóa thông minh OSN-3303\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 15\n\tOSN-3303\t5.590.000đ ↗ nguồn\nCông bố: 5.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 18,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "19\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 16\n\t—\t10.390.000đ ↗ nguồn\nCông bố: 10.390.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 19,
+      "name": "Khóa thông minh - Nhận diện khuôn mặt/Mật khẩu/Vân tay...",
+      "sku": "MINH-NH",
+      "issues": "—",
+      "text": "20\n—\t\nKhóa thông minh - Nhận diện khuôn mặt/Mật khẩu/Vân tay...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 17\n\tMINH-NH\t15.690.000đ ↗ nguồn\nCông bố: 15.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 20,
+      "name": "Khóa thông minh OSN-3357",
+      "sku": "OSN-3357",
+      "issues": "—",
+      "text": "21\n—\t\nKhóa thông minh OSN-3357\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 18\n\tOSN-3357\t15.690.000đ ↗ nguồn\nCông bố: 15.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 21,
+      "name": "Khóa thông minh OSN-3358",
+      "sku": "OSN-3358",
+      "issues": "—",
+      "text": "22\n—\t\nKhóa thông minh OSN-3358\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 19\n\tOSN-3358\t7.690.000đ ↗ nguồn\nCông bố: 7.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 22,
+      "name": "Khóa thông minh OSN-3358 PLUS",
+      "sku": "OSN-3358 PLUS",
+      "issues": "—",
+      "text": "23\n—\t\nKhóa thông minh OSN-3358 PLUS\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 20\n\tOSN-3358 PLUS\t8.790.000đ ↗ nguồn\nCông bố: 8.790.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 23,
+      "name": "Khóa thông minh OSN-3359",
+      "sku": "OSN-3359",
+      "issues": "—",
+      "text": "24\n—\t\nKhóa thông minh OSN-3359\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA THÔNG MINH · dòng 21\n\tOSN-3359\t7.090.000đ ↗ nguồn\nCông bố: 7.090.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 24,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (2.994.000đ / 6.290.000đ)",
+      "text": "25\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 6\n\t—\t2.994.000đ ↗ nguồn\nCông bố: 4.990.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (2.994.000đ / 6.290.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 25,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "26\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 7\n\t—\t5.290.000đ ↗ nguồn\nCông bố: 5.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 26,
+      "name": "Khóa thông minh - Mật khẩu/Vân tay/Thẻ từ...",
+      "sku": "—",
+      "issues": "—",
+      "text": "27\n—\t\nKhóa thông minh - Mật khẩu/Vân tay/Thẻ từ...\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 9\n\t—\t5.890.000đ ↗ nguồn\nCông bố: 5.890.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 27,
+      "name": "Khóa thông minh OSN-3323A",
+      "sku": "OSN-3323A",
+      "issues": "—",
+      "text": "28\n—\t\nKhóa thông minh OSN-3323A\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 10\n\tOSN-3323A\t6.290.000đ ↗ nguồn\nCông bố: 6.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 28,
+      "name": "Khóa thông minh OSN-3326",
+      "sku": "OSN-3326",
+      "issues": "—",
+      "text": "29\n—\t\nKhóa thông minh OSN-3326\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 11\n\tOSN-3326\t5.290.000đ ↗ nguồn\nCông bố: 5.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 29,
+      "name": "Khóa thông minh OSN-3326A",
+      "sku": "OSN-3326A",
+      "issues": "—",
+      "text": "30\n—\t\nKhóa thông minh OSN-3326A\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 12\n\tOSN-3326A\t5.290.000đ ↗ nguồn\nCông bố: 5.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 30,
+      "name": "Khóa thông minh OSN-3328",
+      "sku": "OSN-3328",
+      "issues": "—",
+      "text": "31\n—\t\nKhóa thông minh OSN-3328\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 13\n\tOSN-3328\t8.290.000đ ↗ nguồn\nCông bố: 8.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 31,
+      "name": "Khóa thông minh OSN-2601",
+      "sku": "OSN-2601",
+      "issues": "—",
+      "text": "32\n—\t\nKhóa thông minh OSN-2601\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 14\n\tOSN-2601\t8.290.000đ ↗ nguồn\nCông bố: 8.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 32,
+      "name": "Khóa thông minh OSN-2602",
+      "sku": "OSN-2602",
+      "issues": "—",
+      "text": "33\n—\t\nKhóa thông minh OSN-2602\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 15\n\tOSN-2602\t4.390.000đ ↗ nguồn\nCông bố: 4.390.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 33,
+      "name": "Khóa thông minh OSN-2602A",
+      "sku": "OSN-2602A",
+      "issues": "—",
+      "text": "34\n—\t\nKhóa thông minh OSN-2602A\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 16\n\tOSN-2602A\t4.390.000đ ↗ nguồn\nCông bố: 4.390.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 34,
+      "name": "Khóa thông minh OSN-2603",
+      "sku": "OSN-2603",
+      "issues": "—",
+      "text": "35\n—\t\nKhóa thông minh OSN-2603\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 17\n\tOSN-2603\t5.190.000đ ↗ nguồn\nCông bố: 5.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 35,
+      "name": "Khóa thông minh OSN-2605",
+      "sku": "OSN-2605",
+      "issues": "—",
+      "text": "36\n—\t\nKhóa thông minh OSN-2605\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 18\n\tOSN-2605\t4.190.000đ ↗ nguồn\nCông bố: 4.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 36,
+      "name": "Khóa thông minh OSN-2606",
+      "sku": "OSN-2606",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (6.190.000đ / 6.490.000đ)",
+      "text": "37\n—\t\nKhóa thông minh OSN-2606\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA NHÔM KÍNH · dòng 19\n\tOSN-2606\t6.190.000đ ↗ nguồn\nCông bố: 6.190.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (6.190.000đ / 6.490.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 37,
+      "name": "Khóa thông minh OSN-3373",
+      "sku": "OSN-3373",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT",
+      "text": "38\n—\t\nKhóa thông minh OSN-3373\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KÍNH · dòng 6\n\tOSN-3373\t4.590.000đ ↗ nguồn\nCông bố: 4.590.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 38,
+      "name": "Thẻ từ/chìa cơ",
+      "sku": "—",
+      "issues": "—",
+      "text": "39\n—\t\nThẻ từ/chìa cơ\nPhụ kiện · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 6\n\t—\t3.890.000đ ↗ nguồn\nCông bố: 3.890.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 39,
+      "name": "Thẻ từ/chìa cơ",
+      "sku": "—",
+      "issues": "—",
+      "text": "40\n—\t\nThẻ từ/chìa cơ\nPhụ kiện · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 7\n\t—\t3.490.000đ ↗ nguồn\nCông bố: 3.490.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 40,
+      "name": "Thẻ từ/chìa cơ",
+      "sku": "—",
+      "issues": "—",
+      "text": "41\n—\t\nThẻ từ/chìa cơ\nPhụ kiện · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 8\n\t—\t3.390.000đ ↗ nguồn\nCông bố: 3.390.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 41,
+      "name": "Đèn - Thẻ từ/chìa cơ",
+      "sku": "—",
+      "issues": "—",
+      "text": "42\n—\t\nĐèn - Thẻ từ/chìa cơ\nĐèn · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 9\n\t—\t3.190.000đ ↗ nguồn\nCông bố: 3.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 42,
+      "name": "Khóa thông minh OSN-3379",
+      "sku": "OSN-3379",
+      "issues": "—",
+      "text": "43\n—\t\nKhóa thông minh OSN-3379\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 10\n\tOSN-3379\t3.190.000đ ↗ nguồn\nCông bố: 3.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 43,
+      "name": "Khóa thông minh OSN-3379V",
+      "sku": "OSN-3379V",
+      "issues": "—",
+      "text": "44\n—\t\nKhóa thông minh OSN-3379V\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 11\n\tOSN-3379V\t3.190.000đ ↗ nguồn\nCông bố: 3.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 44,
+      "name": "Khóa thông minh OSN-3378",
+      "sku": "OSN-3378",
+      "issues": "—",
+      "text": "45\n—\t\nKhóa thông minh OSN-3378\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 12\n\tOSN-3378\t4.590.000đ ↗ nguồn\nCông bố: 4.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 45,
+      "name": "Khóa thông minh OSN-3338",
+      "sku": "OSN-3338",
+      "issues": "—",
+      "text": "46\n—\t\nKhóa thông minh OSN-3338\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 13\n\tOSN-3338\t4.790.000đ ↗ nguồn\nCông bố: 4.790.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 46,
+      "name": "Khóa thông minh OSN-3339",
+      "sku": "OSN-3339",
+      "issues": "—",
+      "text": "47\n—\t\nKhóa thông minh OSN-3339\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 14\n\tOSN-3339\t4.790.000đ ↗ nguồn\nCông bố: 4.790.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 47,
+      "name": "Khóa thông minh OSN-3331",
+      "sku": "OSN-3331",
+      "issues": "—",
+      "text": "48\n—\t\nKhóa thông minh OSN-3331\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 15\n\tOSN-3331\t4.790.000đ ↗ nguồn\nCông bố: 4.790.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 48,
+      "name": "Khóa thông minh OSN-3392",
+      "sku": "OSN-3392",
+      "issues": "—",
+      "text": "49\n—\t\nKhóa thông minh OSN-3392\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 16\n\tOSN-3392\t3.990.000đ ↗ nguồn\nCông bố: 3.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 49,
+      "name": "Khóa thông minh OSN-3394",
+      "sku": "OSN-3394",
+      "issues": "—",
+      "text": "50\n—\t\nKhóa thông minh OSN-3394\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 17\n\tOSN-3394\t3.490.000đ ↗ nguồn\nCông bố: 3.490.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 50,
+      "name": "Khóa thông minh OSN-3397",
+      "sku": "OSN-3397",
+      "issues": "—",
+      "text": "51\n—\t\nKhóa thông minh OSN-3397\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 18\n\tOSN-3397\t3.490.000đ ↗ nguồn\nCông bố: 3.490.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 51,
+      "name": "Khóa thông minh OSN-3398",
+      "sku": "OSN-3398",
+      "issues": "—",
+      "text": "52\n—\t\nKhóa thông minh OSN-3398\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 19\n\tOSN-3398\t3.690.000đ ↗ nguồn\nCông bố: 3.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 52,
+      "name": "Khóa thông minh OSN-2311",
+      "sku": "OSN-2311",
+      "issues": "—",
+      "text": "53\n—\t\nKhóa thông minh OSN-2311\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 20\n\tOSN-2311\t2.690.000đ ↗ nguồn\nCông bố: 2.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 53,
+      "name": "Khóa thông minh OSN-2315",
+      "sku": "OSN-2315",
+      "issues": "—",
+      "text": "54\n—\t\nKhóa thông minh OSN-2315\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 21\n\tOSN-2315\t2.490.000đ ↗ nguồn\nCông bố: 2.490.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 54,
+      "name": "Khóa thông minh OSN-2316",
+      "sku": "OSN-2316",
+      "issues": "—",
+      "text": "55\n—\t\nKhóa thông minh OSN-2316\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 22\n\tOSN-2316\t2.690.000đ ↗ nguồn\nCông bố: 2.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 55,
+      "name": "Khóa thông minh OSN-3332",
+      "sku": "OSN-3332",
+      "issues": "—",
+      "text": "56\n—\t\nKhóa thông minh OSN-3332\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 23\n\tOSN-3332\t4.790.000đ ↗ nguồn\nCông bố: 4.790.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 56,
+      "name": "Công tắc thông minh -",
+      "sku": "MINH-CH",
+      "issues": "—",
+      "text": "57\n—\t\nCông tắc thông minh -\nCông tắc thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 24\n\tMINH-CH\t280.000đ ↗ nguồn\nCông bố: 480.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 57,
+      "name": "Khóa thông minh MPT13.56MHZ",
+      "sku": "MPT13.56MHZ",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (4.000.000đ / 2.000.000đ)",
+      "text": "58\n—\t\nKhóa thông minh MPT13.56MHZ\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 25\n\tMPT13.56MHZ\t4.000.000đ ↗ nguồn\nCông bố: 5.500.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (4.000.000đ / 2.000.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 58,
+      "name": "Khóa thông minh OSN-3387",
+      "sku": "OSN-3387",
+      "issues": "—",
+      "text": "59\n—\t\nKhóa thông minh OSN-3387\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 27\n\tOSN-3387\t2.000.000đ ↗ nguồn\nCông bố: 3.600.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 59,
+      "name": "Khóa thông minh OSN-3382",
+      "sku": "OSN-3382",
+      "issues": "—",
+      "text": "60\n—\t\nKhóa thông minh OSN-3382\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 28\n\tOSN-3382\t3.500.000đ ↗ nguồn\nCông bố: 5.250.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 60,
+      "name": "Thẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th",
+      "sku": "—",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (40.000đ / 50.000đ)",
+      "text": "61\n—\t\nThẻ từ khóa khách sạn OSUNO (Thẻ thiết kế và in th\nSản phẩm · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 29\n\t—\t40.000đ ↗ nguồn\nCông bố: 75.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (40.000đ / 50.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 61,
+      "name": "( thẻ trắng) 1 40000 50000 30000 TK13.56MHZ",
+      "sku": "TK13.56MHZ",
+      "issues": "—",
+      "text": "62\n—\t\n( thẻ trắng) 1 40000 50000 30000 TK13.56MHZ\nSản phẩm · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 30\n\tTK13.56MHZ\t30.000đ ↗ nguồn\nCông bố: 50.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 62,
+      "name": "Thẻ từ Mifare 125Khz ( thẻ trắng)",
+      "sku": "—",
+      "issues": "—",
+      "text": "63\n—\t\nThẻ từ Mifare 125Khz ( thẻ trắng)\nSản phẩm · Cái · Tổng hợp báo giá · KHÓA KHÁCH SẠN · dòng 32\n\t—\t35.000đ ↗ nguồn\nCông bố: 55.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 63,
+      "name": "Phương thức mở khóa: vân tay/thẻ từ/mật khẩu...",
+      "sku": "—",
+      "issues": "—",
+      "text": "64\n—\t\nPhương thức mở khóa: vân tay/thẻ từ/mật khẩu...\nSản phẩm · Cái · Tổng hợp báo giá · KHÓA CỔNG · dòng 6\n\t—\t4.890.000đ ↗ nguồn\nCông bố: 4.890.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 64,
+      "name": "Khóa thông minh OSN-3334",
+      "sku": "OSN-3334",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (6.490.000đ / 462.000đ)",
+      "text": "65\n—\t\nKhóa thông minh OSN-3334\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA CỔNG · dòng 7\n\tOSN-3334\t6.490.000đ ↗ nguồn\nCông bố: 6.490.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (6.490.000đ / 462.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 65,
+      "name": "Khóa thông minh OSN-3335A",
+      "sku": "OSN-3335A",
+      "issues": "—",
+      "text": "66\n—\t\nKhóa thông minh OSN-3335A\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA CỔNG · dòng 8\n\tOSN-3335A\t10.590.000đ ↗ nguồn\nCông bố: 10.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 66,
+      "name": "Khóa thông minh OSN-3311",
+      "sku": "OSN-3311",
+      "issues": "—",
+      "text": "67\n—\t\nKhóa thông minh OSN-3311\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA CỔNG · dòng 9\n\tOSN-3311\t1.290.000đ ↗ nguồn\nCông bố: 1.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 67,
+      "name": "Khóa thông minh OSN-3335",
+      "sku": "OSN-3335",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (5.190.000đ / 6.990.000đ)\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (5.190.000đ / 5.590.000đ)",
+      "text": "68\n—\t\nKhóa thông minh OSN-3335\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA CỔNG · dòng 12\n\tOSN-3335\t5.590.000đ ↗ nguồn\nCông bố: 5.590.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (5.190.000đ / 6.990.000đ)\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (5.190.000đ / 5.590.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 68,
+      "name": "Khóa thông minh OSN-3336",
+      "sku": "OSN-3336",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (7.190.000đ / 5.490.000đ)",
+      "text": "69\n—\t\nKhóa thông minh OSN-3336\nKhóa thông minh · Cái · Tổng hợp báo giá · KHÓA CỔNG · dòng 14\n\tOSN-3336\t7.190.000đ ↗ nguồn\nCông bố: 7.190.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (7.190.000đ / 5.490.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 69,
+      "name": "Khóa thông minh OSN-KC02",
+      "sku": "OSN-KC02",
+      "issues": "—",
+      "text": "70\n—\t\nKhóa thông minh OSN-KC02\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 6\n\tOSN-KC02\t594.000đ ↗ nguồn\nCông bố: 990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 70,
+      "name": "Khóa thông minh OSN-KC03G",
+      "sku": "OSN-KC03G",
+      "issues": "—",
+      "text": "71\n—\t\nKhóa thông minh OSN-KC03G\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 8\n\tOSN-KC03G\t498.000đ ↗ nguồn\nCông bố: 830.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 71,
+      "name": "Khóa thông minh OSN-KC04S",
+      "sku": "OSN-KC04S",
+      "issues": "—",
+      "text": "72\n—\t\nKhóa thông minh OSN-KC04S\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 9\n\tOSN-KC04S\t462.000đ ↗ nguồn\nCông bố: 770.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 72,
+      "name": "Khóa thông minh OSN-KC04G",
+      "sku": "OSN-KC04G",
+      "issues": "—",
+      "text": "73\n—\t\nKhóa thông minh OSN-KC04G\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 10\n\tOSN-KC04G\t498.000đ ↗ nguồn\nCông bố: 830.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 73,
+      "name": "Khóa thông minh OSN-KC05S",
+      "sku": "OSN-KC05S",
+      "issues": "—",
+      "text": "74\n—\t\nKhóa thông minh OSN-KC05S\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 11\n\tOSN-KC05S\t618.000đ ↗ nguồn\nCông bố: 1.030.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 74,
+      "name": "Khóa thông minh OSN-KC06",
+      "sku": "OSN-KC06",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (462.000đ / 660.000đ)",
+      "text": "75\n—\t\nKhóa thông minh OSN-KC06\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 12\n\tOSN-KC06\t462.000đ ↗ nguồn\nCông bố: 770.000đ\n\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (462.000đ / 660.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 75,
+      "name": "Khóa thông minh OSN-KC10",
+      "sku": "OSN-KC10",
+      "issues": "—",
+      "text": "76\n—\t\nKhóa thông minh OSN-KC10\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 14\n\tOSN-KC10\t576.000đ ↗ nguồn\nCông bố: 960.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 76,
+      "name": "Khóa thông minh OSN-KC11B",
+      "sku": "OSN-KC11B",
+      "issues": "—",
+      "text": "77\n—\t\nKhóa thông minh OSN-KC11B\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 15\n\tOSN-KC11B\t774.000đ ↗ nguồn\nCông bố: 1.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 77,
+      "name": "Khóa thông minh OSN-KC11G",
+      "sku": "OSN-KC11G",
+      "issues": "—",
+      "text": "78\n—\t\nKhóa thông minh OSN-KC11G\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 16\n\tOSN-KC11G\t774.000đ ↗ nguồn\nCông bố: 1.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 78,
+      "name": "Khóa thông minh OSN-KC12G",
+      "sku": "OSN-KC12G",
+      "issues": "—",
+      "text": "79\n—\t\nKhóa thông minh OSN-KC12G\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 17\n\tOSN-KC12G\t774.000đ ↗ nguồn\nCông bố: 1.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 79,
+      "name": "Khóa thông minh OSN-KC13A",
+      "sku": "OSN-KC13A",
+      "issues": "—",
+      "text": "80\n—\t\nKhóa thông minh OSN-KC13A\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 18\n\tOSN-KC13A\t774.000đ ↗ nguồn\nCông bố: 1.290.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 80,
+      "name": "Khóa thông minh OSN-KC13B",
+      "sku": "OSN-KC13B",
+      "issues": "—",
+      "text": "81\n—\t\nKhóa thông minh OSN-KC13B\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 19\n\tOSN-KC13B\t654.000đ ↗ nguồn\nCông bố: 1.090.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 81,
+      "name": "Khóa thông minh OSN-KC14",
+      "sku": "OSN-KC14",
+      "issues": "—",
+      "text": "82\n—\t\nKhóa thông minh OSN-KC14\nKhóa thông minh · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 20\n\tOSN-KC14\t654.000đ ↗ nguồn\nCông bố: 1.090.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 82,
+      "name": "Mã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO",
+      "sku": "—",
+      "issues": "—",
+      "text": "83\n—\t\nMã sản phẩm: Mắt thần ( Loại 1) Thương hiệu: OSUNO\nPhụ kiện · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 22\n\t—\t72.000đ ↗ nguồn\nCông bố: 120.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 83,
+      "name": "Mã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO",
+      "sku": "—",
+      "issues": "—",
+      "text": "84\n—\t\nMã sản phẩm: Mắt thần (Loại 2) Thương hiệu: OSUNO\nPhụ kiện · Cái · Tổng hợp báo giá · KHOÁ CƠ VÀ PHỤ KIỆN CỬA · dòng 23\n\t—\t63.000đ ↗ nguồn\nCông bố: 105.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 84,
+      "name": "Đầu đọc vân tay",
+      "sku": "TAY-PH",
+      "issues": "—",
+      "text": "85\n—\t\nĐầu đọc vân tay\nChuông cửa · Cái · Tổng hợp báo giá · BKS 01 · dòng 6\n\tTAY-PH\t3.990.000đ ↗ nguồn\nCông bố: 3.990.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 85,
+      "name": "Tủ nguồn",
+      "sku": "—",
+      "issues": "—",
+      "text": "86\n—\t\nTủ nguồn\nPhụ kiện · Cái · Tổng hợp báo giá · BKS 01 · dòng 7\n\t—\t2.590.000đ ↗ nguồn\nCông bố: 2.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 86,
+      "name": "Nam châm",
+      "sku": "—",
+      "issues": "—",
+      "text": "87\n—\t\nNam châm\nSản phẩm · Cái · Tổng hợp báo giá · BKS 01 · dòng 8\n\t—\t1.210.000đ ↗ nguồn\nCông bố: 1.210.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 87,
+      "name": "Bát ZL",
+      "sku": "—",
+      "issues": "—",
+      "text": "88\n—\t\nBát ZL\nSản phẩm · Cái · Tổng hợp báo giá · BKS 01 · dòng 9\n\t—\t550.000đ ↗ nguồn\nCông bố: 550.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 88,
+      "name": "Mô tơ cửa",
+      "sku": "—",
+      "issues": "—",
+      "text": "89\n—\t\nMô tơ cửa\nSản phẩm · Cái · Tổng hợp báo giá · BKS 01 · dòng 10\n\t—\t1.690.000đ ↗ nguồn\nCông bố: 1.690.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 89,
+      "name": "Gateway mở khóa từ xa qua wifi",
+      "sku": "—",
+      "issues": "—",
+      "text": "90\n—\t\nGateway mở khóa từ xa qua wifi\nBộ điều khiển trung tâm · Cái · Tổng hợp báo giá · BKS 01 · dòng 11\n\t—\t1.390.000đ ↗ nguồn\nCông bố: 1.390.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 90,
+      "name": "Exit",
+      "sku": "—",
+      "issues": "—",
+      "text": "91\n—\t\nExit\nSản phẩm · Cái · Tổng hợp báo giá · BKS 01 · dòng 12\n\t—\t220.000đ ↗ nguồn\nCông bố: 220.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 91,
+      "name": "Remote",
+      "sku": "—",
+      "issues": "—",
+      "text": "92\n—\t\nRemote\nRèm thông minh · Cái · Tổng hợp báo giá · BKS 01 · dòng 13\n\t—\t330.000đ ↗ nguồn\nCông bố: 330.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 92,
+      "name": "Chuông",
+      "sku": "—",
+      "issues": "—",
+      "text": "93\n—\t\nChuông\nChuông cửa · Cái · Tổng hợp báo giá · BKS 01 · dòng 14\n\t—\t220.000đ ↗ nguồn\nCông bố: 220.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 93,
+      "name": "IC Card · Giá niêm yết cũ: 50.000đ · Giá điều chỉnh: 55.000đ | IC Card",
+      "sku": "—",
+      "issues": "—",
+      "text": "94\n—\t\nIC Card · Giá niêm yết cũ: 50.000đ · Giá điều chỉnh: 55.000đ | IC Card\nCổng tự động · Thiết bị cổng tự động · Cái · Tổng hợp báo giá · BKS 01 · dòng 15\n\t—\t55.000đ ↗ nguồn\nCông bố: 55.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 94,
+      "name": "Mặt nhận diện",
+      "sku": "LIVE-SCAN-PH",
+      "issues": "—",
+      "text": "95\n—\t\nMặt nhận diện\nSản phẩm · Cái · Tổng hợp báo giá · BKS 02 · dòng 6\n\tLIVE-SCAN-PH\t4.190.000đ ↗ nguồn\nCông bố: 4.190.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 95,
+      "name": "Nguồn tuyến tính",
+      "sku": "—",
+      "issues": "—",
+      "text": "96\n—\t\nNguồn tuyến tính\nPhụ kiện · Cái · Tổng hợp báo giá · BKS 02 · dòng 7\n\t—\t2.590.000đ ↗ nguồn\nCông bố: 2.590.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 96,
+      "name": "Thẻ từ",
+      "sku": "—",
+      "issues": "—",
+      "text": "97\n—\t\nThẻ từ\nSản phẩm · Cái · Tổng hợp báo giá · BKS 02 · dòng 11\n\t—\t55.000đ ↗ nguồn\nCông bố: 55.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 97,
+      "name": "Đèn KAT01",
+      "sku": "KAT01",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "text": "98\n—\t\nĐèn KAT01\nĐèn · Cái · Tổng hợp báo giá · KÉT SẮT · dòng 5\n\tKAT01\t2.590.000đ ↗ nguồn\nCông bố: 2.590.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 98,
+      "name": "Đèn KAT02",
+      "sku": "KAT02",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "text": "99\n—\t\nĐèn KAT02\nĐèn · Cái · Tổng hợp báo giá · KÉT SẮT · dòng 6\n\tKAT02\t2.590.000đ ↗ nguồn\nCông bố: 2.590.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 99,
+      "name": "Đèn KAT03",
+      "sku": "KAT03",
+      "issues": "Kiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text",
+      "text": "100\n—\t\nĐèn KAT03\nĐèn · Cái · Tổng hợp báo giá · KÉT SẮT · dòng 7\n\tKAT03\t2.590.000đ ↗ nguồn\nCông bố: 2.590.000đ\n\tKiểm tra giá\n• Chưa chắc cột đang dùng là giá mua vào: STT\n• Giá gốc bị lỗi, đã lấy giá hợp lý từ text\n\t\nSửa\nDuyệt\nXóa"
+    }
+  ]
+}

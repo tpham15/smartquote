@@ -1,0 +1,303 @@
+{
+  "meta": {
+    "preview": {
+      "hero": "PREVIEW IMPORT\n📄 MX-BG Tổng Hợp T062026 PP(1) -1.xlsx · v2\nCần xem lại 1 dòng\n\n39 sản phẩm sẵn sàng nhập · 1 cần xem lại · 13 dòng đã bỏ qua\n\nXem dòng cần duyệt\nDuyệt 1 dòng an toàn",
+      "tabs": [
+        "Tất cả\n40",
+        "Cần xem lại\n1",
+        "Sạch\n39",
+        "Lỗi\n0",
+        "Đã duyệt/sửa\n0",
+        "Xem dòng cần kiểm tra"
+      ],
+      "all": 40,
+      "review": 1,
+      "clean": 39,
+      "blocking": 0,
+      "approved": 0
+    },
+    "diagnosticCount": 40
+  },
+  "rows": [
+    {
+      "index": 0,
+      "name": "Thiết bị liên lạc tại cửa AV-08FBL",
+      "sku": "AV-08FBL",
+      "issues": "—",
+      "text": "1\n—\t\nThiết bị liên lạc tại cửa AV-08FBL\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 18\n\tAV-08FBL\t24.200.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 1,
+      "name": "Thiết bị liên lạc tại cửa AV-05FD",
+      "sku": "AV-05FD",
+      "issues": "—",
+      "text": "2\n—\t\nThiết bị liên lạc tại cửa AV-05FD\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 19\n\tAV-05FD\t12.740.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 2,
+      "name": "Thiết bị liên lạc tại cửa AV-04SDI",
+      "sku": "AV-04SDI",
+      "issues": "—",
+      "text": "3\n—\t\nThiết bị liên lạc tại cửa AV-04SDI\nCamera · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 20\n\tAV-04SDI\t12.100.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 3,
+      "name": "Thiết bị liên lạc tại cửa AV-04FDI",
+      "sku": "AV-04FDI",
+      "issues": "—",
+      "text": "4\n—\t\nThiết bị liên lạc tại cửa AV-04FDI\nCamera · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 21\n\tAV-04FDI\t12.200.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 4,
+      "name": "Thiết bị liên lạc tại cửa AV-06M",
+      "sku": "AV-06M",
+      "issues": "—",
+      "text": "5\n—\t\nThiết bị liên lạc tại cửa AV-06M\nCamera · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 22\n\tAV-06M\t10.190.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 5,
+      "name": "Đèn AZ-07L",
+      "sku": "AZ-07L",
+      "issues": "—",
+      "text": "6\n—\t\nĐèn AZ-07L\nĐèn · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 23\n\tAZ-07L\t12.780.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 6,
+      "name": "Đèn AZ-07LL",
+      "sku": "AZ-07LL",
+      "issues": "—",
+      "text": "7\n—\t\nĐèn AZ-07LL\nĐèn · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 24\n\tAZ-07LL\t7.740.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 7,
+      "name": "Đèn AQ-07LL",
+      "sku": "AQ-07LL",
+      "issues": "—",
+      "text": "8\n—\t\nĐèn AQ-07LL\nĐèn · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 25\n\tAQ-07LL\t7.346.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 8,
+      "name": "Rèm AT-07",
+      "sku": "AT-07",
+      "issues": "—",
+      "text": "9\n—\t\nRèm AT-07\nRèm thông minh · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 26\n\tAT-07\t17.660.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 9,
+      "name": "Rèm AT-10",
+      "sku": "AT-10",
+      "issues": "—",
+      "text": "10\n—\t\nRèm AT-10\nRèm thông minh · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 27\n\tAT-10\t26.565.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 10,
+      "name": "Máy con tiếng AV-04AFDI",
+      "sku": "AV-04AFDI",
+      "issues": "—",
+      "text": "11\n—\t\nMáy con tiếng AV-04AFDI\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 28\n\tAV-04AFDI\t11.100.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 11,
+      "name": "Module điều khiển khiển 2 cổng - Cửa SH-42",
+      "sku": "SH-42",
+      "issues": "—",
+      "text": "12\n—\t\nModule điều khiển khiển 2 cổng - Cửa SH-42\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 29\n\tSH-42\t3.500.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 12,
+      "name": "Cáp mạng U/UTP Cat6 DS-1LN6UU /CCA",
+      "sku": "DS-1LN6UU /CCA",
+      "issues": "—",
+      "text": "13\n—\t\nCáp mạng U/UTP Cat6 DS-1LN6UU /CCA\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 30\n\tDS-1LN6UU /CCA\t2.460.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 13,
+      "name": "Cáp mạng U/UTP Cat6 DS-1LN6-UE-W",
+      "sku": "DS-1LN6-UE-W",
+      "issues": "—",
+      "text": "14\n—\t\nCáp mạng U/UTP Cat6 DS-1LN6-UE-W\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 31\n\tDS-1LN6-UE-W\t5.590.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 14,
+      "name": "Giá đỡ màn hình",
+      "sku": "—",
+      "issues": "—",
+      "text": "15\n—\t\nGiá đỡ màn hình\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 32\n\t—\t600.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 15,
+      "name": "Công tắc thông minh TD-B2204S1-PEU",
+      "sku": "TD-B2204S1-PEU",
+      "issues": "—",
+      "text": "16\n—\t\nCông tắc thông minh TD-B2204S1-PEU\nCông tắc thông minh · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 33\n\tTD-B2204S1-PEU\t1.100.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 16,
+      "name": "Công tắc thông minh TD-B2208S1-PEU",
+      "sku": "TD-B2208S1-PEU",
+      "issues": "—",
+      "text": "17\n—\t\nCông tắc thông minh TD-B2208S1-PEU\nCông tắc thông minh · Cái · MX BG T062026 PP(1) 1 · Chuông hình BasIP · dòng 34\n\tTD-B2208S1-PEU\t1.600.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 17,
+      "name": "Solt Hàn Quốc 970000 970000 SB9-2XWH",
+      "sku": "SB9-2XWH",
+      "issues": "—",
+      "text": "18\n—\t\nSolt Hàn Quốc 970000 970000 SB9-2XWH\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 16\n\tSB9-2XWH\t970.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 18,
+      "name": "Solt Hàn Quốc 620000 620000 SB5-2XWH",
+      "sku": "SB5-2XWH",
+      "issues": "—",
+      "text": "19\n—\t\nSolt Hàn Quốc 620000 620000 SB5-2XWH\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 17\n\tSB5-2XWH\t620.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 19,
+      "name": "Đèn SL6-10RGB",
+      "sku": "SL6-10RGB",
+      "issues": "—",
+      "text": "20\n—\t\nĐèn SL6-10RGB\nĐèn · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 18\n\tSL6-10RGB\t6.145.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 20,
+      "name": "Solt Hàn Quốc 7900000 7900000 SM3-23PC",
+      "sku": "SM3-23PC",
+      "issues": "—",
+      "text": "21\n—\t\nSolt Hàn Quốc 7900000 7900000 SM3-23PC\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 19\n\tSM3-23PC\t7.900.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 21,
+      "name": "Solt Hàn Quốc 10630000 10630000 SM3-61PC",
+      "sku": "SM3-61PC",
+      "issues": "—",
+      "text": "22\n—\t\nSolt Hàn Quốc 10630000 10630000 SM3-61PC\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 20\n\tSM3-61PC\t10.630.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 22,
+      "name": "Thiết bị khuếch đại tín hiệu hành lang ( Số lượng thay đổi theo mặt bằng thực tế) SR5-BPR",
+      "sku": "SR5-BPR",
+      "issues": "—",
+      "text": "23\n—\t\nThiết bị khuếch đại tín hiệu hành lang ( Số lượng thay đổi theo mặt bằng thực tế) SR5-BPR\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 21\n\tSR5-BPR\t7.360.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 23,
+      "name": "Thiết bị trung tâm ( Phần mền Thiết bị trung tâm) SR5-MPR",
+      "sku": "SR5-MPR",
+      "issues": "—",
+      "text": "24\n—\t\nThiết bị trung tâm ( Phần mền Thiết bị trung tâm) SR5-MPR\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 22\n\tSR5-MPR\t17.000.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 24,
+      "name": "Solt Hàn Quốc 5215000 5215000 SP7-100",
+      "sku": "SP7-100",
+      "issues": "—",
+      "text": "25\n—\t\nSolt Hàn Quốc 5215000 5215000 SP7-100\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Báo gọi y tá không dây · dòng 23\n\tSP7-100\t5.215.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 25,
+      "name": "Chuông cửa có hình JOS-1AW",
+      "sku": "JOS-1AW",
+      "issues": "—",
+      "text": "26\n—\t\nChuông cửa có hình JOS-1AW\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 16\n\tJOS-1AW\t14.705.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 26,
+      "name": "Chuông cửa có hình JOS-1VW",
+      "sku": "JOS-1VW",
+      "issues": "—",
+      "text": "27\n—\t\nChuông cửa có hình JOS-1VW\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 17\n\tJOS-1VW\t16.616.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 27,
+      "name": "Chuông cửa có hình JOS-1FW",
+      "sku": "JOS-1FW",
+      "issues": "—",
+      "text": "28\n—\t\nChuông cửa có hình JOS-1FW\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 18\n\tJOS-1FW\t17.135.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 28,
+      "name": "Chuông cửa có hình JOS-1A",
+      "sku": "JOS-1A",
+      "issues": "• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (7.895.000đ / 8.623.000đ)",
+      "text": "29\n—\t\nChuông cửa có hình JOS-1A\nChuông cửa · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 19\n\tJOS-1A\t7.895.000đ ↗ nguồn\t\n• Cùng sản phẩm xuất hiện nhiều lần với đơn giá khác nhau (7.895.000đ / 8.623.000đ)\n\t\nSửa\nDuyệt\nXóa"
+    },
+    {
+      "index": 29,
+      "name": "Màn hình mở rộng JO-1FD",
+      "sku": "JO-1FD",
+      "issues": "—",
+      "text": "30\n—\t\nMàn hình mở rộng JO-1FD\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 21\n\tJO-1FD\t6.812.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 30,
+      "name": "Màn hình chính JO-1MDW",
+      "sku": "JO-1MDW",
+      "issues": "—",
+      "text": "31\n—\t\nMàn hình chính JO-1MDW\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 22\n\tJO-1MDW\t10.067.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 31,
+      "name": "Bộ cấp nguồn PS1820S",
+      "sku": "PS1820S",
+      "issues": "—",
+      "text": "32\n—\t\nBộ cấp nguồn PS1820S\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 23\n\tPS1820S\t1.962.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 32,
+      "name": "Bộ cấp nguồn PS18V",
+      "sku": "PS18V",
+      "issues": "—",
+      "text": "33\n—\t\nBộ cấp nguồn PS18V\nPhụ kiện · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 24\n\tPS18V\t412.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 33,
+      "name": "Loa mở rộng IER-2",
+      "sku": "IER-2",
+      "issues": "—",
+      "text": "34\n—\t\nLoa mở rộng IER-2\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Aiphone · dòng 25\n\tIER-2\t600.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 34,
+      "name": "Bảng hiển thị SM3-22PN",
+      "sku": "SM3-22PN",
+      "issues": "—",
+      "text": "35\n—\t\nBảng hiển thị SM3-22PN\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Báo gọi nhà hàng · dòng 16\n\tSM3-22PN\t6.115.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 35,
+      "name": "Nút gọi SB5-1PBK/BR/WH",
+      "sku": "SB5-1PBK/BR/WH",
+      "issues": "—",
+      "text": "36\n—\t\nNút gọi SB5-1PBK/BR/WH\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Báo gọi nhà hàng · dòng 17\n\tSB5-1PBK/BR/WH\t500.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 36,
+      "name": "Nút gọi SB9-3XBK/WH",
+      "sku": "SB9-3XBK/WH",
+      "issues": "—",
+      "text": "37\n—\t\nNút gọi SB9-3XBK/WH\nSản phẩm · Cái · MX BG T062026 PP(1) 1 · Báo gọi nhà hàng · dòng 18\n\tSB9-3XBK/WH\t1.100.000đ ↗ nguồn\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 37,
+      "name": "Khóa điện tử S510",
+      "sku": "S510",
+      "issues": "—",
+      "text": "38\n—\t\nKhóa điện tử S510\nKhóa thông minh · Cái · MX BG T062026 PP(1) 1 · Khóa · dòng 15\n\tS510\t6.400.000đ ↗ nguồn\nCông bố: 13.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 38,
+      "name": "Khóa điện tử G811",
+      "sku": "G811",
+      "issues": "—",
+      "text": "39\n—\t\nKhóa điện tử G811\nKhóa thông minh · Cái · MX BG T062026 PP(1) 1 · Khóa · dòng 16\n\tG811\t8.400.000đ ↗ nguồn\nCông bố: 16.500.000đ\n\t—\t\nSửa\nXóa"
+    },
+    {
+      "index": 39,
+      "name": "Khoá điện tử A110",
+      "sku": "A110",
+      "issues": "—",
+      "text": "40\n—\t\nKhoá điện tử A110\nKhóa thông minh · Cái · MX BG T062026 PP(1) 1 · Khóa · dòng 17\n\tA110\t8.200.000đ ↗ nguồn\nCông bố: 11.508.000đ\n\t—\t\nSửa\nXóa"
+    }
+  ]
+}

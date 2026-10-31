@@ -26,7 +26,7 @@ import { setTenantStorageScope, tenantStorageGetItem, tenantStorageSetItem, tena
 import { PLAN_LIMITS, PLAN_ORDER, FEATURE_LABELS, normalizeBilling, canUseFeature, canFitProductCount, formatLimit, buildUpgradeMessage } from "./billing/planLimits.js";
 import { canAccessCapability, CAPABILITY_LABELS, PLAN_CAPABILITIES } from "./billing/planCapabilities.js";
 import { QUOTE_TEMPLATE_PRESET_LIST, applyQuoteTemplatePreset, buildDefaultQuoteTemplateConfig, normalizeQuoteTemplateConfig, getQuoteTemplateLabel } from "./quoteTemplates.js";
-import { assertSmartQuoteUploadFile, filterSafeSmartQuoteFiles, rejectedFilesMessage } from "./import-engine/fileGuards.js";
+import { assertSmartQuoteUploadFile, filterSafeSmartQuoteFiles, rejectedFilesMessage, smartQuoteUploadWarning } from "./import-engine/fileGuards.js";
 import pdfJsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 import {
   loadCatalogTemplate as loadStoredCatalogTemplate,
@@ -5915,6 +5915,8 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       { allow: ["excel", "pdf"] }
     );
     if (rejected.length) notify.info("Một số file bị bỏ qua vì không an toàn/quá lớn:\n\n" + rejectedFilesMessage(rejected));
+    const largeFileWarnings = fileList.map(smartQuoteUploadWarning).filter(Boolean);
+    if (largeFileWarnings.length) notify.info(largeFileWarnings.slice(0, 4).join("\n\n"));
     if (!fileList.length) {
       notify.warning("Không tìm thấy file Excel hoặc PDF hợp lệ.");
       return;
@@ -6051,6 +6053,8 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     if (!f) return;
     try { assertSmartQuoteUploadFile(f, { allow: ["excel", "pdf"] }); }
     catch (error) { notify.error(error.message); return; }
+    const largeFileWarning = smartQuoteUploadWarning(f);
+    if (largeFileWarning) notify.info(largeFileWarning);
 
     // Khóa preview vào đúng file được chọn. Một PDF cũ chạy chậm không được phép
     // hoàn tất sau rồi ghi đè kết quả Excel/PDF mới.
