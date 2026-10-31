@@ -108,6 +108,43 @@ function cleanModelText(sku) {
     .trim();
 }
 
+function splitQuoteProductDescription(rawName = "") {
+  const raw = String(rawName ?? "").replace(/\r/g, "").trim();
+  if (!raw) return { name: "", specs: "", changed: false };
+
+  const lines = raw.split(/\n+/).map((x) => x.trim()).filter(Boolean);
+  const first = lines[0] || "";
+  const markerRe = /\b(?:model|mã\s*(?:sp|sản\s*phẩm)|ma\s*(?:sp|san\s*pham)|thông\s*số\s*kỹ\s*thuật|thong\s*so\s*ky\s*thuat|tính\s*năng|tinh\s*nang|nguồn\s*điện|nguon\s*dien|công\s*suất|cong\s*suat)\b/i;
+
+  let name = first;
+  let restLines = lines.slice(1);
+
+  // Some spreadsheet normalizers collapse line breaks. Preserve the descriptive
+  // head before the first technical marker when it is clearly a product name.
+  if (lines.length === 1) {
+    const marker = markerRe.exec(raw);
+    if (marker && marker.index >= 6) {
+      name = raw.slice(0, marker.index).trim().replace(/[\s:;,-]+$/, "");
+      restLines = [raw.slice(marker.index).trim()];
+    }
+  }
+
+  const nameNorm = normalizeAscii(name);
+  const invalidHead = !name || name.length < 4 || /^(thong so|thong so san pham|model|ma sp|san pham)$/.test(nameNorm);
+  if (invalidHead || name.length > 150) return { name: raw, specs: "", changed: false };
+
+  const specs = restLines.join("\n").trim();
+  const changed = name !== raw && (restLines.length > 0 || name.length < raw.length);
+  return { name, specs, changed };
+}
+
+function hasStrongSmartLockEvidence(value = "") {
+  const s = normalizeAscii(value);
+  if (!s) return false;
+  return /\b(ddl|k20|k9|r7|q9|p100|kbt|osn|kaadas|hexa)\b/.test(s)
+    || /khoa\s*(?:thong\s*minh|cua|van\s*tay)|door\s*lock|smart\s*lock|fingerprint\s*lock/.test(s);
+}
+
 function inferBrandFromContext(sheetName = "", sectionName = "", supplier = "") {
   const raw = [sheetName, sectionName, supplier].join(" ");
   const norm = normalizeAscii(raw);
@@ -125,13 +162,13 @@ function inferProductTypeFromContext(sheetName = "", sectionName = "", specs = "
   const catNorm = normalizeAscii(category);
   if (catNorm) {
     if (/ket\s*an\s*toan|safe/.test(catNorm)) return "Két an toàn";
-    if (/khoa|lock/.test(catNorm)) return "Khóa thông minh";
+    if (hasStrongSmartLockEvidence(catNorm) || /^(khoa|lock)$/.test(catNorm)) return "Khóa thông minh";
     if (/cong\s*tac|switch/.test(catNorm)) return "Công tắc thông minh";
     if (/den|downlight|spotlight|lighting|chieu\s*sang/.test(catNorm)) return "Đèn";
     if (/camera|nvr|dvr/.test(catNorm)) return "Camera";
     if (/cam\s*bien|sensor/.test(catNorm)) return "Cảm biến";
     if (/rem|curtain|thanh\s*ray/.test(catNorm)) return "Rèm";
-    if (/cong\b|gate|motor/.test(catNorm)) return "Cổng tự động";
+    if (/cong\b|gate|motor|mo\s*to/.test(catNorm)) return "Cổng tự động";
   }
 
   // 2) Pattern SKU/model — đặc trưng từng dòng, chính xác hơn sheet/section.
@@ -147,14 +184,15 @@ function inferProductTypeFromContext(sheetName = "", sectionName = "", specs = "
   const ctxNorm = normalizeAscii(raw);
   const specNorm = normalizeAscii(specs);
   if (/safe|sbx|valis|k[eé]t\b|ket\b|ket\s*an\s*toan/.test(ctxNorm)) return "Két an toàn";
-  if (/khoa|door|lock|ddl|kaadas|hexa/.test(ctxNorm)) return "Khóa thông minh";
+  if (/mo\s*to\s*cong|motor\s*cong|dong\s*co\s*cong|cong\s*(?:tu\s*dong|truot|xoay)|gate\s*(?:motor|opener)|vulcan|ayros|torq|stark|nyk/.test(ctxNorm)) return "Cổng tự động";
+  if (hasStrongSmartLockEvidence(ctxNorm)) return "Khóa thông minh";
   if (/cong\s*tac|switch/.test(ctxNorm)) return "Công tắc thông minh";
   if (/den|downlight|spotlight|lighting/.test(ctxNorm)) return "Đèn";
   if (/camera|nvr|dvr/.test(ctxNorm)) return "Camera";
   if (/cam\s*bien|sensor/.test(ctxNorm)) return "Cảm biến";
   // chỉ dùng specs khi context không quyết định được
   if (/safe|sbx|valis|ket\s*an\s*toan/.test(specNorm)) return "Két an toàn";
-  if (/khoa|door|lock/.test(specNorm)) return "Khóa thông minh";
+  if (hasStrongSmartLockEvidence(specNorm)) return "Khóa thông minh";
   return "Sản phẩm";
 }
 
@@ -349,6 +387,27 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
   let listPrice = currentListPrice || oldListPrice;
   let minRetailPrice = parsePrice(get("minRetailPrice"), priceScaleForKey(map, "minRetailPrice"));
   let specs = get("specs");
+
+  // Historical quotation sheets often store the commercial product name and
+  // the entire technical description in the same "Thông số sản phẩm" cell.
+  // Keep the first descriptive line as the product identity instead of
+  // replacing it with an inferred category + SKU.
+  if (map?._quoteTable && name) {
+    const quoteDescription = splitQuoteProductDescription(name);
+    if (quoteDescription.changed) {
+      name = quoteDescription.name;
+      if (quoteDescription.specs) {
+        specs = [quoteDescription.specs, specs].filter(Boolean).join("\n");
+      }
+      issues.push(issue(
+        "quote_product_name_preserved",
+        "info",
+        "Đã giữ tên thương mại từ dòng đầu của ô mô tả báo giá",
+        "name"
+      ));
+    }
+  }
+
   if (schemaDriftRecovery?.recovered) {
     if (schemaDriftRecovery.warranty) {
       specs = appendSpecLine(specs, `Bảo hành: ${schemaDriftRecovery.warranty}`);

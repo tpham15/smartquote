@@ -22,7 +22,13 @@ const BAD_CATEGORY_RE = /(bang\s*bao\s*gia|bảng\s*báo\s*giá|bao\s*gia|báo\s
 
 const CATEGORY_RULES = [
   { category: "Két an toàn", patterns: [/\b(sbx|valis|safe)/i, /két\s*an\s*toàn/i, /ket\s*an\s*toan/i] },
-  { category: "Khóa thông minh", patterns: [/\b(ddl|k20|k9|r7|q9|p100|kbt|osn|kaadas|hexa)\b/i, /khóa\s*(thông\s*minh|cửa)?|khoa\s*(thong\s*minh|cua)?|door\s*lock|smart\s*lock|fingerprint\s*lock/i] },
+  // Strong gate evidence must win over incidental prose such as
+  // "Có chìa khóa mở kèm". A physical key in a motor specification is not
+  // evidence that the product itself is a smart lock.
+  { category: "Cổng tự động", patterns: [/mô\s*tơ\s*cổng|moto\s*cổng|motor\s*cổng|động\s*cơ\s*cổng|dong\s*co\s*cong|cong\s*tu\s*dong|cổng\s*tự\s*động|cổng\s*trượt|cong\s*truot|cổng\s*xoay|cong\s*xoay|vulcan|ayros|torq|stark?\s*k?3?|nyk|tay\s*đòn|tay\s*don|âm\s*sàn|am\s*san/i] },
+  // Do not classify on the word "khóa" alone. It appears in many unrelated
+  // specifications ("chìa khóa", "khóa mở khẩn", ...).
+  { category: "Khóa thông minh", patterns: [/\b(ddl|k20|k9|r7|q9|p100|kbt|osn|kaadas|hexa)\b/i, /khóa\s*(?:thông\s*minh|cửa|vân\s*tay)|khoa\s*(?:thong\s*minh|cua|van\s*tay)|door\s*lock|smart\s*lock|fingerprint\s*lock/i] },
   { category: "Công tắc thông minh", patterns: [/công\s*tắc|cong\s*tac|switch|\bct\b|lumi.*s\d|aqara.*switch/i] },
   { category: "Cảm biến", patterns: [/cảm\s*biến|cam\s*bien|sensor|motion|door\s*sensor|nhiệt\s*độ|nhiet\s*do|khói|khoi|gas|pir/i] },
   { category: "Bộ điều khiển trung tâm", patterns: [/hub|gateway|bộ\s*điều\s*khiển\s*trung\s*tâm|bo\s*dieu\s*khien\s*trung\s*tam|home\s*center/i] },
@@ -30,7 +36,6 @@ const CATEGORY_RULES = [
   { category: "Đèn", patterns: [/đèn|den|downlight|spotlight|tracklight|led\s*dây|led\s*day|driver|dimmer|lighting/i] },
   { category: "Lưu trữ camera", patterns: [/ổ\s*cứng|o\s*cung|hdd|hard\s*drive|wd20|wd40|purple/i] },
   { category: "Chuông cửa", patterns: [/chuông\s*cửa|chuong\s*cua|intercom|\bds-kv|\bkh6320|màn\s*hình\s*chuông|man\s*hinh\s*chuong/i] },
-  { category: "Cổng tự động", patterns: [/moto\s*cổng|motor\s*cổng|cong\s*tu\s*dong|cổng\s*tự\s*động|vulcan|tay\s*đòn|tay\s*don|âm\s*sàn|am\s*san/i] },
   { category: "Camera", patterns: [/camera|nvr|dvr|poe|ipcam|ipc|đầu\s*ghi|dau\s*ghi/i] },
   { category: "Điều hòa", patterns: [/điều\s*hòa|dieu\s*hoa|air\s*conditioner|vrv|vrf|cassette|btu/i] },
   { category: "Thiết bị vệ sinh", patterns: [/bồn\s*cầu|bon\s*cau|vòi|voi|sen|lavabo|toto|inax|kohler|thiết\s*bị\s*vệ\s*sinh/i] },
