@@ -1,5 +1,6 @@
 import { inferCategoryForProduct } from "./categoryInference.js";
 import { productIdentityKey, canAutoMergeIdentity, appendIdentityReviewIssue, normalizeIdentitySku } from "./productIdentity.js";
+import { applyProductSemantics } from "./productSemantics.js";
 
 // ============================================================
 // Product sanitizer — guardrail cho dữ liệu import catalog/PDF.
@@ -21,7 +22,7 @@ const NON_PRODUCT_ROW_RE = /(^|\b)(hàng\s*đặt|hang\s*dat|thi\s*công|thi\s*c
 const BILLABLE_SERVICE_ROW_RE = /(^|\b)(nhân\s*công|nhan\s*cong|công\s*lắp|cong\s*lap|lắp\s*đặt|lap\s*dat|thi\s*công|thi\s*cong|bảo\s*hành\s*mở\s*rộng|bao\s*hanh\s*mo\s*rong|khảo\s*sát|khao\s*sat|dịch\s*vụ|dich\s*vu)(\b|:)/i;
 const CONTACT_OR_BANK_RE = /(ngân\s*hàng|ngan\s*hang|tài\s*khoản|tai\s*khoan|số\s*tk|so\s*tk|hotline|website|email|địa\s*chỉ|dia\s*chi|mst|mã\s*số\s*thuế|ma\s*so\s*thue)/i;
 const DOCUMENT_METADATA_RE = /^\s*(khách\s*hàng|khach\s*hang|công\s*trình|cong\s*trinh|địa\s*điểm(?:\s*công\s*trình)?|dia\s*diem(?:\s*cong\s*trinh)?|điện\s*thoại|dien\s*thoai|số\s*điện\s*thoại|so\s*dien\s*thoai|số\s*báo\s*giá|so\s*bao\s*gia|ngày|ngay|email|người\s*báo\s*giá|nguoi\s*bao\s*gia|hạng\s*mục|hang\s*muc|mst|mã\s*số\s*thuế|ma\s*so\s*thue|showroom|vpgd)\s*[:：]/i;
-const SKU_CANDIDATE_RE = /\b(?:[A-Z]{2,}[A-Z0-9]*[-_/][A-Z0-9][A-Z0-9._\-/]{1,}|[A-Z]{2,}\d{2,}[A-Z0-9._\-/]*|[A-Z0-9]{2,}-[A-Z0-9]{2,}(?:[-_/][A-Z0-9]{1,})*)\b/g;
+const SKU_CANDIDATE_RE = /\b(?:[A-Z]{2,}[A-Z0-9]*[-_/][A-Z0-9][A-Z0-9._\-/]{1,}|[A-Z]{2,}\d{2,}[A-Z0-9._\-/]*|\d{2,}[A-Z](?:[A-Z0-9]*\d[A-Z0-9]*|[-_/][A-Z0-9]+)|[A-Z0-9]{2,}-[A-Z0-9]{2,}(?:[-_/][A-Z0-9]{1,})*)\b/g;
 
 function text(v) {
   return String(v ?? "").replace(/\s+/g, " ").trim();
@@ -276,6 +277,8 @@ export function isLikelyNonProductRow(rawText, opts = {}) {
 
 function isBadSkuCandidate(cand) {
   if (!cand || /^\d+$/.test(cand)) return true;
+  // Technical values such as 230V/24V/50HZ are specs, never product identity.
+  if (/^\d+(?:V|W|A|HZ|KHZ|MHZ|GHZ|MM|CM|KG|G)$/i.test(cand)) return true;
   if (/^(VAT|TEL|HOTLINE|EMAIL|WWW|HTTP|HTTPS|MODEL|CODE|SKU)$/.test(cand)) return true;
   if (/^20\d{2}$/.test(cand)) return true;
   if (cand.length < 4 || cand.length > 40) return true;
@@ -330,6 +333,50 @@ export function extractSkuFromText(rawText) {
 }
 
 /**
+ * Extract an identity code only when the source explicitly labels it as
+ * Model/SKU/Code/Mã SP. This evidence is stronger than a quotation column that
+ * mixes a commercial model name with an internal code, e.g.
+ * `Vulcan - 24V (29G020)` while the description says `Model: 29G020`.
+ *
+ * Keep display punctuation from the labelled source; canonical identity matching
+ * already folds punctuation in normalizeIdentitySku(), so 30C-074 and 30C074
+ * resolve to the same key without corrupting what the source actually says.
+ */
+export function extractExplicitIdentityCode(rawText = "") {
+  const raw = String(rawText ?? "").replace(/\r/g, "");
+  const labelRe = /\b(?:model|sku|code|part\s*(?:no\.?|number)?|mã\s*(?:sp|sản\s*phẩm|hàng|thiết\s*bị)|ma\s*(?:sp|san\s*pham|hang|thiet\s*bi))\s*[:：#-]?\s*([A-Z0-9][A-Z0-9._\-/]*(?:\s+V\d+)?)\b/ig;
+  const candidates = [];
+  for (const m of raw.matchAll(labelRe)) {
+    const value = String(m[1] || "").toUpperCase().replace(/\s*[-–—]\s*/g, "-").replace(/\s+/g, " ").trim();
+    if (!value || isBadSkuCandidate(value.replace(/\s+V(?=\d+$)/, "-V"))) continue;
+    candidates.push(value);
+  }
+  if (!candidates.length) return "";
+  return candidates[0];
+}
+
+/**
+ * Quote-table identity resolver. In old quotations the mapped `Mã SP` cell can
+ * be a human alias rather than the canonical product code. Prefer an explicitly
+ * labelled Model/SKU/Code from the product description when present, while
+ * preserving the original mapped value as provenance.
+ */
+export function resolveCanonicalQuoteIdentity({ rawSku = "", name = "", specs = "", rawText = "" } = {}) {
+  const sourceSku = text(rawSku);
+  const explicitCode = extractExplicitIdentityCode([name, specs, rawText].filter(Boolean).join("\n"));
+  if (!explicitCode) return { sku: sourceSku, sourceSku, evidence: sourceSku ? "mapped_sku" : "none", changed: false };
+  const explicitNorm = normalizeIdentitySku(explicitCode);
+  const sourceNorm = normalizeIdentitySku(sourceSku);
+  const changed = !!sourceSku && explicitNorm !== sourceNorm;
+  return {
+    sku: explicitCode,
+    sourceSku,
+    evidence: "explicit_model_label",
+    changed,
+  };
+}
+
+/**
  * Một số báo giá lịch sử dùng cột "Mã thiết bị" để ghi bảo hành (vd "BH 36 tháng"),
  * trong khi SKU thật lại nằm ở cột Tên hàng hoá. Đây là schema drift theo section,
  * không phải dòng rác nếu cột Tên thực sự chứa model hợp lệ.
@@ -345,8 +392,8 @@ export function extractCommercialNameFromSpecs(rawSpecs = "") {
     .replace(/^[\s"'“”‘’*•\-–—]+/, "")
     .replace(/[\s"'“”‘’]+$/, "")
     .trim();
-  const isSpecOnlyStart = (line) => /^(tinh\s*nang|thong\s*so|dien\s*ap|nguon|cong\s*suat|nhiet\s*do|kich\s*thuoc|bao\s*hanh|cri\b|quang\s*thong|goc\s*chieu)/.test(asciiFold(line));
-  const marker = /\b(?:Tính\s*năng|Thông\s*số|Điện\s*áp|Nguồn|Công\s*suất|Nhiệt\s*độ|Kích\s*thước|Bảo\s*hành|CRI|Quang\s*thông|Góc\s*chiếu)\b/i;
+  const isSpecOnlyStart = (line) => /^(model\b|sku\b|code\b|ma\s*(?:sp|san\s*pham|hang|thiet\s*bi)\b|tinh\s*nang|thong\s*so|dien\s*ap|nguon|cong\s*suat|nhiet\s*do|kich\s*thuoc|bao\s*hanh|cri\b|quang\s*thong|goc\s*chieu)/.test(asciiFold(line));
+  const marker = /\b(?:Model|SKU|Code|Mã\s*(?:SP|sản\s*phẩm|hàng|thiết\s*bị)|Tính\s*năng|Thông\s*số|Điện\s*áp|Nguồn|Công\s*suất|Nhiệt\s*độ|Kích\s*thước|Bảo\s*hành|CRI|Quang\s*thông|Góc\s*chiếu)\b/i;
   const headBeforeSpecs = (value) => {
     const line = cleanLine(value);
     const m = marker.exec(line);
@@ -642,12 +689,80 @@ export function sanitizeCatalogProduct(product, opts = {}) {
   p.unit = cleanUnit(p.unit);
   p.sku = stripWeird(p.sku || "");
 
+  // P2.3.1 — old quotation identity canonicalization. Historical quotes often
+  // put a human alias in the mapped “Mã SP” column (e.g.
+  // “Vulcan - 24V (29G020)”) while the technical description explicitly says
+  // “Model: 29G020”. In old-quote mode, the labelled Model/SKU/Code is stronger
+  // identity evidence than the mixed alias. This safety net also covers PDF and
+  // manual-mapping paths that do not pass through rowToItem().
+  if (opts.oldQuoteMode) {
+    const beforeSku = p.sku;
+    const quoteIdentity = resolveCanonicalQuoteIdentity({
+      rawSku: beforeSku,
+      name: p.name,
+      specs: p.specs,
+      rawText: p._meta?.source?.rawText || p.source?.rawText || p.rawText || "",
+    });
+    if (quoteIdentity.sku && (quoteIdentity.evidence === "explicit_model_label" || !p.sku)) {
+      p.sku = stripWeird(quoteIdentity.sku);
+      if (quoteIdentity.changed) {
+        const metaSource = { ...(p._meta?.source || {}) };
+        if (!metaSource.rawSku) metaSource.rawSku = beforeSku;
+        metaSource.canonicalSkuEvidence = quoteIdentity.evidence;
+        p._meta = { ...(p._meta || {}), source: metaSource };
+        issues.push(issue(
+          "canonical_sku_recovered_from_model",
+          "info",
+          `Đã tách mã sản phẩm chuẩn ${p.sku} khỏi alias nguồn ${beforeSku}`,
+          "sku"
+        ));
+
+        // If an earlier fallback generated `category + raw SKU` as the display
+        // name, recover the commercial first line from specs instead of keeping
+        // the synthetic name visible to users.
+        const generatedName = asciiFold(p.name).replace(/[^a-z0-9]+/g, "");
+        const generatedFromAlias = asciiFold(`${p.category || ""} ${beforeSku || ""}`).replace(/[^a-z0-9]+/g, "");
+        const commercialName = extractCommercialNameFromSpecs(p.specs);
+        if (commercialName && generatedName && generatedFromAlias && generatedName === generatedFromAlias) {
+          p.name = commercialName;
+          issues.push(issue(
+            "commercial_name_recovered_from_specs",
+            "info",
+            "Đã khôi phục tên thương mại từ mô tả báo giá thay vì dùng danh mục + alias mã",
+            "name"
+          ));
+        }
+      }
+    }
+  }
+
   if (!p.sku) {
     const extractedSku = extractSkuFromText([p.name, p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" "));
     if (extractedSku) {
       p.sku = extractedSku;
       issues.push(issue("sku_extracted_from_text", "info", "Đã tự tách SKU từ mô tả/thông số", "sku"));
     }
+  }
+
+  // P2.3.2 — semantic identity separation. Category describes where the item
+  // belongs; Product Type describes what is actually sold. A strong semantic
+  // rule may canonicalize the display name, while retaining sourceName/rawSku
+  // under attributes.identity for audit/provenance.
+  const beforeSemanticName = p.name;
+  const semanticProduct = applyProductSemantics(p, {
+    category: p.category,
+    sheetName: p.source?.sheet || p._meta?.source?.sheet || "",
+    sectionName: p.source?.section || p._meta?.source?.section || "",
+    rawSku: p.source?.rawSku || p._meta?.source?.rawSku || "",
+  });
+  Object.assign(p, semanticProduct);
+  if (p.name && beforeSemanticName && p.name !== beforeSemanticName && p?.attributes?.identity?.semanticRule !== "none") {
+    issues.push(issue(
+      "canonical_product_name_from_semantics",
+      "info",
+      `Đã chuẩn hóa tên theo loại sản phẩm thực tế: ${p.name}`,
+      "name"
+    ));
   }
 
   const oldQuoteGuardSkipped = !userAccepted && isLikelyOldQuoteAggregateProduct(p, opts);

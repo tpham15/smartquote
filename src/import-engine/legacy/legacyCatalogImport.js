@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import { parsePdfCatalogWithPipeline } from "../pdf/pdfCatalogPipeline.js";
 import { expandPdfSellableVariants } from "../pdf/pdfVariants.js";
 import { priceUpdatePreviewFromLegacy, productsToImportPreviewResult } from "../previewResult.js";
-import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities, extractCommercialNameFromSpecs } from "../productSanitizer.js";
+import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities, extractCommercialNameFromSpecs, resolveCanonicalQuoteIdentity } from "../productSanitizer.js";
 import { inferCategory } from "../categoryInference.js";
 
 const uid = (p = "imp") => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -60,7 +60,15 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       ? recoverQuoteSectionSchemaIdentity({ name: rawName, sku: rawSku, specs: get("specs") })
       : { name: rawName, sku: rawSku, specs: get("specs"), recovered: false, warranty: "" };
     if (opts.quoteTable && isWarrantyPseudoSku(rawSku) && !schemaRecovery.recovered) return null;
-    const sku = schemaRecovery.recovered ? schemaRecovery.sku : (rawSku || extractSkuFromText(rowText));
+    const quoteIdentity = opts.quoteTable
+      ? resolveCanonicalQuoteIdentity({
+          rawSku: schemaRecovery.recovered ? schemaRecovery.sku : rawSku,
+          name: schemaRecovery.name || rawName,
+          specs: schemaRecovery.specs || get("specs"),
+          rawText: rowText,
+        })
+      : { sku: schemaRecovery.recovered ? schemaRecovery.sku : rawSku, sourceSku: rawSku, evidence: "mapped_sku", changed: false };
+    const sku = quoteIdentity.sku || extractSkuFromText(rowText);
     const supplier = cleanSupplierName(get("supplier"), opts.defaultSupplier || "");
     const brand = cleanSupplierName(get("brand"), "");
     const origin = get("origin");
@@ -110,6 +118,8 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
           rawText: rowText,
           rowIndex: opts.startRowIndex != null ? opts.startRowIndex + rowOffset + 1 : rowOffset + 1,
           sheet: opts.sheetName || "",
+          rawSku: rawSku || "",
+          canonicalSkuEvidence: quoteIdentity.evidence || "",
         }
       }
     };

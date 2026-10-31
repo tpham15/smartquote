@@ -23,11 +23,16 @@ function pickSourceUrl(product = {}) {
 export function normalizeCatalogProduct(product = {}) {
   const id = asText(product.id).trim();
   const name = asText(product.name || product.title).trim();
+  const hasSemanticIdentity = !!(product.attributes?.identity || product.productType || product.product_type || product.subtype);
+  const legacyModelAsSku = !hasSemanticIdentity ? product.model : '';
   return {
     ...product,
     id,
     name,
-    sku: asText(product.sku || product.model || product.code).trim(),
+    sku: asText(product.sku || product.code || legacyModelAsSku).trim(),
+    model: asText(product.model || product.attributes?.identity?.model).trim(),
+    productType: asText(product.productType || product.product_type || product.attributes?.identity?.productType).trim(),
+    subtype: asText(product.subtype || product.attributes?.identity?.subtype).trim(),
     supplier: asText(product.supplier || product.vendor).trim(),
     brand: asText(product.brand).trim(),
     origin: asText(product.origin || product.attributes?.origin).trim(),
@@ -64,6 +69,9 @@ export function serializeProductsForCatalog(products = []) {
     id: p.id,
     name: p.name,
     sku: p.sku || '',
+    model: p.model || '',
+    productType: p.productType || '',
+    subtype: p.subtype || '',
     supplier: p.supplier || '',
     brand: p.brand || '',
     origin: p.origin || '',
@@ -110,6 +118,9 @@ export function catalogRowToProduct(row = {}) {
     id: row.id || raw.id,
     name: row.name || raw.name,
     sku: row.sku || raw.sku || '',
+    model: raw.model || raw.attributes?.identity?.model || '',
+    productType: raw.productType || raw.product_type || raw.attributes?.identity?.productType || '',
+    subtype: raw.subtype || raw.attributes?.identity?.subtype || '',
     supplier: row.supplier || raw.supplier || '',
     brand: row.brand || raw.brand || '',
     origin: raw.origin || raw.attributes?.origin || '',

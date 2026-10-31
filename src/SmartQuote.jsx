@@ -13,10 +13,12 @@ import { mapBomRowsWithClaude, mapTakeoffColumnsWithClaude, autoMapCatalogColumn
 import { parsePdfCatalogWithClaude, parseSupplierPriceFile, guessCatalogColumnsByName, buildCatalogPreview, readCatalogRowsForManualMapping } from "./import-engine/legacy/legacyCatalogImport.js";
 import { sanitizeCatalogProducts, dedupeCatalogIdentities, isUnsafeImportedProduct, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
 import { productIdentityKey, canAutoMergeIdentity } from "./import-engine/productIdentity.js";
+import { canonicalizeLegacyProductForMatching } from "./import-engine/productSemantics.js";
 import { webScrapeItemsToProducts } from "./import-engine/web/webCatalogImport.js";
 import { loadCloudState, saveCloudState } from "./supabase/cloudState.js";
 import { listCloudCatalog, syncCloudCatalogSnapshot, logCloudCatalogImport, serializeProductsForCatalog, deleteCloudCatalogItems, replaceCloudCatalog } from "./supabase/catalogStore.js";
 import { deleteCloudQuote, listCloudQuotes, saveCloudQuote } from "./supabase/quoteStore.js";
+import { recordCloudQuoteLearning, listCloudQuoteLearningObservations } from "./supabase/learningStore.js";
 import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd, buildVietQrUrl, markManualBillingPaid } from "./supabase/billingStore.js";
 import { smartQuoteFetch } from "./supabase/apiFetch.js";
 import { uploadDealerCatalogImage, assertDealerCatalogImageFile } from "./supabase/catalogImageStore.js";
@@ -41,7 +43,16 @@ import {
 } from "./import-engine/correctionLearning.js";
 import { applyCommercialValidation } from "./import-engine/businessValidator.js";
 import { recordCorrectionEvent, getCorrectionTelemetryStats, buildCorrectionEvidenceExport, markCorrectionEvidenceExported } from "./import-engine/correctionTelemetry.js";
+import {
+  buildFinalQuoteLearningObservations,
+  recordQuoteLearningObservations,
+  mergeCloudQuoteLearningObservations,
+  applyQuoteIdentityLearning,
+  getQuoteLearningInsight,
+  listQuoteLearningStats,
+} from "./learning/quoteLearning.js";
 import { calculateQuoteTotals, normalizePercent } from "./quoteMath.js";
+import { ENGINEERING_ROLE_OPTIONS, buildEngineeringAssessment, buildEngineeringValidationSnapshot } from "./engineering/engineeringRules.js";
 import {
   chooseDefaultMarkupFactor,
   productDisplayBasePrice,
@@ -1059,6 +1070,21 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
   setTenantStorageScope(cloud?.enabled ? cloud?.dealerId : null);
   const industryProfile = useMemo(() => getIndustryProfile(cloud?.industryProfile || "generic"), [cloud?.industryProfile]);
 
+  // P2.0: hydrate Final-quote learning from cloud into the tenant-scoped local
+  // memory. Missing migration must never block app startup or quoting.
+  useEffect(() => {
+    if (!cloud?.enabled || !cloud?.dealerId) return undefined;
+    let cancelled = false;
+    listCloudQuoteLearningObservations(cloud.dealerId, { limit: 2000 })
+      .then((rows) => { if (!cancelled && rows?.length) mergeCloudQuoteLearningObservations(rows); })
+      .catch((error) => {
+        if (!/quote_learning_observations|does not exist|relation/i.test(String(error?.message || ""))) {
+          console.warn("Không đồng bộ được Final Quote Learning:", error);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [cloud?.enabled, cloud?.dealerId]);
+
   const [theme, setTheme] = useState(
     () => document.documentElement.getAttribute("data-theme") || "light"
   );
@@ -2032,6 +2058,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   const [quoteRootQuoteId, setQuoteRootQuoteId] = useState(null);
   const [quoteFinalizedAt, setQuoteFinalizedAt] = useState(null);
   const [quoteCompanySnapshot, setQuoteCompanySnapshot] = useState(null);
+  const [engineeringRequirements, setEngineeringRequirements] = useState({ retentionDays: 0, defaultCameraBitrateMbps: 0, storageSafetyPercent: 10 });
+  const [engineeringOverrideReason, setEngineeringOverrideReason] = useState("");
   const [solutionModalOpen, setSolutionModalOpen] = useState(false);
   const lastCreateRequestRef = useRef(createRequest);
   // Saved quotes carry immutable product/price snapshots. While such a quote is open,
@@ -2153,6 +2181,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setQuoteRootQuoteId(null);
     setQuoteFinalizedAt(null);
     setQuoteCompanySnapshot(null);
+    setEngineeringRequirements({ retentionDays: 0, defaultCameraBitrateMbps: 0, storageSafetyPercent: 10 });
+    setEngineeringOverrideReason("");
     setPickerRoomId(null);
     setEditingLine(null);
     setCustomerDetailsOpen(false);
@@ -2302,7 +2332,16 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     vatPercent,
     snapshotRooms: snapshotPreviewRooms,
   }), [commercialAssessment, customer, vatPercent, snapshotPreviewRooms]);
+  const engineeringAssessment = useMemo(() => buildEngineeringAssessment({
+    rooms,
+    productById,
+    requirements: engineeringRequirements,
+  }), [rooms, productById, engineeringRequirements]);
+  const engineeringNeedsOverride = engineeringAssessment.counts.error > 0;
+  const engineeringOverrideValid = !engineeringNeedsOverride || String(engineeringOverrideReason || "").trim().length >= 8;
   const actionableFinalBlockers = finalQuoteGate.blockers.filter((item) => !(item.id === "snapshot" && finalQuoteGate.lineCount === 0));
+  const combinedFinalReady = finalQuoteGate.ready && engineeringOverrideValid;
+  const finalizeIssueCount = actionableFinalBlockers.length + (engineeringOverrideValid ? 0 : engineeringAssessment.counts.error);
   const passedQuoteChecks = finalQuoteGate.checks.filter((item) => item.pass);
   const visibleQuoteChecks = showPassedQuoteChecks ? finalQuoteGate.checks : actionableFinalBlockers;
 
@@ -2345,6 +2384,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     customerOverride = null,
     lifecycleOverride = null,
     workflowOverride = null,
+    engineeringValidationOverride = null,
     idOverride = undefined,
   } = {}) => {
     const sourceCustomer = customerOverride || customer;
@@ -2365,7 +2405,14 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
         quoteNumber: asCopy && sourceCustomer.quoteNumber ? `${sourceCustomer.quoteNumber}-COPY` : (sourceCustomer.quoteNumber || ""),
       },
       rooms: buildQuoteSnapshotRooms(sourceRooms, buildQuoteProductMap(catalogProductById, sourceRooms)),
-      calc: { ...calc, grossMarginPct, commercialAssessment, workflow },
+      calc: {
+        ...calc,
+        grossMarginPct,
+        commercialAssessment,
+        workflow,
+        engineeringRequirements: { ...engineeringRequirements },
+        engineeringValidation: engineeringValidationOverride || buildEngineeringValidationSnapshot(engineeringAssessment, engineeringOverrideReason),
+      },
       status: asCopy ? "draft" : (quoteStatus || "draft"),
       snapshotVersion: 1,
     };
@@ -2394,6 +2441,12 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setQuoteRootQuoteId(workflow.rootQuoteId);
     setQuoteFinalizedAt(workflow.finalizedAt);
     setQuoteCompanySnapshot(workflow.companySnapshot);
+    setEngineeringRequirements({
+      retentionDays: Number(quote.calc?.engineeringRequirements?.retentionDays || quote.calc?.engineeringValidation?.requirements?.retentionDays || 0),
+      defaultCameraBitrateMbps: Number(quote.calc?.engineeringRequirements?.defaultCameraBitrateMbps || quote.calc?.engineeringValidation?.requirements?.defaultCameraBitrateMbps || 0),
+      storageSafetyPercent: Number(quote.calc?.engineeringRequirements?.storageSafetyPercent ?? quote.calc?.engineeringValidation?.requirements?.storageSafetyPercent ?? 10),
+    });
+    setEngineeringOverrideReason(String(quote.calc?.engineeringValidation?.override?.reason || ""));
     setPickerRoomId(null);
     setEditingLine(null);
     setCustomerDetailsOpen(Boolean(quote.customer?.address || quote.customer_address || quote.customer?.quoteNumber || quote.quote_number || quote.customer?.category || quote.category));
@@ -2446,6 +2499,27 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
       notify.warning(`Chưa thể chốt báo giá: ${gate.blockers.map((item) => item.label).join("; ")}.`);
       return;
     }
+    const frozenProductById = buildQuoteProductMap(catalogProductById, frozenRooms);
+    const finalEngineeringAssessment = buildEngineeringAssessment({
+      rooms: frozenRooms,
+      productById: frozenProductById,
+      requirements: engineeringRequirements,
+    });
+    const overrideReason = String(engineeringOverrideReason || "").trim();
+    if (finalEngineeringAssessment.counts.error > 0 && overrideReason.length < 8) {
+      notify.warning(`Còn ${finalEngineeringAssessment.counts.error} lỗi kỹ thuật. Hãy xử lý hoặc nhập lý do override tối thiểu 8 ký tự trước khi chốt.`);
+      return;
+    }
+    if (finalEngineeringAssessment.counts.error > 0) {
+      const accepted = await confirmAction({
+        title: "Chốt báo giá với Engineering override?",
+        message: `Còn ${finalEngineeringAssessment.counts.error} lỗi kỹ thuật. Lý do override sẽ được lưu vào snapshot: “${overrideReason}”.`,
+        confirmLabel: "Chốt với override",
+        tone: "danger",
+      });
+      if (!accepted) return;
+    }
+    const finalEngineeringValidation = buildEngineeringValidationSnapshot(finalEngineeringAssessment, overrideReason);
     const finalizedAt = new Date().toISOString();
     const companySnapshot = snapshotQuoteCompany(company);
     const workflow = buildQuoteWorkflow({
@@ -2468,6 +2542,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           customerOverride: finalCustomer,
           lifecycleOverride: QUOTE_LIFECYCLE_FINAL,
           workflowOverride: workflow,
+          engineeringValidationOverride: finalEngineeringValidation,
         }));
         await Promise.all([reloadQuotes(), cloud?.refreshBilling?.()]);
       } catch (error) {
@@ -2488,7 +2563,49 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setPickerRoomId(null);
     setEditingLine(null);
     setSolutionModalOpen(false);
-    notify.success(cloud?.enabled ? `Đã Final Rev ${quoteRevision} và khóa nội dung.` : `Đã Final Rev ${quoteRevision} trong phiên này. Nội dung đã khóa.`);
+
+    // P2.0 — a Final quote is a human-confirmed learning event. Learning must
+    // never block finalization: local/cloud failures are isolated and pricing is
+    // recorded only as historical guidance, never auto-applied.
+    let learnedProducts = 0;
+    const learningAllowed = !cloud?.enabled || canAccessCapability(cloud.billing, "correction_learning").ok;
+    if (learningAllowed) {
+      try {
+        const observations = buildFinalQuoteLearningObservations({
+          quoteId: savedId || `local:${finalizedAt}`,
+          revision: quoteRevision,
+          rooms: frozenRooms,
+          customer: finalCustomer,
+          finalizedAt,
+          industryId: industryProfile?.id || "generic",
+        });
+        const localLearning = recordQuoteLearningObservations(observations);
+        learnedProducts = Number(localLearning.added || 0);
+        saveProductLearningBatch(observations.map((row) => ({
+          ...row.product,
+          _meta: { source: { rawText: row.product?.name || row.product?.sku || "", fileName: `Final Quote ${finalCustomer.quoteNumber || ""}` } },
+        })), {
+          source: "final_quote",
+          userApproved: true,
+          fileName: `Final Quote ${finalCustomer.quoteNumber || ""}`,
+          detectedIndustry: industryProfile?.id || "generic",
+        });
+        if (cloud?.enabled && cloud.dealerId && savedId) {
+          try {
+            await recordCloudQuoteLearning(cloud.dealerId, savedId, observations);
+          } catch (learningError) {
+            console.warn("Final Quote đã lưu nhưng chưa đồng bộ Learning Memory:", learningError);
+          }
+        }
+      } catch (learningError) {
+        console.warn("Không ghi được Final Quote Learning Memory:", learningError);
+      }
+    }
+
+    const baseSuccess = cloud?.enabled
+      ? `Đã Final Rev ${quoteRevision} và khóa nội dung.`
+      : `Đã Final Rev ${quoteRevision} trong phiên này. Nội dung đã khóa.`;
+    notify.success(learnedProducts > 0 ? `${baseSuccess} SmartQuote đã học ${learnedProducts} sản phẩm từ báo giá này.` : baseSuccess);
   };
 
   const createRevisionFromFinal = async () => {
@@ -2511,6 +2628,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setQuoteRootQuoteId(quoteRootQuoteId || previousId || quoteParentQuoteId || null);
     setQuoteFinalizedAt(null);
     setQuoteCompanySnapshot(null);
+    setEngineeringOverrideReason("");
     setQuoteStatus("draft");
     setPickerRoomId(null);
     setEditingLine(null);
@@ -2524,6 +2642,10 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     }
     if (!finalQuoteGate.ready) {
       notify.warning(`Không thể ${label}: báo giá đã chốt hiện không còn đạt kiểm tra an toàn (${finalQuoteGate.blockers.map((item) => item.label).join("; ")}).`);
+      return false;
+    }
+    if (engineeringAssessment.counts.error > 0 && !engineeringOverrideValid) {
+      notify.warning(`Không thể ${label}: còn ${engineeringAssessment.counts.error} lỗi Engineering chưa có lý do override hợp lệ.`);
       return false;
     }
     return true;
@@ -2910,13 +3032,51 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                 ? (commercialAssessment.unknownCostCount > 0 ? `Lãi gộp — · thiếu giá vốn ${commercialAssessment.unknownCostCount} dòng` : "Lãi gộp —")
                 : `${grossMarginPct < 0 ? "▼" : "▲"} Lãi gộp ${grossMarginPct}%`}
             </div>
-            <div className={`quote-final-gate ${isFinalQuote ? "final" : (finalQuoteGate.ready ? "ready" : "blocked")}`}>
+            <div className={`engineering-panel ${engineeringAssessment.status.toLowerCase()}`}>
+              <div className="engineering-panel-head">
+                <div>
+                  <strong>Engineering checks</strong>
+                  <span>P2.3 · constraint kỹ thuật deterministic</span>
+                </div>
+                <b>{engineeringAssessment.counts.error > 0 ? `${engineeringAssessment.counts.error} lỗi` : engineeringAssessment.counts.warning > 0 ? `${engineeringAssessment.counts.warning} cần xem` : engineeringAssessment.counts.total > 0 ? "Đạt" : "Chưa có dữ liệu"}</b>
+              </div>
+              {!isFinalQuote && (
+                <div className="engineering-requirements">
+                  <label><span>Retention (ngày)</span><input type="number" min="0" value={engineeringRequirements.retentionDays || 0} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, retentionDays: Math.max(0, Number(e.target.value) || 0) }))} /></label>
+                  <label><span>Bitrate mặc định (Mbps)</span><input type="number" min="0" step="0.1" value={engineeringRequirements.defaultCameraBitrateMbps || 0} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, defaultCameraBitrateMbps: Math.max(0, Number(e.target.value) || 0) }))} /></label>
+                  <label><span>Storage safety (%)</span><input type="number" min="0" max="100" value={engineeringRequirements.storageSafetyPercent ?? 10} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, storageSafetyPercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))} /></label>
+                </div>
+              )}
+              {engineeringAssessment.counts.total === 0 ? (
+                <p className="engineering-empty">Chưa có check áp dụng. Mở Catalog → Sửa sản phẩm → Engineering Rules để khai báo role/thông số đã xác minh.</p>
+              ) : (
+                <div className="engineering-check-list">
+                  {engineeringAssessment.issues.slice(0, 5).map((item) => (
+                    <div key={`${item.ruleCode}-${item.title}`} className={`engineering-check ${item.status.toLowerCase()}`}>
+                      <span className="engineering-check-mark">{item.status === "FAIL" ? "!" : "?"}</span>
+                      <div><strong>{item.title}</strong><small>{item.detail}</small>{item.resolution && <em>{item.resolution}</em>}</div>
+                    </div>
+                  ))}
+                  {engineeringAssessment.issues.length === 0 && <div className="engineering-all-pass">✓ {engineeringAssessment.counts.pass} kiểm tra kỹ thuật đã đạt.</div>}
+                  {engineeringAssessment.issues.length > 5 && <small className="engineering-more">+ {engineeringAssessment.issues.length - 5} kiểm tra cần xem khác</small>}
+                </div>
+              )}
+              {engineeringAssessment.counts.error > 0 && (
+                <label className="engineering-override">
+                  <span>Lý do override kỹ thuật {isFinalQuote ? "đã lưu" : "(bắt buộc nếu vẫn muốn Final)"}</span>
+                  <textarea rows={2} disabled={isFinalQuote} value={engineeringOverrideReason} onChange={(e) => setEngineeringOverrideReason(e.target.value)} placeholder="VD: Khách đã có NVR/switch PoE ngoài phạm vi báo giá…" />
+                  {!isFinalQuote && String(engineeringOverrideReason || "").trim().length > 0 && String(engineeringOverrideReason || "").trim().length < 8 && <small>Tối thiểu 8 ký tự để tránh override vô tình.</small>}
+                </label>
+              )}
+              {engineeringAssessment.counts.pass > 0 && engineeringAssessment.issues.length > 0 && <details className="engineering-passed"><summary>{engineeringAssessment.counts.pass} kiểm tra đã đạt</summary>{engineeringAssessment.passed.slice(0, 8).map((item) => <div key={item.ruleCode}>✓ {item.title} · {item.detail}</div>)}</details>}
+            </div>
+            <div className={`quote-final-gate ${isFinalQuote ? "final" : (combinedFinalReady ? "ready" : "blocked")}`}>
               <div className="quote-final-gate-head">
                 <div>
-                  <strong>{isFinalQuote ? `Đã chốt · Rev ${quoteRevision}` : (finalQuoteGate.ready ? "Sẵn sàng để chốt" : "Chưa thể chốt báo giá")}</strong>
-                  <span>{isFinalQuote ? "Nội dung và giá đã khóa. Muốn sửa hãy tạo revision mới." : (finalQuoteGate.ready ? "Tất cả kiểm tra an toàn đã đạt." : `Còn ${actionableFinalBlockers.length} việc cần xử lý.`)}</span>
+                  <strong>{isFinalQuote ? `Đã chốt · Rev ${quoteRevision}` : (combinedFinalReady ? "Sẵn sàng để chốt" : "Chưa thể chốt báo giá")}</strong>
+                  <span>{isFinalQuote ? "Nội dung, giá và Engineering snapshot đã khóa. Muốn sửa hãy tạo revision mới." : (combinedFinalReady ? "Kiểm tra thương mại và Engineering đã sẵn sàng." : `Còn ${finalizeIssueCount} việc cần xử lý.`)}</span>
                 </div>
-                <b>{finalQuoteGate.ready ? "Đạt" : `${actionableFinalBlockers.length} việc`}</b>
+                <b>{combinedFinalReady ? "Đạt" : `${finalizeIssueCount} việc`}</b>
               </div>
               {visibleQuoteChecks.length > 0 && (
                 <div className="quote-final-gate-checks">
@@ -2971,17 +3131,17 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
             </div>
             <div className="s-actions">
               {isFinalQuote ? (
-                <button className="btn-export-primary" disabled={exporting || !finalQuoteGate.ready} onClick={exportExcel}>
+                <button className="btn-export-primary" disabled={exporting || !combinedFinalReady} onClick={exportExcel}>
                   {exporting ? "Đang tạo…" : `Xuất báo giá · Rev ${quoteRevision}`}
                 </button>
               ) : (
                 <button className="btn-export-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={finalizeCurrentQuote}>
-                  {finalQuoteGate.ready ? "Chốt & khóa báo giá" : `Còn ${actionableFinalBlockers.length} việc để chốt`}
+                  {combinedFinalReady ? "Chốt & khóa báo giá" : `Còn ${finalizeIssueCount} việc để chốt`}
                 </button>
               )}
               {isFinalQuote && (
                 <div className="row2">
-                  <button className="btn-ghost" disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>
+                  <button className="btn-ghost" disabled={!combinedFinalReady} onClick={exportPDF}>Xuất PDF</button>
                   <button className="btn-ghost" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
                 </div>
               )}
@@ -3018,6 +3178,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           markups={markups}
           current={productById[editingLine.line.productId]}
           line={editingLine.line}
+          learningInsight={getQuoteLearningInsight(productById[editingLine.line.productId] || {})}
           onSetFactor={(factor) => setLineFactor(editingLine.roomId, editingLine.line.id, factor)}
           onSwap={(pid) => swapLineProduct(editingLine.roomId, editingLine.line.id, pid)}
           onClose={() => setEditingLine(null)}
@@ -3280,7 +3441,7 @@ function SolutionFamilies({ products, solutionFamilies = [], setSolutionFamilies
 }
 
 // Modal đổi thiết bị cho 1 dòng (giữ nguyên SL & hệ số)
-function LineProductSwap({ products, markups = [], current, line, onSetFactor, onSwap, onClose }) {
+function LineProductSwap({ products, markups = [], current, line, learningInsight = null, onSetFactor, onSwap, onClose }) {
   const [q, setQ] = useState("");
   const filtered = products.filter(
     (p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.sku || "").toLowerCase().includes(q.toLowerCase())
@@ -3293,6 +3454,15 @@ function LineProductSwap({ products, markups = [], current, line, onSetFactor, o
           <p className="tab-intro" style={{ margin: "0 0 12px" }}>
             Đang chọn: <strong>{current.name}</strong> ({current.sku}). Chọn sản phẩm thay thế bên dưới — số lượng giữ nguyên.
           </p>
+        )}
+        {learningInsight && learningInsight.quoteCount > 0 && (
+          <div className="line-learning-insight">
+            <strong>SmartQuote Learning</strong>
+            <span>Đã xuất hiện trong {learningInsight.quoteCount} báo giá Final · tổng {Math.round(learningInsight.totalQty || 0)} sản phẩm.</span>
+            {learningInsight.medianSalePrice > 0 && <span>Giá bán lịch sử trung vị: <b>{VND(Math.round(learningInsight.medianSalePrice))}</b>{learningInsight.minSalePrice !== learningInsight.maxSalePrice ? ` · khoảng ${VND(Math.round(learningInsight.minSalePrice || 0))} – ${VND(Math.round(learningInsight.maxSalePrice || 0))}` : ""}.</span>}
+            {learningInsight.medianMarginPct != null && <span>Biên lợi nhuận lịch sử trung vị: <b>{Math.round(learningInsight.medianMarginPct * 10) / 10}%</b>.</span>}
+            <em>Chỉ là dữ liệu tham khảo từ báo giá đã chốt; SmartQuote không tự đổi giá hiện tại.</em>
+          </div>
         )}
         {current && current.priceMode !== "fixed" && (
           <div className="line-detail-factor">
@@ -5458,6 +5628,9 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const [learningStats, setLearningStats] = useState(() => {
     try { return listCorrectionLearningStats(); } catch { return { skuRules: 0, rawRules: 0, supplierProfiles: 0 }; }
   });
+  const [quoteLearningStats, setQuoteLearningStats] = useState(() => {
+    try { return listQuoteLearningStats(); } catch { return { finalQuotes: 0, products: 0, suggest: 0, trusted: 0 }; }
+  });
   const [correctionStats, setCorrectionStats] = useState(() => {
     try { return getCorrectionTelemetryStats(); } catch { return { total: 0, edited: 0, approved: 0, deleted: 0 }; }
   });
@@ -5545,9 +5718,16 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const PDF_QUOTA_LIMIT = cloud?.enabled ? (billingForImporter?.limits?.pdf_extract ?? 0) : ((company?.pdfQuotaLimit) || 50);
 
   const hasCapabilityQuiet = (capabilityKey) => !cloud?.enabled || canAccessCapability(cloud.billing, capabilityKey).ok;
-  const applyLearningIfAllowed = (items, meta = {}) => hasCapabilityQuiet("correction_learning")
-    ? applyCorrectionLearning(items, meta)
-    : { products: items || [], hits: 0 };
+  const applyLearningIfAllowed = (items, meta = {}) => {
+    if (!hasCapabilityQuiet("correction_learning")) return { products: items || [], hits: 0, quoteSuggestions: 0 };
+    const corrected = applyCorrectionLearning(items, meta);
+    const fromFinalQuotes = applyQuoteIdentityLearning(corrected.products || []);
+    return {
+      products: fromFinalQuotes.products,
+      hits: Number(corrected.hits || 0) + Number(fromFinalQuotes.hits || 0),
+      quoteSuggestions: Number(fromFinalQuotes.suggestions || 0),
+    };
+  };
 
   // ── TEMPLATE MEMORY: centralized in import-engine/templateMemory.js ──
   const loadCatalogTemplate = (hdrs, fileName) => hasCapabilityQuiet("template_memory") ? loadStoredCatalogTemplate(hdrs, fileName) : null;
@@ -5582,6 +5762,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
   const refreshLearningStats = () => {
     try { setLearningStats(listCorrectionLearningStats()); } catch {}
+    try { setQuoteLearningStats(listQuoteLearningStats()); } catch {}
     try { setCorrectionStats(getCorrectionTelemetryStats()); } catch {}
   };
 
@@ -6578,7 +6759,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
 
     const nextProductCount = (() => {
       if (mergeMode === "replace") return finalItems.length;
-      const simulated = [...products];
+      const simulated = products.map((p) => canonicalizeLegacyProductForMatching(p));
       for (const np of finalItems) {
         const key = productIdentityKey(np);
         const candidates = key ? simulated.filter((p) => productIdentityKey(p) === key && canAutoMergeIdentity(p, np)) : [];
@@ -6597,7 +6778,10 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
       // Merge by canonical identity, never by bare SKU. If the same SKU has
       // conflicting supplier/name evidence, keep it as a separate product.
       setProducts((prev) => {
-        const updated = [...prev];
+        // P2.3.2: safely repair pre-canonicalization catalog rows when their
+        // stored source still contains an explicit Model/SKU label. This lets
+        // a re-import update the same product instead of adding a duplicate.
+        const updated = prev.map((p) => canonicalizeLegacyProductForMatching(p));
         finalItems.forEach(np => {
           const key = productIdentityKey(np);
           const candidateIndexes = [];
@@ -6621,6 +6805,17 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
               specs: np.specs || updated[idx].specs,
               image: updated[idx].image || np.image || "",
               category: np.category || updated[idx].category,
+              productType: np.productType || updated[idx].productType || "",
+              subtype: np.subtype || updated[idx].subtype || "",
+              model: np.model || updated[idx].model || "",
+              attributes: {
+                ...(updated[idx].attributes || {}),
+                ...(np.attributes || {}),
+                identity: {
+                  ...(updated[idx].attributes?.identity || {}),
+                  ...(np.attributes?.identity || {}),
+                },
+              },
               supplier: np.supplier || updated[idx].supplier,
               brand: np.brand || updated[idx].brand,
               unit: np.unit || updated[idx].unit,
@@ -6950,6 +7145,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <div><span>Confidence</span><strong>{Math.round((importResult?.overallConfidence || 0) * 100)}%</strong></div>
                 <div><span>Template</span><strong>{importResult?.templateKnown ? "đã nhớ" : (importResult?.detectedTemplateId ? "mới" : "—")}</strong></div>
                 <div><span>Đã học</span><strong>{learningStats ? `${learningStats.skuRules} SKU · ${learningStats.rawRules} raw · ${learningStats.supplierProfiles} nhà cung cấp` : "—"}</strong></div>
+                <div><span>Final Quote Learning</span><strong>{quoteLearningStats ? `${quoteLearningStats.finalQuotes} báo giá · ${quoteLearningStats.products} SP · ${quoteLearningStats.trusted} tin cậy` : "—"}</strong></div>
                 <div><span>Correction evidence</span><strong>{correctionStats ? `${correctionStats.total} sự kiện · ${correctionStats.edited} sửa · ${correctionStats.approved} duyệt · ${correctionStats.deleted} xóa · ${correctionStats.unexported} chưa export` : "—"}</strong></div>
                 <div><span>Pilot evidence</span><strong><button type="button" className="btn-mini" onClick={exportPilotCorrectionEvidence} disabled={!correctionStats?.total}>Export JSON</button></strong></div>
                 <div><span>Nguồn</span><strong>{file?.name || "import"}</strong></div>
@@ -7036,7 +7232,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                       <td className="ci-product-cell">
                         <div className="ci-product-name">{p.name || "(thiếu tên)"}</div>
                         <div className="ci-product-meta">
-                          {[p.category, p.unit, p.supplier].filter(Boolean).join(" · ")}
+                          {[p.category, p.productType, p.subtype, p.model, p.unit, p.supplier].filter(Boolean).join(" · ")}
                           {source && <span> · {source}</span>}
                         </div>
                       </td>
@@ -7072,8 +7268,11 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <div className="ci-edit-title">Sửa dòng #{(editingIndex ?? 0) + 1}</div>
                 <div className="ci-edit-grid">
                   <label>Tên sản phẩm<input value={editingDraft.name || ""} onChange={(e)=>setEditingDraft(d=>({...d, name:e.target.value}))} /></label>
-                  <label>Mã SKU<input value={editingDraft.sku || ""} onChange={(e)=>setEditingDraft(d=>({...d, sku:e.target.value}))} /></label>
-                  <label>Nhóm<input value={editingDraft.category || ""} onChange={(e)=>setEditingDraft(d=>({...d, category:e.target.value}))} /></label>
+                  <label>Mã SKU<input value={editingDraft.sku || ""} onChange={(e)=>setEditingDraft(d=>({...d, sku:e.target.value, attributes:{...(d.attributes||{}), identity:{...(d.attributes?.identity||{}), sku:e.target.value}}}))} /></label>
+                  <label>Model thương mại<input value={editingDraft.model || editingDraft.attributes?.identity?.model || ""} onChange={(e)=>setEditingDraft(d=>({...d, model:e.target.value, attributes:{...(d.attributes||{}), identity:{...(d.attributes?.identity||{}), model:e.target.value}}}))} /></label>
+                  <label>Loại sản phẩm<input value={editingDraft.productType || editingDraft.attributes?.identity?.productType || ""} onChange={(e)=>setEditingDraft(d=>({...d, productType:e.target.value, attributes:{...(d.attributes||{}), identity:{...(d.attributes?.identity||{}), productType:e.target.value}}}))} /></label>
+                  <label>Phân loại chi tiết<input value={editingDraft.subtype || editingDraft.attributes?.identity?.subtype || ""} onChange={(e)=>setEditingDraft(d=>({...d, subtype:e.target.value, attributes:{...(d.attributes||{}), identity:{...(d.attributes?.identity||{}), subtype:e.target.value}}}))} /></label>
+                  <label>Nhóm<input value={editingDraft.category || ""} onChange={(e)=>setEditingDraft(d=>({...d, category:e.target.value, attributes:{...(d.attributes||{}), identity:{...(d.attributes?.identity||{}), category:e.target.value}}}))} /></label>
                   <label>Nhà cung cấp<input value={editingDraft.supplier || ""} onChange={(e)=>setEditingDraft(d=>({...d, supplier:e.target.value}))} /></label>
                   <label>Hãng / Thương hiệu<input value={editingDraft.brand || ""} onChange={(e)=>setEditingDraft(d=>({...d, brand:e.target.value}))} /></label>
                   <label>Xuất xứ<input value={editingDraft.origin || editingDraft.attributes?.origin || ""} onChange={(e)=>setEditingDraft(d=>({...d, origin:e.target.value, attributes:{...(d.attributes||{}), origin:e.target.value}}))} /></label>
@@ -8095,6 +8294,15 @@ function ProductEnrichmentModal({ products, setProducts, company, cloud, onUpgra
 function ProductEditor({ product, suppliers, industryProfile = getIndustryProfile("generic"), onSave, onCancel }) {
   const [f, setF] = useState(product);
   const set = (k, v) => setF({ ...f, [k]: v });
+  const engineering = (f.attributes && typeof f.attributes === "object" && f.attributes.engineering && typeof f.attributes.engineering === "object") ? f.attributes.engineering : {};
+  const setEngineering = (key, value) => setF((current) => ({
+    ...current,
+    attributes: {
+      ...(current.attributes || {}),
+      engineering: { ...((current.attributes || {}).engineering || {}), [key]: value },
+    },
+  }));
+  const engineeringRole = engineering.role || "";
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -8124,6 +8332,45 @@ function ProductEditor({ product, suppliers, industryProfile = getIndustryProfil
             </div>
           </div>
         )}
+        <div className="engineering-product-fields" style={{ marginTop: 14 }}>
+          <div className="section-mini-title">Engineering Rules · P2.3</div>
+          <p className="side-note" style={{ marginTop: 4, marginBottom: 10 }}>Chỉ điền thông số đã xác minh từ datasheet/nhà sản xuất. SmartQuote dùng các số này để PASS/FAIL kỹ thuật; không dùng AI để đoán.</p>
+          <div className="field-grid">
+            <label className="field">
+              <span>Vai trò kỹ thuật</span>
+              <select value={engineeringRole} onChange={(e) => setEngineering("role", e.target.value)}>
+                {ENGINEERING_ROLE_OPTIONS.map((option) => <option key={option.value || "none"} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <Field label="Protocols hỗ trợ" value={engineering.protocols || ""} onChange={(v) => setEngineering("protocols", v)} placeholder="VD: ONVIF, KNX, Zigbee" />
+            {(engineeringRole === "ip_camera" || engineeringRole === "device") && <>
+              <NumField label="Công suất thiết bị (W)" value={engineering.powerW || 0} onChange={(v) => setEngineering("powerW", v)} />
+              <NumField label="Bitrate trung bình (Mbps)" value={engineering.bitrateMbps || 0} onChange={(v) => setEngineering("bitrateMbps", v)} />
+              <div className="field engineering-check-field"><span>PoE</span><label className="inline-check"><input type="checkbox" checked={Boolean(engineering.poeRequired)} onChange={(e) => setEngineering("poeRequired", e.target.checked)} /> Thiết bị cần PoE</label></div>
+              <NumField label="Số port mạng / thiết bị" value={engineering.networkPortsRequired || 1} onChange={(v) => setEngineering("networkPortsRequired", v)} />
+            </>}
+            {engineeringRole === "nvr" && <>
+              <NumField label="Max channels" value={engineering.maxChannels || 0} onChange={(v) => setEngineering("maxChannels", v)} />
+              <NumField label="Incoming bandwidth (Mbps)" value={engineering.maxIncomingBandwidthMbps || 0} onChange={(v) => setEngineering("maxIncomingBandwidthMbps", v)} />
+              <NumField label="PoE ports tích hợp" value={engineering.poePorts || 0} onChange={(v) => setEngineering("poePorts", v)} />
+              <NumField label="Reserved ports" value={engineering.reservedPorts || 0} onChange={(v) => setEngineering("reservedPorts", v)} />
+              <NumField label="PoE budget (W)" value={engineering.poeBudgetW || 0} onChange={(v) => setEngineering("poeBudgetW", v)} />
+              <NumField label="Storage lắp sẵn (TB)" value={engineering.installedStorageTb || 0} onChange={(v) => setEngineering("installedStorageTb", v)} />
+            </>}
+            {engineeringRole === "poe_switch" && <>
+              <NumField label="PoE ports" value={engineering.poePorts || 0} onChange={(v) => setEngineering("poePorts", v)} />
+              <NumField label="Reserved/uplink ports" value={engineering.reservedPorts || 0} onChange={(v) => setEngineering("reservedPorts", v)} />
+              <NumField label="PoE budget (W)" value={engineering.poeBudgetW || 0} onChange={(v) => setEngineering("poeBudgetW", v)} />
+            </>}
+            {engineeringRole === "storage_hdd" && <NumField label="Dung lượng (TB)" value={engineering.capacityTb || 0} onChange={(v) => setEngineering("capacityTb", v)} />}
+            {(engineeringRole === "gateway" || engineeringRole === "controller") && <NumField label="Max devices" value={engineering.maxDevices || 0} onChange={(v) => setEngineering("maxDevices", v)} />}
+            {engineeringRole && <>
+              <Field label="Yêu cầu role đi kèm" value={engineering.requiresRoles || ""} onChange={(v) => setEngineering("requiresRoles", v)} placeholder="VD: gateway" />
+              <NumField label="Mỗi N thiết bị cần 1 role trên" value={engineering.unitsPerRequiredRole || 0} onChange={(v) => setEngineering("unitsPerRequiredRole", v)} />
+              <Field label="Protocol bắt buộc" value={engineering.requiresProtocols || ""} onChange={(v) => setEngineering("requiresProtocols", v)} placeholder="VD: KNX" />
+            </>}
+          </div>
+        </div>
         <label className="field full" style={{ marginTop: 12 }}>
           <span>Thông số kỹ thuật (hiện trong báo giá gửi khách)</span>
           <textarea
@@ -9678,6 +9925,10 @@ const CSS = `
 .quote-lifecycle-pill.draft{color:var(--amber);background:var(--amber-bg);border-color:var(--amber-line);}
 .quote-lifecycle-pill.final{color:var(--pos);background:var(--green-bg);border-color:color-mix(in srgb,var(--pos) 35%,var(--line));}
 .hs-inline-note{display:block;font-size:10.5px;line-height:1.2;margin-top:2px;}
+.line-learning-insight{border:1px solid var(--primary-soft);background:var(--c-primary-soft);border-radius:10px;padding:10px 12px;margin:0 0 12px;display:grid;gap:4px;font-size:12px;color:var(--text);}
+.line-learning-insight strong{font-size:13px;color:var(--brand);}
+.line-learning-insight span{line-height:1.4;}
+.line-learning-insight em{font-style:normal;color:var(--muted);font-size:11px;line-height:1.4;}
 .line-detail-factor{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;margin:0 0 12px;}
 .line-detail-factor label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;font-weight:700;color:var(--text);}
 .line-detail-factor input{width:86px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;text-align:center;}
@@ -9999,6 +10250,39 @@ details summary::-webkit-details-marker{color:var(--brand);}
 .settings-actions{display:flex;gap:10px;flex-wrap:wrap;}
 .settings-actions .btn-primary{width:auto;}
 .markup-box{background:var(--warn-bg);border:1px solid var(--amber-line);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+
+.engineering-panel{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);display:flex;flex-direction:column;gap:8px;}
+.engineering-panel.fail{border-color:color-mix(in srgb,var(--neg) 45%,var(--line));background:var(--red-bg);}
+.engineering-panel.review{border-color:var(--amber-line);background:var(--amber-bg);}
+.engineering-panel.pass{border-color:color-mix(in srgb,var(--pos) 35%,var(--line));background:var(--green-bg);}
+.engineering-panel-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.engineering-panel-head strong{display:block;font-size:12.5px;color:var(--ink);}
+.engineering-panel-head span{display:block;font-size:10.5px;color:var(--muted);line-height:1.35;margin-top:2px;}
+.engineering-panel-head>b{font-size:11px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 7px;white-space:nowrap;}
+.engineering-requirements{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.engineering-requirements label{display:flex;flex-direction:column;gap:3px;font-size:9.5px;color:var(--muted);}
+.engineering-requirements input{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 7px;background:var(--card);color:var(--ink);font-size:11px;}
+.engineering-empty{margin:0;font-size:10.5px;color:var(--muted);line-height:1.45;}
+.engineering-check-list{display:flex;flex-direction:column;gap:5px;}
+.engineering-check{display:grid;grid-template-columns:18px 1fr;gap:6px;align-items:start;padding-top:5px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);}
+.engineering-check-mark{width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;background:var(--amber-bg);color:var(--warn);}
+.engineering-check.fail .engineering-check-mark{background:var(--red-bg);color:var(--neg);}
+.engineering-check strong{display:block;font-size:10.5px;color:var(--ink);}
+.engineering-check small,.engineering-check em{display:block;font-size:9.5px;line-height:1.4;color:var(--muted);font-style:normal;margin-top:1px;}
+.engineering-check em{color:var(--ink);}
+.engineering-all-pass{font-size:10.5px;color:var(--pos);font-weight:700;}
+.engineering-more{font-size:9.5px;color:var(--muted);}
+.engineering-override{display:flex;flex-direction:column;gap:4px;font-size:9.5px;color:var(--muted);}
+.engineering-override textarea{resize:vertical;min-height:54px;border:1px solid var(--line);border-radius:8px;padding:7px;background:var(--card);color:var(--ink);font:inherit;font-size:10.5px;}
+.engineering-override textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 2px var(--primary-ring);}
+.engineering-override small{color:var(--neg);}
+.engineering-passed{font-size:9.5px;color:var(--muted);}
+.engineering-passed summary{cursor:pointer;font-weight:700;}
+.engineering-passed div{padding:3px 0;line-height:1.35;}
+.engineering-product-fields{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface2);}
+.engineering-check-field .inline-check{display:flex;align-items:center;gap:7px;min-height:38px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--card);color:var(--ink);font-size:12px;}
+.engineering-check-field .inline-check input{width:auto;margin:0;}
+@media(max-width:760px){.engineering-requirements{grid-template-columns:1fr}.engineering-panel{margin-top:8px}}
 .quote-final-gate{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:11px;background:var(--surface2);display:flex;flex-direction:column;gap:8px;}
 .quote-final-gate.ready{border-color:color-mix(in srgb,var(--pos) 38%,var(--line));background:var(--green-bg);}
 .quote-final-gate.final{border-color:color-mix(in srgb,var(--pos) 50%,var(--line));background:color-mix(in srgb,var(--pos) 7%,var(--card));}

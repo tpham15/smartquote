@@ -38,7 +38,7 @@ export function quoteLineSalePrice(product = {}, line = {}) {
 
 export function snapshotQuoteProduct(product = {}) {
   const allowed = [
-    "id", "name", "sku", "category", "supplier", "brand", "unit",
+    "id", "name", "sku", "category", "supplier", "brand", "origin", "attributes", "unit",
     "costPrice", "listPrice", "publicPrice", "salePrice", "price", "priceMode",
     "specs", "description", "image", "imageUrl", "sourceUrl",
   ];

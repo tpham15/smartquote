@@ -3,7 +3,7 @@
 // ============================================================
 import { classifyRow } from "./classifyRows.js";
 import { ROW_CLASS } from "./types.js";
-import { parseSafePrice, extractSkuFromText, extractSkuCandidatesFromText, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity } from "./productSanitizer.js";
+import { parseSafePrice, extractSkuFromText, extractSkuCandidatesFromText, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, resolveCanonicalQuoteIdentity } from "./productSanitizer.js";
 import { inferCategory } from "./categoryInference.js";
 
 const PRICE_SCALE_SUSPECT_LIMIT = 1_000_000_000;
@@ -158,6 +158,14 @@ function inferBrandFromContext(sheetName = "", sectionName = "", supplier = "") 
 
 // Suy luận loại sản phẩm. Ưu tiên: category đã infer đúng → pattern SKU → context.
 function inferProductTypeFromContext(sheetName = "", sectionName = "", specs = "", sku = "", category = "") {
+  // P2.3.2: Category is not Product Type. If the source clearly describes a
+  // gate motor/opener, name the actual sellable item instead of the broad
+  // category "Cổng tự động".
+  const gateCtxNorm = normalizeAscii([category, sheetName, sectionName, specs, sku].filter(Boolean).join(" "));
+  const gateEvidence = /cong\s*(?:tu\s*dong|truot|xoay)|gate|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(gateCtxNorm);
+  const motorEvidence = /mo\s*to|moto|motor|dong\s*co|vulcan|ayros|torq|nyk|star\s*k3|stark\s*600/.test(gateCtxNorm);
+  if (gateEvidence && motorEvidence) return "Động cơ cổng tự động";
+
   // 1) Category đã được infer đúng (vd "Két an toàn") → dùng luôn, độ tin cậy cao nhất.
   const catNorm = normalizeAscii(category);
   if (catNorm) {
@@ -377,10 +385,27 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
     if (isWarrantyPseudoSku(rawSkuCell) && !schemaDriftRecovery.recovered) return null;
     if (schemaDriftRecovery.recovered) name = schemaDriftRecovery.name;
   }
-  let sku = cleanModelText(schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell);
+  const rawSpecsCell = get("specs");
+  const quoteIdentity = map?._quoteTable
+    ? resolveCanonicalQuoteIdentity({
+        rawSku: schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell,
+        name,
+        specs: rawSpecsCell,
+        rawText: row.joined,
+      })
+    : { sku: schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell, sourceSku: rawSkuCell, evidence: "mapped_sku", changed: false };
+  let sku = cleanModelText(quoteIdentity.sku);
   const hiddenSku = extractSkuFromHiddenCells(row, map);
   if (!sku && hiddenSku) sku = hiddenSku;
   const issues = [];
+  if (quoteIdentity.evidence === "explicit_model_label" && quoteIdentity.sourceSku && quoteIdentity.changed) {
+    issues.push(issue(
+      "canonical_sku_recovered_from_model",
+      "info",
+      `Đã tách mã sản phẩm chuẩn ${sku} khỏi alias nguồn ${quoteIdentity.sourceSku}`,
+      "sku"
+    ));
+  }
   let price = parsePrice(get("price"), priceScaleForKey(map, "price"));
   const oldListPrice = parsePrice(get("listPrice"), priceScaleForKey(map, "listPrice"));
   const currentListPrice = parsePrice(get("currentListPrice"), priceScaleForKey(map, "currentListPrice"));
@@ -610,6 +635,8 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier) {
       rowIndex: row.r,
       cellRefs,
       rawText: row.joined,
+      rawSku: rawSkuCell || "",
+      canonicalSkuEvidence: quoteIdentity.evidence || "",
     },
   };
 }
