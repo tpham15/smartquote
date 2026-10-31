@@ -6,9 +6,10 @@ export default function IndustryOnboarding({ dealerName = "", onSave, busy = fal
   const [businessType, setBusinessType] = useState("");
   const [step, setStep] = useState(1);
 
-  const submit = async () => {
+  const submit = async (businessTypeOverride = undefined) => {
     if (!industry || busy) return;
-    await onSave?.({ industryProfile: industry, businessType: businessType || null });
+    const selectedBusinessType = businessTypeOverride === undefined ? businessType : businessTypeOverride;
+    await onSave?.({ industryProfile: industry, businessType: selectedBusinessType || null });
   };
 
   return (
@@ -49,7 +50,7 @@ export default function IndustryOnboarding({ dealerName = "", onSave, busy = fal
             {error && <div className="sq-industry-error">{error}</div>}
             <div className="sq-industry-actions">
               <button className="ghost" type="button" disabled={busy} onClick={() => setStep(1)}>← Quay lại</button>
-              <div><button className="ghost" type="button" disabled={busy} onClick={() => { setBusinessType(""); submit(); }}>Bỏ qua</button><button type="button" disabled={busy} onClick={submit}>{busy ? "Đang lưu..." : "Vào SmartQuote →"}</button></div>
+              <div><button className="ghost" type="button" disabled={busy} onClick={() => { setBusinessType(""); submit(null); }}>Bỏ qua</button><button type="button" disabled={busy} onClick={() => submit()}>{busy ? "Đang lưu..." : "Vào SmartQuote →"}</button></div>
             </div>
           </>
         )}

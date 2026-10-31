@@ -18,6 +18,7 @@ import { listCloudCatalog, syncCloudCatalogSnapshot, logCloudCatalogImport, seri
 import { deleteCloudQuote, listCloudQuotes, saveCloudQuote } from "./supabase/quoteStore.js";
 import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd, buildVietQrUrl, markManualBillingPaid } from "./supabase/billingStore.js";
 import { smartQuoteFetch } from "./supabase/apiFetch.js";
+import { uploadDealerCatalogImage, assertDealerCatalogImageFile } from "./supabase/catalogImageStore.js";
 import { setTenantStorageScope, tenantStorageGetItem, tenantStorageSetItem, tenantStorageRemoveItem, tenantStorageKeysWithPrefix } from "./storage/tenantStorage.js";
 import { PLAN_LIMITS, PLAN_ORDER, FEATURE_LABELS, normalizeBilling, canUseFeature, canFitProductCount, formatLimit, buildUpgradeMessage } from "./billing/planLimits.js";
 import { canAccessCapability, CAPABILITY_LABELS, PLAN_CAPABILITIES } from "./billing/planCapabilities.js";
@@ -610,7 +611,12 @@ function buildNormalizedCloudSnapshot(state = {}, industryId = "generic") {
   const markups = Array.isArray(state.markups) && state.markups.length ? state.markups : buildDefaultMarkups();
   const suppliers = Array.isArray(state.suppliers) ? state.suppliers : [];
   const nameMap = state.nameMap && typeof state.nameMap === "object" ? state.nameMap : {};
-  const solutionFamilies = industryId === "smarthome" ? normalizeSolutionFamilies(state.solutionFamilies) : [];
+  // Industry controls visibility, not ownership of stored solution-family data.
+  // Keep existing families when a Smart Home dealer temporarily switches industry,
+  // otherwise a profile change could silently persist an empty array over their data.
+  const solutionFamilies = Array.isArray(state.solutionFamilies)
+    ? state.solutionFamilies.map(normalizeSolutionFamily)
+    : (industryId === "smarthome" ? buildSeedSolutionFamilies() : []);
   return { products, templates, company, markups, suppliers, nameMap, solutionFamilies };
 }
 
@@ -1559,6 +1565,7 @@ function UnifiedImportHub({ products, setProducts, nameMap, setNameMap, markups,
           cloud={cloud}
           onUpgrade={onUpgrade}
           onCreateQuote={onCreateQuote}
+          industryProfile={industryProfile}
         />
       </div>
     );
@@ -2588,7 +2595,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           calc,
         });
       } else {
-        await exportQuoteExcel({ company: effectiveQuoteCompany, customer, rooms, productById, lineSalePrice, calc });
+        await exportQuoteExcel({ company: effectiveQuoteCompany, customer, rooms, productById, lineSalePrice, calc, industryProfile });
       }
       cloud?.refreshBilling?.();
     } catch (e) {
@@ -3733,7 +3740,7 @@ function SearchSelect({ products, value, onChange, placeholder = "Tìm thiết b
     </div>
   );
 }
-function AIReader({ products, setProducts, company, markups = [], onCreateQuote, cloud, onUpgrade, embedded = false, ktsFileRef = null, onBack = null }) {
+function AIReader({ products, setProducts, company, markups = [], onCreateQuote, cloud, onUpgrade, embedded = false, ktsFileRef = null, onBack = null, industryProfile = getIndustryProfile("generic") }) {
   const [step, setStep] = useState("upload"); // upload | parsing | review | done
   const [rows, setRows] = useState([]); // {section, name, unit, qty}
   const [mapped, setMapped] = useState([]); // {row, product, qty, confidence, section}
@@ -3794,8 +3801,8 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
 
       if (toProcess.length === 0) {
         notify.info(`Không có vật tư nào phù hợp với catalog của công ty trong file này.\n\n` +
-          `File có ${allRows.length} dòng nhưng đều là vật tư ngoài phạm vi (ống, cáp, điều hòa...).\n\n` +
-          `Hãy upload file bảng khối lượng điện nhẹ / smarthome / camera.`);
+          `File có ${allRows.length} dòng nhưng đều là vật tư ngoài phạm vi catalog hiện tại.\n\n` +
+          `Hãy upload file bảng khối lượng phù hợp với danh mục sản phẩm của công ty.`);
         setStep("upload");
         return;
       }
@@ -3820,7 +3827,7 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
       setStep("review");
       return;
     }
-    const results = await mapBomRowsWithClaude(allRows, products, setProgress);
+    const results = await mapBomRowsWithClaude(allRows, products, setProgress, { industryId: industryProfile.id, industryName: industryProfile.name });
     cloud?.refreshBilling?.();
     const mappedList = results.filter((r) => r.productId && (r.confidence === "high" || r.confidence === "medium"));
     const unmatchedList = results.filter((r) => !r.productId || r.confidence === "low");
@@ -3837,7 +3844,8 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
       notify.warning(`Còn ${unresolvedForQuote.length} dòng cần chọn sản phẩm. SmartQuote không tạo báo giá nếu phải âm thầm bỏ dòng.`);
       return;
     }
-    const solutionOrder = [
+    const isSmartHomeIndustry = industryProfile.id === "smarthome";
+    const smartHomeSolutionOrder = [
       "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
       "II./ Hệ thống cảm biến",
       "III./ Giải pháp cổng tự động thông minh",
@@ -3848,32 +3856,46 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
 
     const roomMap = {};
     const addLine = (solutionName, productId, qty, note) => {
-      if (!roomMap[solutionName]) roomMap[solutionName] = [];
+      const safeName = String(solutionName || "").trim() || industryProfile.labels.section;
+      if (!roomMap[safeName]) roomMap[safeName] = [];
       // Gộp dòng trùng productId
-      const existing = roomMap[solutionName].find((l) => l.productId === productId);
+      const existing = roomMap[safeName].find((l) => l.productId === productId);
       if (existing) { existing.qty += qty; }
       else {
         const p = products.find((x) => x.id === productId);
-        roomMap[solutionName].push({ id: uid("ln"), productId, qty, note: note || "", factor: p?.priceMode === "fixed" ? 1 : defaultMarkupFactor });
+        roomMap[safeName].push({ id: uid("ln"), productId, qty, note: note || "", factor: p?.priceMode === "fixed" ? 1 : defaultMarkupFactor });
       }
     };
+    const neutralSectionFor = (row, productId, idx = 0) => {
+      const sourceSection = String(row?.section || "").trim();
+      if (sourceSection) return sourceSection;
+      const product = products.find((x) => x.id === productId);
+      const category = String(product?.category || "").trim();
+      if (category) return category;
+      return `${industryProfile.labels.section} ${idx + 1}`;
+    };
 
-    // Thêm các dòng đã map
-    mapped.forEach((r) => {
-      const sol = r.solution || solutionOrder[0];
-      addLine(sol, r.productId, r.qty, `${r.section}: ${r.qty}`);
+    // Thêm các dòng đã map. Với ngành khác Smart Home, không dùng "solution"
+    // do AI tự suy diễn; ưu tiên nhóm/hạng mục từ file hoặc category catalog.
+    mapped.forEach((r, idx) => {
+      const sol = isSmartHomeIndustry
+        ? (r.solution || smartHomeSolutionOrder[0])
+        : neutralSectionFor(r, r.productId, idx);
+      addLine(sol, r.productId, r.qty, `${r.section || industryProfile.labels.section}: ${r.qty}`);
     });
 
     // Thêm các dòng được chọn thủ công
-    unmatched.forEach((r) => {
+    unmatched.forEach((r, idx) => {
       const pid = manualMap[r.idx];
       if (pid) {
-        const sol = sectionMap[r.idx] || solutionOrder[0];
-        addLine(sol, pid, r.qty, `${r.section}: ${r.qty}`);
+        const sol = isSmartHomeIndustry
+          ? (sectionMap[r.idx] || smartHomeSolutionOrder[0])
+          : (sectionMap[r.idx] || neutralSectionFor(r, pid, idx));
+        addLine(sol, pid, r.qty, `${r.section || industryProfile.labels.section}: ${r.qty}`);
       }
     });
 
-    // Sắp xếp theo thứ tự La Mã
+    // Sắp xếp theo thứ tự La Mã chỉ cho profile Smart Home cũ.
     const romanOrder = (name) => {
       const m = name.match(/^(I{1,3}|IV|V|VI{0,3})\./);
       if (!m) return 99;
@@ -3881,8 +3903,9 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
       return map[m[1]] || 99;
     };
 
-    const rooms = Object.entries(roomMap)
-      .sort(([a], [b]) => romanOrder(a) - romanOrder(b))
+    const roomEntries = Object.entries(roomMap);
+    if (isSmartHomeIndustry) roomEntries.sort(([a], [b]) => romanOrder(a) - romanOrder(b));
+    const rooms = roomEntries
       .map(([name, lines]) => ({ id: uid("room"), name, lines }))
       .filter((r) => r.lines.length > 0);
 
@@ -4060,7 +4083,7 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
   );
 }
 
-function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud, onUpgrade, onCreateQuote }) {
+function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud, onUpgrade, onCreateQuote, industryProfile = getIndustryProfile("generic") }) {
   const [mode, setMode] = useState(""); // "" | "bom" | "matrix" | "kts"
   const [pendingOpen, setPendingOpen] = useState(""); // "bom" | "matrix" | "kts" — chờ render xong rồi click
   const [parsed, setParsed] = useState(null);
@@ -4428,6 +4451,8 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
               rows: result.rawRows || [],
               unmapped,
               products,
+              industryId: industryProfile.id,
+              industryName: industryProfile.name,
             });
             cloud?.refreshBilling?.();
 
@@ -4482,9 +4507,11 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
     const shared = parsed.sharedColumns || {};
     const columnGroups = parsed.columnGroups || [];
 
-    // Mapping từ TÊN NHÓM trong file bóc tách (R1) → tên giải pháp chuẩn
-    // Đây là mapping chính xác nhất vì dùng đúng cấu trúc file bóc tách
-    const GROUP_TO_SOLUTION = {
+    const isSmartHomeIndustry = industryProfile.id === "smarthome";
+
+    // Legacy Smart Home grouping is kept only for Smart Home workspaces.
+    // Every other industry stays neutral and uses the source group/category.
+    const SMART_HOME_GROUP_TO_SOLUTION = {
       "công tắc thông minh": "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
       "công tắc":            "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
       "ổ cắm":               "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
@@ -4504,12 +4531,11 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
       "rèm":                 "VIII./ Giải pháp rèm thông minh",
     };
 
-    // Dự phòng: map theo category thiết bị nếu file bóc tách không có nhóm R1
-    const CAT_TO_SOLUTION = {
-      "Công tắc":    "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
-      "Ổ cắm":       "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
-      "Chiếu sáng":  "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
-      "Điều khiển":  "I./ Giải pháp chiếu sáng tự động thông minh\n(Điều khiển tắt/mở đèn từ xa qua Smart Phone, hẹn giờ, cảm ứng…)",
+    const SMART_HOME_CAT_TO_SOLUTION = {
+      "Công tắc":    SMART_HOME_GROUP_TO_SOLUTION["công tắc"],
+      "Ổ cắm":       SMART_HOME_GROUP_TO_SOLUTION["ổ cắm"],
+      "Chiếu sáng":  SMART_HOME_GROUP_TO_SOLUTION["chiếu sáng"],
+      "Điều khiển":  SMART_HOME_GROUP_TO_SOLUTION["chiếu sáng"],
       "Cảm biến":    "II./ Hệ thống cảm biến",
       "Cổng tự động":"III./ Giải pháp cổng tự động thông minh",
       "Camera":      "IV./ Giải pháp camera an ninh",
@@ -4521,21 +4547,28 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
     };
 
     const resolveSolution = (colIdx, p) => {
-      // Ưu tiên 1: nhóm từ R1 của file bóc tách (chính xác nhất)
-      const grp = (columnGroups[colIdx] || "").toLowerCase().trim();
+      const rawGroup = String(columnGroups[colIdx] || "").trim();
+      const category = String(p?.category || "").trim();
+
+      // Non-Smart-Home workspaces must never inherit Smart Home solution names.
+      if (!isSmartHomeIndustry) {
+        return rawGroup || category || `${industryProfile.labels.section} ${colIdx + 1}`;
+      }
+
+      const grp = rawGroup.toLowerCase();
       if (grp) {
-        // Tìm khớp chính xác trước
-        if (GROUP_TO_SOLUTION[grp]) return GROUP_TO_SOLUTION[grp];
-        // Tìm khớp một phần
-        const found = Object.entries(GROUP_TO_SOLUTION)
+        if (SMART_HOME_GROUP_TO_SOLUTION[grp]) return SMART_HOME_GROUP_TO_SOLUTION[grp];
+        const found = Object.entries(SMART_HOME_GROUP_TO_SOLUTION)
           .find(([k]) => grp.includes(k) || k.includes(grp));
         if (found) return found[1];
       }
-      // Ưu tiên 2: category của thiết bị trong catalog
-      const cat = p?.category || "";
-      return CAT_TO_SOLUTION[cat]
-        || Object.entries(CAT_TO_SOLUTION).find(([k]) => cat.toLowerCase().includes(k.toLowerCase()))?.[1]
-        || GROUP_TO_SOLUTION["công tắc thông minh"]; // fallback về giải pháp I
+      if (category) {
+        return SMART_HOME_CAT_TO_SOLUTION[category]
+          || Object.entries(SMART_HOME_CAT_TO_SOLUTION)
+            .find(([k]) => category.toLowerCase().includes(k.toLowerCase()))?.[1]
+          || category;
+      }
+      return SMART_HOME_GROUP_TO_SOLUTION["công tắc thông minh"];
     };
 
     // Tạo map: tên giải pháp → lines[]
@@ -5265,6 +5298,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
           ktsFileRef={ktsFileRef}
           onBack={() => { setMode(""); }}
           onCreateQuote={onCreateQuote}
+          industryProfile={industryProfile}
         />
       )}
 
@@ -6668,9 +6702,9 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
                 <span>✓ Báo giá căn hộ mẫu.xlsx</span>
                 <span>✓ Báo giá công trình cũ.xlsx</span>
               </>) : (<>
-                <span>✓ Bảng giá Lumi.xlsx</span>
-                <span>✓ Catalog Bisco.pdf</span>
-                <span>✓ Giá Roger 2026.xlsx</span>
+                <span>✓ Bảng giá nhà cung cấp A.xlsx</span>
+                <span>✓ Catalog sản phẩm B.pdf</span>
+                <span>✓ Bảng giá nhà cung cấp C.xlsx</span>
               </>)}
             </div>
 
@@ -7148,6 +7182,9 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
   const [importPreview, setImportPreview] = useState(null);
   const [showEnricher, setShowEnricher] = useState(false);
   const [autoImg, setAutoImg] = useState({ running: false, done: 0, total: 0, errors: 0, log: "" });
+  const [imageReplaceTarget, setImageReplaceTarget] = useState(null);
+  const [imageReplaceBusyId, setImageReplaceBusyId] = useState("");
+  const singleImageInputRef = useRef();
   const importRef = useRef();
 
   const suppliers = useMemo(() => [...new Set(products.map((p) => p.supplier).filter(Boolean))], [products]);
@@ -7172,6 +7209,74 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
     const matchS = !supplierFilter || p.supplier === supplierFilter;
     return matchQ && matchS;
   });
+
+  const openProductImagePicker = (product) => {
+    if (!product?.id) return;
+    setImageReplaceTarget(product);
+    if (singleImageInputRef.current) {
+      singleImageInputRef.current.value = "";
+      singleImageInputRef.current.click();
+    }
+  };
+
+  const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(String(event?.target?.result || ""));
+    reader.onerror = () => reject(new Error("Không đọc được ảnh trên thiết bị."));
+    reader.readAsDataURL(file);
+  });
+
+  const handleSingleProductImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    const target = imageReplaceTarget;
+    event.target.value = "";
+    if (!file || !target?.id) return;
+
+    try {
+      assertDealerCatalogImageFile(file);
+      setImageReplaceBusyId(target.id);
+      let image = "";
+      let storagePath = "";
+
+      if (cloud?.enabled && cloud.dealerId) {
+        const uploaded = await uploadDealerCatalogImage({
+          dealerId: cloud.dealerId,
+          productId: target.id,
+          file,
+          previousPath: target?._meta?.imageStoragePath || "",
+        });
+        image = uploaded.publicUrl;
+        storagePath = uploaded.storagePath;
+      } else {
+        image = await fileToDataUrl(file);
+      }
+
+      setProducts((ps) => ps.map((p) => p.id === target.id ? {
+        ...p,
+        image,
+        _meta: {
+          ...(p._meta || {}),
+          imageSource: "dealer_upload",
+          imageLocked: true,
+          imageStoragePath: storagePath || p?._meta?.imageStoragePath || "",
+          imageUploadedAt: new Date().toISOString(),
+          imageUploadedName: file.name || "",
+        },
+      } : p));
+      notify.success(`Đã thay ảnh cho “${target.name}”. Ảnh đại lý sẽ được ưu tiên thay cho ảnh tự động.`);
+    } catch (error) {
+      console.error("Upload ảnh sản phẩm lỗi:", error);
+      const message = String(error?.message || error || "Không upload được ảnh.");
+      if (/bucket|storage|row-level|policy/i.test(message)) {
+        notify.error(`Không upload được ảnh lên cloud. Hãy kiểm tra migration P1.5.2 Storage.\n\n${message}`);
+      } else {
+        notify.error(message);
+      }
+    } finally {
+      setImageReplaceBusyId("");
+      setImageReplaceTarget(null);
+    }
+  };
 
   const saveProduct = (prod) => {
     if (prod.id) setProducts((ps) => ps.map((p) => (p.id === prod.id ? prod : p)));
@@ -7309,7 +7414,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
   };
 
   const autoFetchImages = async () => {
-    const targets = products.filter((p) => !p.image);
+    const targets = products.filter((p) => !p.image && p?._meta?.imageSource !== "dealer_upload");
     if (targets.length === 0) { notify.success("Tất cả sản phẩm đã có ảnh rồi!"); return; }
     if (!guardFeature(cloud, "product_enrich", 1, onUpgrade)) return;
     if (!(await confirmAction({
@@ -7445,6 +7550,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
     if (!files.length) return;
     setImgStatus(`Đang xử lý ${files.length} ảnh...`);
     let matched = 0;
+    let errors = 0;
 
     // Build SKU lookup — normalize: bỏ /, -, _ và lowercase
     const normalize = (s) => String(s || "").toLowerCase().replace(/[\/\-_\s\.]/g, "");
@@ -7485,7 +7591,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
     }
 
     if (Object.keys(updates).length > 0) {
-      setProducts(ps => ps.map(p => updates[p.id] ? { ...p, image: updates[p.id] } : p));
+      setProducts(ps => ps.map(p => updates[p.id] ? { ...p, image: updates[p.id], _meta: { ...(p._meta || {}), imageSource: "dealer_upload", imageLocked: true, imageUploadedAt: new Date().toISOString() } } : p));
     }
     setImgStatus(`✓ Ghép được ${matched}/${files.length} ảnh với sản phẩm trong catalog`);
   };
@@ -7665,6 +7771,14 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
         </div>
       )}
 
+      <input
+        ref={singleImageInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        style={{ display: "none" }}
+        onChange={handleSingleProductImageUpload}
+      />
+
       <table className="cat-table" style={{ display: products.length === 0 ? "none" : "table" }}>
         <thead>
           <tr><th style={{width:"52px"}}>Ảnh</th><th>Sản phẩm</th><th>Mã</th><th>Nhà cung cấp</th><th className="num">Giá gốc/nhập</th><th className="num">Giá bán</th><th className="num">Lợi nhuận</th><th></th></tr>
@@ -7684,10 +7798,20 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
             return (
               <tr key={p.id}>
                 <td>
-                  {p.image
-                    ? <ImgWithFallback src={p.image} className="cat-thumb" />
-                    : null}
-                  <div className="cat-thumb-empty" style={{ display: p.image ? "none" : "flex" }}>?</div>
+                  <button
+                    type="button"
+                    className={`cat-thumb-button${p?._meta?.imageSource === "dealer_upload" ? " dealer-image" : ""}`}
+                    onClick={() => openProductImagePicker(p)}
+                    title={p.image ? "Nhấp để thay ảnh sản phẩm" : "Nhấp để upload ảnh sản phẩm"}
+                    aria-label={p.image ? `Thay ảnh cho ${p.name}` : `Thêm ảnh cho ${p.name}`}
+                    disabled={imageReplaceBusyId === p.id}
+                  >
+                    {p.image
+                      ? <ImgWithFallback src={p.image} className="cat-thumb" />
+                      : <div className="cat-thumb-empty">?</div>}
+                    <span className="cat-thumb-overlay">{imageReplaceBusyId === p.id ? "Đang tải…" : (p.image ? "Đổi ảnh" : "Thêm ảnh")}</span>
+                    {p?._meta?.imageSource === "dealer_upload" && <span className="cat-thumb-source" title="Ảnh do đại lý upload">✓</span>}
+                  </button>
                 </td>
                 <td className="strong">{p.name}{isFixed && <span className="badge-fixed">giá cố định</span>}</td>
                 <td className="muted" style={{fontSize:11.5}}>{p.sku}</td>
@@ -9148,7 +9272,7 @@ async function exportQuoteExcelWithTemplate({ template, company, customer, rooms
 // ============================================================
 // Xuất báo giá ra file Excel theo mẫu công ty (gom theo phòng/khu vực)
 // ============================================================
-async function exportQuoteExcel({ company, customer, rooms, productById, lineSalePrice, calc }) {
+async function exportQuoteExcel({ company, customer, rooms, productById, lineSalePrice, calc, industryProfile = getIndustryProfile("generic") }) {
   // Nếu đang chạy trên Vercel (HTTPS) → dùng Python API để xuất Excel có ảnh
   const isVercel = typeof window !== "undefined" && window.location.protocol === "https:";
   if (isVercel) {
@@ -9158,6 +9282,11 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
         company,
         customer,
         calc,
+        industry: {
+          id: industryProfile.id || "generic",
+          name: industryProfile.id === "generic" ? "Sản phẩm / dịch vụ" : (industryProfile.name || "Sản phẩm / dịch vụ"),
+          sectionLabel: industryProfile.labels?.section || "Hạng mục",
+        },
         rooms: rooms
           .filter((r) => r.lines.some((l) => productById[l.productId]))
           .map((r) => ({
@@ -9234,7 +9363,8 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
   push([`Điện thoại: ${customer.phone || ""}`, "", "", "", "", "", "", ""]);
   push([`Email:`, "", "", "", "", "", "", ""]);
   push([`Địa điểm công trình: ${customer.address || ""}`, "", "", "", "", "", "", ""]);
-  push([`Hạng mục: ${customer.category || "Giải pháp nhà thông minh Lumi"}`, "", "", "", "", "", "", ""]);
+  const defaultQuoteCategory = industryProfile.id === "generic" ? "Sản phẩm / dịch vụ" : (industryProfile.name || "Sản phẩm / dịch vụ");
+  push([`Hạng mục: ${customer.category || defaultQuoteCategory}`, "", "", "", "", "", "", ""]);
   push([]);
 
   // --- Tiêu đề ---
@@ -9285,7 +9415,7 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
   push([]);
 
   // --- BẢNG TỔNG HỢP CÁC GIẢI PHÁP ---
-  push(["TỔNG HỢP CÁC GIẢI PHÁP NHÀ THÔNG MINH", "", "", "", "", "", "", "", "", ""]);
+  push(["TỔNG HỢP HẠNG MỤC", "", "", "", "", "", "", "", "", ""]);
   merges.push({ s: { r: R-1, c: 0 }, e: { r: R-1, c: 9 } });
 
   // Từng phòng/khu vực
@@ -9517,6 +9647,13 @@ const CSS = `
 .price-preview{padding:8px 10px;background:var(--brand-soft);border-radius:8px;font-weight:700;color:var(--brand);font-size:13px;}
 .cat-thumb{width:40px;height:40px;object-fit:cover;border-radius:6px;background:var(--bg);border:1px solid var(--line);}
 .cat-thumb-empty{width:40px;height:40px;border-radius:6px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:16px;}
+.cat-thumb-button{position:relative;width:42px;height:42px;padding:0;border:0;background:transparent;border-radius:7px;cursor:pointer;display:block;overflow:visible;font-family:inherit;}
+.cat-thumb-button:disabled{cursor:wait;opacity:.7;}
+.cat-thumb-button .cat-thumb,.cat-thumb-button .cat-thumb-empty{width:40px;height:40px;display:flex;}
+.cat-thumb-overlay{position:absolute;left:1px;right:1px;bottom:1px;padding:3px 2px;border-radius:0 0 6px 6px;background:rgba(8,15,29,.82);color:#fff;font-size:8px;font-weight:800;line-height:1;opacity:0;transition:opacity .15s;pointer-events:none;white-space:nowrap;}
+.cat-thumb-button:hover .cat-thumb-overlay,.cat-thumb-button:focus-visible .cat-thumb-overlay{opacity:1;}
+.cat-thumb-button:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+.cat-thumb-source{position:absolute;right:-3px;top:-3px;width:15px;height:15px;border-radius:999px;background:#10b981;color:#fff;border:2px solid var(--surface);font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;}
 .cat-toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
 .cat-toolbar .search,.search{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;}
 .cat-toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;}

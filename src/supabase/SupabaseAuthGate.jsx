@@ -297,7 +297,7 @@ export default function SupabaseAuthGate({ children }) {
         {mode === "register" && (
           <>
             <label>Tên đại lý / công ty</label>
-            <input value={dealerName} onChange={(e) => setDealerName(e.target.value)} placeholder="VD: Lumi Dealer Hà Nội" required />
+            <input value={dealerName} onChange={(e) => setDealerName(e.target.value)} placeholder="VD: Công ty Thiết bị ABC" required />
             <label>Người phụ trách</label>
             <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="VD: Nguyễn Văn A" />
           </>

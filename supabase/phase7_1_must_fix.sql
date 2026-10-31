@@ -116,5 +116,6 @@ $$;
 
 revoke all on function public.usage_monthly_limit(text, text) from public;
 revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from public;
-grant execute on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) to authenticated;
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from anon;
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from authenticated;
 grant execute on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) to service_role;

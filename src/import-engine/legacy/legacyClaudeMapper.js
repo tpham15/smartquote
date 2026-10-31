@@ -212,8 +212,11 @@ export async function callClaudeJSON(payload) {
  * @param {(progress:{cur:number,total:number,msg:string})=>void} [onProgress]
  * @returns {Promise<Array>}
  */
-export async function mapBomRowsWithClaude(rows, products, onProgress) {
+export async function mapBomRowsWithClaude(rows, products, onProgress, context = {}) {
   if (!rows?.length) return [];
+
+  const industryId = String(context?.industryId || "generic");
+  const industryName = String(context?.industryName || "Ngành khác");
 
   const catalogSummary = products.map((p) =>
     `${p.id}|${p.name}|${p.sku}|${p.category}|${p.specs || ""}`
@@ -233,6 +236,7 @@ export async function mapBomRowsWithClaude(rows, products, onProgress) {
     ).join("\n");
 
     const prompt = `Bạn là chuyên gia đọc bảng khối lượng kỹ thuật Việt Nam.
+Ngành hiện tại của workspace: ${industryName} (${industryId}).
 
 CATALOG SẢN PHẨM của công ty (id|tên|mã|nhóm|thông số):
 ${catalogSummary}
@@ -247,23 +251,24 @@ Trả về JSON array, mỗi phần tử:
   "productId": "id sản phẩm trong catalog" hoặc null nếu không tìm thấy,
   "confidence": "high" | "medium" | "low",
   "reason": "lý do ngắn (tối đa 10 từ)",
-  "solution": "tên giải pháp phù hợp (I./...)"
+  "solution": "tên hạng mục/nhóm phù hợp"
 }
 
 Quy tắc:
-- Chỉ map khi chắc chắn sản phẩm tương đương. Không map vật tư phụ, dây điện, ống luồn, phụ kiện.
-- Đèn downlight 9W → map sang LM-D9-90-110-W4-2 nếu có
-- Công tắc 1 nút → LM-1G2W-C(G) hoặc LM-S1N/S
-- Camera trong nhà → DS-2CD1347G2H-LIUF, camera ngoài → DS-2CD1047G2H-LIUF
-- Wifi mesh → RG-AP2200E hoặc RG-AP2200F
-- Đầu ghi 32 kênh → không có trong catalog, trả null
-- Solution: xếp vào đúng giải pháp I./II./III./IV./V. theo loại thiết bị
+- Chỉ map khi tên, mã hoặc thông số đủ bằng chứng tương đương; không tự bịa SKU/brand.
+- Ưu tiên mã sản phẩm/SKU chính xác, sau đó mới tới tên và thông số.
+- Không map dòng tổng, tiêu đề, ghi chú, nhân công hoặc vật tư phụ không có sản phẩm tương ứng.
+- "solution" ưu tiên giữ tên nhóm/hạng mục có sẵn trong file; nếu file không có nhóm thì dùng category catalog.
+- Không ép dữ liệu sang một hãng hoặc ngành khác với workspace hiện tại.
+- Nếu không chắc, productId = null và confidence = "low".
 
 Chỉ trả về JSON array thuần, không có markdown.`;
 
     try {
       const parsed = await callClaudeJSON({
-        max_tokens: 1000,
+        // 30 rows can easily exceed 1k output tokens. Keep enough headroom so one
+        // truncated Claude response does not turn the entire batch into "Lỗi AI".
+        max_tokens: Math.min(8000, Math.max(3000, batch.length * 220)),
         messages: [{ role: "user", content: prompt }],
       });
       if (Array.isArray(parsed)) {
@@ -292,12 +297,13 @@ Chỉ trả về JSON array thuần, không có markdown.`;
  * @param {{rows:any[][], unmapped:string[], products:Array}} params
  * @returns {Promise<Array<{colIdx:number,productId:string|null,confidence:string}>>}
  */
-export async function mapTakeoffColumnsWithClaude({ rows, unmapped, products }) {
+export async function mapTakeoffColumnsWithClaude({ rows, unmapped, products, industryId = "generic", industryName = "Ngành khác" }) {
   const catalogSummary = products.map((p) => `${p.id}|${p.name}|${p.sku}|${p.category}`).join("\n");
   const rawData = rows.slice(0, 10).map((r) => (r || []).join("\t")).join("\n");
   const colsText = unmapped.map((c, i) => `${i}: "${c}"`).join(", ");
 
-  const prompt = `Bạn là chuyên gia đọc file bóc tách khối lượng kỹ thuật Việt Nam. Đây là file bóc tách:
+  const prompt = `Bạn là chuyên gia đọc file bóc tách khối lượng kỹ thuật Việt Nam.
+Ngành hiện tại của workspace: ${industryName} (${industryId}).
 
 HEADER FILE (10 dòng đầu):
 ${rawData}
@@ -308,21 +314,19 @@ ${colsText}
 CATALOG SẢN PHẨM (id|tên|sku|nhóm):
 ${catalogSummary}
 
-Nhiệm vụ: Ghép từng cột chưa map sang sản phẩm trong catalog.
-Lưu ý đặc biệt:
-- CBCĐ/CBCD = Cảm biến chuyển động → tìm LM-MDZ hoặc tương tự
-- CBHD = Cảm biến hiện diện → tìm LM-PCB hoặc tương tự
-- BCM = Camera điều khiển cổng Roger
-- "Bộ motor" / "Bộ cổng" = motor cổng tự động
-- "Cam ngoài", "Cam trong" = camera HIKVISION
-- "Bộ wifi", "Wifi gắn tường" = RG-AP2200E hoặc F
+Nhiệm vụ: Ghép từng cột chưa map sang đúng sản phẩm trong catalog.
+Quy tắc:
+- Ưu tiên SKU/model/tên/thông số thực tế trong file và catalog.
+- Không suy đoán một mã hàng chỉ vì cùng category.
+- Không mặc định bất kỳ brand hoặc ngành nào; chỉ dùng bằng chứng trong file và catalog.
+- Nếu không đủ bằng chứng, productId = null và confidence = "low".
 
 Trả về JSON array:
 [{"colIdx": 0, "productId": "id_trong_catalog_hoặc_null", "confidence": "high|medium|low"}]
 Chỉ JSON thuần, không markdown.`;
 
   const parsed = await callClaudeJSON({
-    max_tokens: 1000,
+    max_tokens: Math.min(6000, Math.max(2000, unmapped.length * 160)),
     messages: [{ role: "user", content: prompt }],
   });
   return Array.isArray(parsed) ? parsed : [];

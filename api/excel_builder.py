@@ -92,6 +92,10 @@ def build_excel(data: dict) -> bytes:
     customer = data.get("customer", {})
     rooms    = data.get("rooms", [])
     calc     = data.get("calc", {})
+    industry = data.get("industry", {}) or {}
+    industry_id = str(industry.get("id") or "generic").strip().lower()
+    industry_name = str(industry.get("name") or "").strip()
+    default_category = "Sản phẩm / dịch vụ" if industry_id == "generic" else (industry_name or "Sản phẩm / dịch vụ")
 
     wb = Workbook()
     ws = wb.active
@@ -164,7 +168,7 @@ def build_excel(data: dict) -> bytes:
         (f"Điện thoại: {customer.get('phone','')}", ""),
         (f"Email: ", ""),
         (f"Địa điểm: {customer.get('address','')}", ""),
-        (f"Hạng mục: {customer.get('category','Giải pháp nhà thông minh')}", ""),
+        (f"Hạng mục: {customer.get('category') or default_category}", ""),
     ]
     for left, right in info:
         row_h(R,14)
@@ -273,7 +277,7 @@ def build_excel(data: dict) -> bytes:
     # BẢNG TỔNG HỢP CÁC GIẢI PHÁP
     # ══════════════════════════════════════════════════════════════════════════
     row_h(R,18)
-    mr(R,1,11,"TỔNG HỢP CÁC GIẢI PHÁP NHÀ THÔNG MINH",
+    mr(R,1,11,"TỔNG HỢP HẠNG MỤC",
        font(True,12,WHITE), fill(BRAND), align("center"), border(BRAND))
     R+=1
 

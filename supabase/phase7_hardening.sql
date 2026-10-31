@@ -57,6 +57,8 @@ end;
 $$;
 
 revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from public;
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from anon;
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from authenticated;
 grant execute on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) to service_role;
 
 create table if not exists public.api_logs (
@@ -102,3 +104,6 @@ end;
 $$;
 
 revoke all on function public.admin_prune_api_logs(integer) from public;
+revoke all on function public.admin_prune_api_logs(integer) from anon;
+revoke all on function public.admin_prune_api_logs(integer) from authenticated;
+grant execute on function public.admin_prune_api_logs(integer) to service_role;

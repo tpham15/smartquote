@@ -1235,6 +1235,8 @@ end;
 $$;
 
 revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from public;
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from anon;
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from authenticated;
 grant execute on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) to service_role;
 
 create table if not exists public.api_logs (
@@ -1280,6 +1282,9 @@ end;
 $$;
 
 revoke all on function public.admin_prune_api_logs(integer) from public;
+revoke all on function public.admin_prune_api_logs(integer) from anon;
+revoke all on function public.admin_prune_api_logs(integer) from authenticated;
+grant execute on function public.admin_prune_api_logs(integer) to service_role;
 
 
 -- SmartQuote Phase 7.1 — Production Must-Fix Pack
@@ -1400,7 +1405,8 @@ $$;
 
 revoke all on function public.usage_monthly_limit(text, text) from public;
 revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from public;
-grant execute on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) to authenticated;
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from anon;
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from authenticated;
 grant execute on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) to service_role;
 
 -- SmartQuote Phase 8.1 — SQL source of truth for plan prices and quotas
@@ -1957,3 +1963,50 @@ alter table public.dealers add constraint dealers_industry_profile_version_check
 
 revoke update on table public.dealers from authenticated;
 grant update (name, phone, address, industry_profile, business_type, industry_profile_version) on table public.dealers to authenticated;
+
+-- ============================================================
+-- P1.5.2 — Dealer product-image overrides
+-- ============================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('catalog-product-images','catalog-product-images',true,4194304,array['image/jpeg','image/png','image/webp']::text[])
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+create or replace function public.can_manage_catalog_image_path(object_name text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  dealer_text text;
+  dealer_uuid uuid;
+begin
+  dealer_text := split_part(coalesce(object_name, ''), '/', 1);
+  if dealer_text = '' then return false; end if;
+  begin
+    dealer_uuid := dealer_text::uuid;
+  exception when invalid_text_representation then
+    return false;
+  end;
+  return public.is_dealer_member(dealer_uuid);
+end;
+$$;
+revoke all on function public.can_manage_catalog_image_path(text) from public;
+grant execute on function public.can_manage_catalog_image_path(text) to authenticated;
+
+drop policy if exists "Catalog images insert by dealer members" on storage.objects;
+create policy "Catalog images insert by dealer members" on storage.objects for insert to authenticated
+with check (bucket_id = 'catalog-product-images' and public.can_manage_catalog_image_path(name));
+drop policy if exists "Catalog images update by dealer members" on storage.objects;
+create policy "Catalog images update by dealer members" on storage.objects for update to authenticated
+using (bucket_id = 'catalog-product-images' and public.can_manage_catalog_image_path(name))
+with check (bucket_id = 'catalog-product-images' and public.can_manage_catalog_image_path(name));
+drop policy if exists "Catalog images delete by dealer members" on storage.objects;
+create policy "Catalog images delete by dealer members" on storage.objects for delete to authenticated
+using (bucket_id = 'catalog-product-images' and public.can_manage_catalog_image_path(name));
+drop policy if exists "Catalog images list by dealer members" on storage.objects;
+create policy "Catalog images list by dealer members" on storage.objects for select to authenticated
+using (bucket_id = 'catalog-product-images' and public.can_manage_catalog_image_path(name));

@@ -206,6 +206,24 @@ revoke all on function public.mark_manual_billing_event_paid(uuid, uuid) from an
 grant execute on function public.mark_manual_billing_event_paid(uuid, uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- 3. Server-only operational RPCs are not browser-executable.
+-- ---------------------------------------------------------------------------
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from public;
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from anon;
+revoke all on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) from authenticated;
+grant execute on function public.smartquote_increment_rate_limit(text, timestamptz, integer, integer) to service_role;
+
+revoke all on function public.admin_prune_api_logs(integer) from public;
+revoke all on function public.admin_prune_api_logs(integer) from anon;
+revoke all on function public.admin_prune_api_logs(integer) from authenticated;
+grant execute on function public.admin_prune_api_logs(integer) to service_role;
+
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from public;
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from anon;
+revoke all on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) from authenticated;
+grant execute on function public.consume_usage_quota(uuid, uuid, text, integer, jsonb) to service_role;
+
+-- ---------------------------------------------------------------------------
 -- Verification row. After applying in Supabase SQL Editor:
 -- every *_should_be_false column must be f;
 -- every *_should_be_true column must be t.
@@ -234,4 +252,22 @@ select
   has_function_privilege('authenticated', 'public.create_manual_billing_request(uuid,text,text,text,text)', 'EXECUTE')
     as authenticated_create_billing_request_should_be_true,
   has_function_privilege('authenticated', 'public.mark_manual_billing_event_paid(uuid,uuid)', 'EXECUTE')
-    as authenticated_mark_paid_should_be_true;
+    as authenticated_mark_paid_should_be_true,
+  has_function_privilege('anon', 'public.smartquote_increment_rate_limit(text,timestamptz,integer,integer)', 'EXECUTE')
+    as anon_rate_limit_should_be_false,
+  has_function_privilege('authenticated', 'public.smartquote_increment_rate_limit(text,timestamptz,integer,integer)', 'EXECUTE')
+    as authenticated_rate_limit_should_be_false,
+  has_function_privilege('service_role', 'public.smartquote_increment_rate_limit(text,timestamptz,integer,integer)', 'EXECUTE')
+    as service_role_rate_limit_should_be_true,
+  has_function_privilege('anon', 'public.admin_prune_api_logs(integer)', 'EXECUTE')
+    as anon_prune_logs_should_be_false,
+  has_function_privilege('authenticated', 'public.admin_prune_api_logs(integer)', 'EXECUTE')
+    as authenticated_prune_logs_should_be_false,
+  has_function_privilege('service_role', 'public.admin_prune_api_logs(integer)', 'EXECUTE')
+    as service_role_prune_logs_should_be_true,
+  has_function_privilege('anon', 'public.consume_usage_quota(uuid,uuid,text,integer,jsonb)', 'EXECUTE')
+    as anon_consume_quota_should_be_false,
+  has_function_privilege('authenticated', 'public.consume_usage_quota(uuid,uuid,text,integer,jsonb)', 'EXECUTE')
+    as authenticated_consume_quota_should_be_false,
+  has_function_privilege('service_role', 'public.consume_usage_quota(uuid,uuid,text,integer,jsonb)', 'EXECUTE')
+    as service_role_consume_quota_should_be_true;
