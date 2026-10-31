@@ -12,12 +12,12 @@ const assertNotIncludes = (needle, label = needle) => {
   if (src.includes(needle)) fail(`still contains ${label}`);
 };
 
-assertIncludes('+ Thêm phòng', 'primary add-room label');
-assertNotIncludes('+ Thêm giải pháp', 'old add-room label');
-assertIncludes('name: "Phòng 1"', 'default first room label');
-assertIncludes('const name = `Phòng ${idx}`;', 'new added room label pattern');
-assertIncludes('Phòng / Phân bổ', 'room allocation column label');
-assertNotIncludes('Khu vực / Phân bổ', 'old allocation label');
+assertIncludes('+ Thêm hạng mục', 'primary add-section label');
+assertNotIncludes('+ Thêm phòng', 'old room-specific add label');
+assertIncludes('name: `${industryProfile.labels.section} 1`', 'default first neutral section label');
+assertIncludes('const name = `${industryProfile.labels.section} ${idx}`;', 'new added section label pattern');
+assertIncludes('Hạng mục / Phân bổ', 'neutral section allocation column label');
+assertNotIncludes('Phòng / Phân bổ', 'old room-specific allocation label');
 
 assertIncludes('Mở Zalo với Nhà cung cấp', 'full supplier wording on Zalo action');
 assertIncludes('Chưa có nhà cung cấp', 'empty supplier wording');

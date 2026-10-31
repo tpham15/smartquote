@@ -47,7 +47,7 @@ export const QUOTE_TEMPLATE_PRESETS = {
   camera_security: {
     id: "camera_security",
     name: "Camera / Security",
-    industry: "camera",
+    industry: "cctv",
     description: "Mẫu camera, an ninh, mạng, nhấn mạnh model, phụ kiện, bảo hành.",
     config: {
       layoutType: "technical",
@@ -91,8 +91,8 @@ function mergeDeep(base, override) {
   return out;
 }
 
-export function buildDefaultQuoteTemplateConfig(presetId = "smarthome_pro") {
-  const preset = QUOTE_TEMPLATE_PRESETS[presetId] || QUOTE_TEMPLATE_PRESETS.smarthome_pro;
+export function buildDefaultQuoteTemplateConfig(presetId = "minimal_business") {
+  const preset = QUOTE_TEMPLATE_PRESETS[presetId] || QUOTE_TEMPLATE_PRESETS.minimal_business;
   return {
     presetId: preset.id,
     name: preset.name,
@@ -101,12 +101,12 @@ export function buildDefaultQuoteTemplateConfig(presetId = "smarthome_pro") {
 }
 
 export function normalizeQuoteTemplateConfig(config = {}) {
-  const presetId = config?.presetId || "smarthome_pro";
+  const presetId = config?.presetId || "minimal_business";
   const base = buildDefaultQuoteTemplateConfig(presetId);
   return mergeDeep(base, config || {});
 }
 
-export function applyQuoteTemplatePreset(current = {}, presetId = "smarthome_pro") {
+export function applyQuoteTemplatePreset(current = {}, presetId = "minimal_business") {
   const presetConfig = buildDefaultQuoteTemplateConfig(presetId);
   const normalized = normalizeQuoteTemplateConfig(current);
   return {
@@ -121,7 +121,7 @@ export function applyQuoteTemplatePreset(current = {}, presetId = "smarthome_pro
 }
 
 export function getQuoteTemplateLabel(presetId) {
-  return QUOTE_TEMPLATE_PRESETS[presetId]?.name || "SmartHome Pro";
+  return QUOTE_TEMPLATE_PRESETS[presetId]?.name || "Minimal Business";
 }
 
 export function enabledQuoteColumns(config = {}) {

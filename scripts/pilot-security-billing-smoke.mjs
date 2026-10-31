@@ -50,9 +50,17 @@ has(schema, /grant update \(name, phone, address\) on table public\.dealers to a
 has(schema, /revoke all on function public\.admin_activate_dealer_plan\(uuid, text, integer, text\) from authenticated;/i,
   'fresh schema must revoke admin plan activation from authenticated');
 
-// Current browser code only reads billing state; it must not directly mutate dealer billing columns.
-assert.doesNotMatch(cloudState, /\.from\(["']dealers["']\)[\s\S]{0,300}\.update\(/i,
-  'browser cloudState must not directly update dealers');
+// P1.5 allows browser owners/admins to update only non-billing workspace metadata.
+// The update payload must stay explicitly limited to industry/business/profile-version fields.
+const profileUpdateStart = cloudState.indexOf('export async function updateDealerWorkspaceProfile');
+const profileUpdateEnd = cloudState.indexOf('export async function loadCloudState', profileUpdateStart);
+assert.ok(profileUpdateStart >= 0 && profileUpdateEnd > profileUpdateStart, 'workspace profile updater must be isolated');
+const profileUpdateBlock = cloudState.slice(profileUpdateStart, profileUpdateEnd);
+assert.match(profileUpdateBlock, /industry_profile:/, 'workspace updater must persist industry_profile');
+assert.match(profileUpdateBlock, /business_type:/, 'workspace updater must persist business_type');
+for (const protectedCol of ['plan', 'subscription_status', 'trial_ends_at', 'current_period_end', 'plan_started_at']) {
+  assert.ok(!new RegExp(`\\b${protectedCol}\\b`).test(profileUpdateBlock), `workspace updater must not touch ${protectedCol}`);
+}
 
 // Migration includes a live verification row with false/true expectations.
 for (const marker of [

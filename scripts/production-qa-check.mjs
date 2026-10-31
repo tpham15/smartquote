@@ -20,6 +20,13 @@ async function assertTable(table, minRows = 0) {
   return data || [];
 }
 
+
+async function assertColumns(table, columns = []) {
+  const selectList = columns.join(',');
+  const { error } = await supabase.from(table).select(selectList).limit(1);
+  if (error) throw new Error(`${table} column check failed (${selectList}): ${error.message}`);
+}
+
 async function assertRpc(name, args) {
   const { error } = await supabase.rpc(name, args);
   if (error) throw new Error(`${name} RPC check failed: ${error.message}`);
@@ -31,6 +38,7 @@ await assertTable('external_api_budget_catalog', 1);
 await assertTable('usage_events', 0);
 await assertTable('external_api_usage', 0);
 await assertTable('dealers', 0);
+await assertColumns('dealers', ['industry_profile', 'business_type', 'industry_profile_version']);
 await assertTable('dealer_members', 0);
 await assertTable('catalog_items', 0);
 await assertTable('quotes', 0);

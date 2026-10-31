@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { InteractionHost, confirmAction, notify } from "./ui/interaction.jsx";
+import { BUSINESS_TYPES, INDUSTRY_PROFILE_LIST, getIndustryProfile } from "./config/industryProfiles.js";
 import * as XLSX from "xlsx";
 import { importFileForUI, importManyForUI, productsToImportPreviewResult, combineImportPreviewResults } from "./import-engine/uiAdapter.js";
 import { parseKtsBomExcel, parseTakeoffMatrixFile, guessProductForColumn } from "./import-engine/legacy/legacyBomImport.js";
@@ -59,9 +60,9 @@ import {
 } from "./quote/quoteLifecycle.js";
 
 // ============================================================
-// SmartQuote — App báo giá smarthome
+// SmartQuote — B2B quotation/catalog workspace
 // Giải quyết: giá nhà cung cấp đổi liên tục, nhập tay mất thời gian,
-// báo giá theo phòng/gói. Catalog đổi giá áp cho báo giá mới; báo giá đã lưu giữ snapshot lịch sử.
+// báo giá theo hạng mục/bộ sản phẩm. Catalog đổi giá áp cho báo giá mới; báo giá đã lưu giữ snapshot lịch sử.
 // Dữ liệu catalog giữ trong state/cloud; báo giá đã lưu giữ snapshot sản phẩm/giá để không bị đổi theo catalog sau này.
 // ============================================================
 
@@ -536,15 +537,18 @@ const SEED_PRODUCTS = [];
 const SEED_CATEGORIES = [];
 const buildSeedTemplates = () => [];
 
-const buildDefaultCompany = () => ({
-  name: "", phone: "", address: "", taxCode: "",
-  laborPercent: 0, vatPercent: 8, quoteNumber: "", salesPerson: "", salesPhone: "",
-  website: "", googleApiKey: "", googleCx: "",
-  logoUrl: "", bankInfo: "", introText: "",
-  quoteTemplate: buildDefaultQuoteTemplateConfig("smarthome_pro"),
-  excelQuoteTemplates: [],
-  defaultExcelQuoteTemplateId: "",
-});
+const buildDefaultCompany = (industryId = "generic") => {
+  const industry = getIndustryProfile(industryId);
+  return {
+    name: "", phone: "", address: "", taxCode: "",
+    laborPercent: 0, vatPercent: 8, quoteNumber: "", salesPerson: "", salesPhone: "",
+    website: "", googleApiKey: "", googleCx: "",
+    logoUrl: "", bankInfo: "", introText: "",
+    quoteTemplate: buildDefaultQuoteTemplateConfig(industry.defaultQuoteTemplatePreset || "minimal_business"),
+    excelQuoteTemplates: [],
+    defaultExcelQuoteTemplateId: "",
+  };
+};
 
 const sanitizeCompanyClientSecrets = (value = {}) => ({
   ...(value && typeof value === "object" ? value : {}),
@@ -592,21 +596,21 @@ function writeLocalState(cloud, key, value, cloudLoaded) {
   }
 }
 
-function buildNormalizedCloudSnapshot(state = {}) {
+function buildNormalizedCloudSnapshot(state = {}, industryId = "generic") {
   const products = Array.isArray(state.products) ? state.products : [];
   const templates = Array.isArray(state.templates) ? state.templates : [];
   const company = state.company && typeof state.company === "object" && Object.keys(state.company).length
     ? {
-        ...buildDefaultCompany(),
+        ...buildDefaultCompany(industryId),
         ...sanitizeCompanyClientSecrets(state.company),
-        quoteTemplate: normalizeQuoteTemplateConfig(state.company.quoteTemplate || {}),
+        quoteTemplate: normalizeQuoteTemplateConfig(state.company.quoteTemplate || buildDefaultQuoteTemplateConfig(getIndustryProfile(industryId).defaultQuoteTemplatePreset || "minimal_business")),
         excelQuoteTemplates: normalizeExcelQuoteTemplates(state.company.excelQuoteTemplates),
       }
-    : buildDefaultCompany();
+    : buildDefaultCompany(industryId);
   const markups = Array.isArray(state.markups) && state.markups.length ? state.markups : buildDefaultMarkups();
   const suppliers = Array.isArray(state.suppliers) ? state.suppliers : [];
   const nameMap = state.nameMap && typeof state.nameMap === "object" ? state.nameMap : {};
-  const solutionFamilies = normalizeSolutionFamilies(state.solutionFamilies);
+  const solutionFamilies = industryId === "smarthome" ? normalizeSolutionFamilies(state.solutionFamilies) : [];
   return { products, templates, company, markups, suppliers, nameMap, solutionFamilies };
 }
 
@@ -897,8 +901,8 @@ const PRIMARY_TABS = [
     { key: "import", label: "Nhập file" },
     { key: "ask", label: "Hỏi Nhà cung cấp" },
   ] },
-  { key: "assets", label: "Mẫu & Gói", subs: [
-    { key: "room_packs", label: "Gói phòng" },
+  { key: "assets", label: "Mẫu", subs: [
+    { key: "room_packs", label: "Bộ sản phẩm" },
     { key: "solution_families", label: "Bộ giải pháp" },
     { key: "quote_tmpl", label: "Mẫu báo giá" },
   ] },
@@ -1030,6 +1034,7 @@ function guardProductCount(cloud, nextCount, onUpgrade) {
 
 export default function SmartQuote({ cloud = { enabled: false } } = {}) {
   setTenantStorageScope(cloud?.enabled ? cloud?.dealerId : null);
+  const industryProfile = useMemo(() => getIndustryProfile(cloud?.industryProfile || "generic"), [cloud?.industryProfile]);
 
   const [theme, setTheme] = useState(
     () => document.documentElement.getAttribute("data-theme") || "light"
@@ -1051,15 +1056,15 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
   };
   const [products, setProducts] = useState(() => readLocalState(cloud, "products", () => SEED_PRODUCTS));
   const [templates, setTemplates] = useState(() => readLocalState(cloud, "templates", buildSeedTemplates));
-  const [solutionFamilies, setSolutionFamilies] = useState(() => readLocalState(cloud, "solutionFamilies", buildSeedSolutionFamilies));
-  const [company, setCompany] = useState(() => sanitizeCompanyClientSecrets(readLocalState(cloud, "company", buildDefaultCompany)));
+  const [solutionFamilies, setSolutionFamilies] = useState(() => readLocalState(cloud, "solutionFamilies", () => industryProfile.enableSolutionFamilies ? buildSeedSolutionFamilies() : []));
+  const [company, setCompany] = useState(() => sanitizeCompanyClientSecrets(readLocalState(cloud, "company", () => buildDefaultCompany(industryProfile.id))));
 
   // Các mức hệ số áp cho giá gốc → giá bán
   const [markups, setMarkups] = useState(() => readLocalState(cloud, "markups", buildDefaultMarkups));
 
-  // Báo giá: mỗi "room" = 1 phòng/hạng mục. Bắt đầu với 1 phòng trống.
+  // Báo giá: mỗi "room" là một hạng mục/section trung lập theo ngành.
   const DEFAULT_ROOMS = () => [
-    { id: uid("room"), name: "Phòng 1", lines: [] },
+    { id: uid("room"), name: `${industryProfile.labels.section} 1`, lines: [] },
   ];
   const [rooms, setRooms] = useState(DEFAULT_ROOMS);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "", project: "" });
@@ -1085,7 +1090,11 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
   const lastCatalogJsonRef = useRef("");
   const [cloudSyncStatus, setCloudSyncStatus] = useState(cloud?.enabled ? "Đang tải cloud..." : "Local");
   const billingStatus = useMemo(() => getBillingFromCloud(cloud), [cloud?.enabled, cloud?.billing]);
-  const activePrimary = PRIMARY_TABS.find((t) => t.key === tab) || PRIMARY_TABS[0];
+  const visiblePrimaryTabs = useMemo(() => PRIMARY_TABS.map((item) => {
+    if (item.key !== "assets" || industryProfile.enableSolutionFamilies) return item;
+    return { ...item, subs: (item.subs || []).filter((sub) => sub.key !== "solution_families") };
+  }), [industryProfile.id, industryProfile.enableSolutionFamilies]);
+  const activePrimary = visiblePrimaryTabs.find((t) => t.key === tab) || visiblePrimaryTabs[0];
   const effectiveSubView = activePrimary.subs?.some((s) => s.key === subView) ? subView : (activePrimary.subs?.[0]?.key || null);
   const openUpgrade = () => setTab("settings", "plan");
   const activeSubLabel = activePrimary.subs?.find((item) => item.key === effectiveSubView)?.label || "";
@@ -1098,7 +1107,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
       : tab === "data" && effectiveSubView === "products"
         ? { label: "Nhập sản phẩm", tone: "primary", onClick: () => setTab("data", "import") }
         : tab === "assets" && effectiveSubView === "room_packs"
-          ? { label: "+ Tạo gói", tone: "primary", onClick: () => setRoomPackCreateRequest((value) => value + 1) }
+          ? { label: "+ Tạo bộ sản phẩm", tone: "primary", onClick: () => setRoomPackCreateRequest((value) => value + 1) }
           : null)
     : null;
 
@@ -1144,7 +1153,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
 
     // Xóa dữ liệu đang hiển thị ngay khi đổi workspace để tránh đại lý mới
     // thấy thoáng qua dữ liệu của đại lý trước trong lúc chờ Supabase trả về.
-    const safeEmptySnapshot = buildNormalizedCloudSnapshot({});
+    const safeEmptySnapshot = buildNormalizedCloudSnapshot({}, industryProfile.id);
     setProducts(safeEmptySnapshot.products);
     setTemplates(safeEmptySnapshot.templates);
     setSolutionFamilies(safeEmptySnapshot.solutionFamilies);
@@ -1159,7 +1168,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
     Promise.all([loadCloudState(cloud.dealerId), listCloudCatalog(cloud.dealerId)])
       .then(async ([state, catalogProducts]) => {
         if (cancelled) return;
-        const nextSnapshot = buildNormalizedCloudSnapshot(state);
+        const nextSnapshot = buildNormalizedCloudSnapshot(state, industryProfile.id);
         let nextProducts = Array.isArray(catalogProducts) ? catalogProducts : [];
 
         // Phase 5 migration: nếu workspace cũ vẫn còn products trong dealer_app_state
@@ -1202,7 +1211,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
       });
 
     return () => { cancelled = true; };
-  }, [cloud?.enabled, cloud?.dealerId]);
+  }, [cloud?.enabled, cloud?.dealerId, industryProfile.id]);
 
   useEffect(() => {
     if (!cloud?.enabled || !cloud.dealerId || !cloudLoadedRef.current) return;
@@ -1272,7 +1281,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
           <div className="brand-name">Smart<span>Quote</span></div>
         </div>
         <nav className="nav" aria-label="Điều hướng chính">
-          {PRIMARY_TABS.map((item) => (
+          {visiblePrimaryTabs.map((item) => (
             <div className="nav-group" key={item.key}>
               <button className={tab === item.key ? "active" : ""} onClick={() => setTab(item.key)}>
                 <NavIcon name={item.key} />
@@ -1357,6 +1366,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
             onUpgrade={openUpgrade}
             quoteTemplateConfig={company.quoteTemplate}
             createRequest={quoteCreateRequest}
+            industryProfile={industryProfile}
           />
         )}
         {!billingStatus?.locked && tab === "data" && effectiveSubView === "products" && (
@@ -1368,6 +1378,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
             cloud={cloud}
             onUpgrade={openUpgrade}
             onOpenImportHub={() => setTab("data", "import")}
+            industryProfile={industryProfile}
           />
         )}
         {!billingStatus?.locked && tab === "data" && effectiveSubView === "import" && (
@@ -1381,6 +1392,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
             cloud={cloud}
             onUpgrade={openUpgrade}
             onGoProducts={() => setTab("data", "products")}
+            industryProfile={industryProfile}
             onCreateQuote={(newRooms, customerInfo) => {
               setRooms(newRooms);
               if (customerInfo) setCustomer((c) => ({ ...c, ...customerInfo }));
@@ -1400,11 +1412,11 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
         {!billingStatus?.locked && tab === "assets" && effectiveSubView === "room_packs" && (
           <Templates products={products} productById={productById} templates={templates} setTemplates={setTemplates} markups={markups} createRequest={roomPackCreateRequest} />
         )}
-        {!billingStatus?.locked && tab === "assets" && effectiveSubView === "solution_families" && (
+        {!billingStatus?.locked && industryProfile.enableSolutionFamilies && tab === "assets" && effectiveSubView === "solution_families" && (
           <SolutionFamilies products={products} solutionFamilies={solutionFamilies} setSolutionFamilies={setSolutionFamilies} />
         )}
         {!billingStatus?.locked && tab === "assets" && effectiveSubView === "quote_tmpl" && (
-          <QuoteTemplateSettings company={company} setCompany={setCompany} products={products} rooms={rooms} productById={productById} />
+          <QuoteTemplateSettings company={company} setCompany={setCompany} products={products} rooms={rooms} productById={productById} industryProfile={industryProfile} />
         )}
         {!billingStatus?.locked && tab === "settings" && effectiveSubView === "general" && (
           <Settings
@@ -1412,6 +1424,9 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
             setCompany={setCompany}
             markups={markups}
             setMarkups={setMarkups}
+            industryProfile={industryProfile}
+            businessType={cloud?.businessType || null}
+            onWorkspaceProfileChange={cloud?.updateIndustryProfile}
             data={{ products, templates, solutionFamilies, company, markups, suppliers: suppliersList, nameMap }}
             onImport={(d) => {
               if (d.products) setProducts(d.products);
@@ -1469,7 +1484,7 @@ function NewUserEmptyState({ context = "quote", onImport }) {
 }
 
 
-function UnifiedImportHub({ products, setProducts, nameMap, setNameMap, markups, company, cloud, onUpgrade, onCreateQuote, onGoProducts }) {
+function UnifiedImportHub({ products, setProducts, nameMap, setNameMap, markups, company, cloud, onUpgrade, onCreateQuote, onGoProducts, industryProfile = getIndustryProfile("generic") }) {
   const [mode, setMode] = useState(null);
 
   if (mode === "supplier_price") {
@@ -1490,6 +1505,7 @@ function UnifiedImportHub({ products, setProducts, nameMap, setNameMap, markups,
           markups={markups}
           cloud={cloud}
           onUpgrade={onUpgrade}
+          industryProfile={industryProfile}
           importOnly
           onImportDone={onGoProducts}
         />
@@ -1515,6 +1531,7 @@ function UnifiedImportHub({ products, setProducts, nameMap, setNameMap, markups,
           markups={markups}
           cloud={cloud}
           onUpgrade={onUpgrade}
+          industryProfile={industryProfile}
           importOnly
           importSourceKind="old_quote"
           onImportDone={onGoProducts}
@@ -1579,6 +1596,9 @@ function UnifiedImportHub({ products, setProducts, nameMap, setNameMap, markups,
         </button>
       </div>
 
+      <div className="import-choice-note">
+        <b>{industryProfile.name}:</b> {(industryProfile.importHints || [])[0] || "SmartQuote sẽ ưu tiên nhận diện mã sản phẩm, tên và giá."}
+      </div>
       <div className="import-choice-note">
         <b>Gợi ý:</b> Nếu file là báo giá từng gửi khách, chọn <b>Báo giá cũ / công trình cũ</b> để SmartQuote bỏ qua hạng mục và tổng nhóm. Nếu là bảng giá sạch từ nhà cung cấp, chọn <b>Bảng giá nhà cung cấp</b>.
       </div>
@@ -1970,7 +1990,7 @@ function UpgradePage({ billing, usage = {}, cloud, locked = false, onBack }) {
 // ============================================================
 // TAB 1 — Tạo báo giá
 // ============================================================
-function QuoteBuilder({ products, setProducts, productById: catalogProductById, templates, solutionFamilies = [], company, markups, rooms, setRooms, defaultRooms, customer, setCustomer, activeQuoteId, setActiveQuoteId, cloud, onUpgrade, quoteTemplateConfig, createRequest = 0 }) {
+function QuoteBuilder({ products, setProducts, productById: catalogProductById, templates, solutionFamilies = [], company, markups, rooms, setRooms, defaultRooms, customer, setCustomer, activeQuoteId, setActiveQuoteId, cloud, onUpgrade, quoteTemplateConfig, createRequest = 0, industryProfile = getIndustryProfile("generic") }) {
   const [pickerRoomId, setPickerRoomId] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [editingLine, setEditingLine] = useState(null); // {roomId, line} đang đổi thiết bị
@@ -2025,7 +2045,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   const listPriceOf = (p) => productDisplayBasePrice(p);
   const lineSalePrice = (p, line) => quoteLineSalePrice(p, line);
 
-  // Tạo thiết bị mới ngay tại chỗ (từ ô tìm trong báo giá) + thêm luôn vào phòng đang chọn
+  // Tạo sản phẩm mới ngay tại chỗ (từ ô tìm trong báo giá) + thêm luôn vào hạng mục đang chọn
   const createProductAndAdd = (roomId, draft) => {
     if (!ensureDraftEditable()) return;
     if (!guardProductCount(cloud, products.length + 1, onUpgrade)) return;
@@ -2045,7 +2065,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     addProductToRoom(roomId, newProduct.id, newProduct);  // thêm ngay vào báo giá
   };
 
-  // Đổi thiết bị của 1 dòng (vd Luto → Lumes), giữ nguyên số lượng và hệ số
+  // Đổi sản phẩm của 1 dòng, giữ nguyên số lượng và hệ số
   const swapLineProduct = (roomId, lineId, newProductId) => {
     if (!ensureDraftEditable()) return;
     setRooms((r) =>
@@ -2085,7 +2105,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   const addRoom = () => {
     if (!ensureDraftEditable()) return;
     const idx = rooms.length + 1;
-    const name = `Phòng ${idx}`;
+    const name = `${industryProfile.labels.section} ${idx}`;
     setRooms((r) => [...r, { id: uid("room"), name, lines: [] }]);
   };
   const removeRoom = (roomId) => { if (ensureDraftEditable()) setRooms((r) => r.filter((x) => x.id !== roomId)); };
@@ -2383,7 +2403,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
       return;
     }
     if (calc.pointCount === 0) {
-      notify.warning("Chưa có thiết bị nào để chốt báo giá.");
+      notify.warning("Chưa có sản phẩm nào để chốt báo giá.");
       return;
     }
     const finalCustomer = {
@@ -2495,7 +2515,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
       return;
     }
     if (calc.pointCount === 0) {
-      notify.warning("Chưa có thiết bị nào để lưu báo giá.");
+      notify.warning("Chưa có sản phẩm nào để lưu báo giá.");
       return;
     }
     const isNewQuote = asCopy || !activeQuoteId;
@@ -2550,7 +2570,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   // Nếu template export lỗi, tuyệt đối không fallback âm thầm sang generic vì sẽ làm mất fidelity.
   const exportExcel = async () => {
     if (calc.pointCount === 0) {
-      notify.warning("Chưa có thiết bị nào để xuất báo giá.");
+      notify.warning("Chưa có sản phẩm nào để xuất báo giá.");
       return;
     }
     if (!requireFinalForExport("xuất báo giá")) return;
@@ -2583,7 +2603,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
 
   const exportPDF = async () => {
     if (calc.pointCount === 0) {
-      notify.warning("Chưa có thiết bị nào để xuất báo giá.");
+      notify.warning("Chưa có sản phẩm nào để xuất báo giá.");
       return;
     }
     if (!requireFinalForExport("xuất PDF")) return;
@@ -2710,11 +2730,11 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                   disabled={isFinalQuote}
                   onChange={(e) => { if (e.target.value) { applyTemplate(room.id, e.target.value); e.target.value = ""; } }}
                 >
-                  <option value="">+ Thêm gói…</option>
+                  <option value="">+ Thêm bộ sản phẩm…</option>
                   {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
                 <button className="btn-ghost" disabled={isFinalQuote} onClick={() => setPickerRoomId(pickerRoomId === room.id ? null : room.id)}>
-                  + Thêm thiết bị
+                  + Thêm sản phẩm
                 </button>
                 {rooms.length > 1 && (
                   <button className="btn-ghost danger" disabled={isFinalQuote} onClick={() => removeRoom(room.id)}>Xóa</button>
@@ -2733,14 +2753,14 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
             )}
 
             {room.lines.length === 0 ? (
-              <p className="empty-hint">Chưa có thiết bị. Chọn “Thêm gói” để dùng combo dựng sẵn, hoặc “Thêm thiết bị” để chọn lẻ.</p>
+              <p className="empty-hint">Chưa có sản phẩm. Chọn “Thêm bộ sản phẩm” để dùng bộ dựng sẵn, hoặc “Thêm sản phẩm” để chọn lẻ.</p>
             ) : (
               <table className="line-table">
                 <thead>
                   <tr>
                     <th className="stt-col">STT</th>
-                    <th className="note-col">Phòng / Phân bổ</th>
-                    <th>Thiết bị</th>
+                    <th className="note-col">Hạng mục / Phân bổ</th>
+                    <th>Sản phẩm</th>
                     <th className="num">Niêm yết</th>
                     <th className="num">Đơn giá</th>
                     <th className="num qty-col">SL</th>
@@ -2836,7 +2856,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                         </td>
                         <td className="num strong">{VND(sp * l.qty)}</td>
                         <td className="ln-actions">
-                          <button className="ln-edit" disabled={isFinalQuote} title="Đổi thiết bị" onClick={() => setEditingLine({ roomId: room.id, line: l })}>✎</button>
+                          <button className="ln-edit" disabled={isFinalQuote} title="Đổi sản phẩm" onClick={() => setEditingLine({ roomId: room.id, line: l })}>✎</button>
                           <button className="x-btn" disabled={isFinalQuote} onClick={() => removeLine(room.id, l.id)}>×</button>
                         </td>
                       </tr>
@@ -2849,8 +2869,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
         ))}
 
         <div className="quote-actions-bottom">
-          <button className="btn-solution-family" disabled={isFinalQuote} onClick={() => setSolutionModalOpen(true)}>⚡ Tạo từ bộ giải pháp</button>
-          <button className="btn-add-room" disabled={isFinalQuote} onClick={addRoom}>+ Thêm phòng</button>
+          {industryProfile.enableSolutionFamilies && <button className="btn-solution-family" disabled={isFinalQuote} onClick={() => setSolutionModalOpen(true)}>⚡ Tạo từ bộ giải pháp</button>}
+          <button className="btn-add-room" disabled={isFinalQuote} onClick={addRoom}>+ Thêm hạng mục</button>
           <button className="btn-ghost" onClick={newQuote}>⟳ Báo giá mới</button>
         </div>
       </div>
@@ -2899,7 +2919,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
               </div>
             )}
             <div className="s-rows">
-              <Row label={`Tiền hàng (${calc.pointCount} thiết bị)`} value={VND(calc.deviceTotal)} />
+              <Row label={`Tiền hàng (${calc.pointCount} sản phẩm)`} value={VND(calc.deviceTotal)} />
               <Row label={`Nhân công, lập trình (${effectiveQuoteCompany?.laborPercent || 0}%)`} value={VND(calc.laborTotal)} />
               <div className="s-row vat-summary-row">
                 <span className="vat-summary-label">
@@ -2999,7 +3019,7 @@ function SolutionFamilyApplyModal({ products, solutionFamilies = [], onApply, on
       <div className="modal-backdrop" onClick={onClose}>
         <div className="modal solution-apply-modal" onClick={(e) => e.stopPropagation()}>
           <h2>Chưa có bộ giải pháp</h2>
-          <p className="tab-intro">Vào Mẫu &amp; Gói → Bộ giải pháp để tạo bộ Lumi/Erfinden/Schneider trước.</p>
+          <p className="tab-intro">Vào Mẫu → Bộ giải pháp để tạo bộ theo hãng trước.</p>
           <div className="modal-actions"><button className="btn-ghost" onClick={onClose}>Đóng</button></div>
         </div>
       </div>
@@ -3244,10 +3264,10 @@ function LineProductSwap({ products, markups = [], current, line, onSetFactor, o
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Đổi thiết bị</h2>
+        <h2>Đổi sản phẩm</h2>
         {current && (
           <p className="tab-intro" style={{ margin: "0 0 12px" }}>
-            Đang chọn: <strong>{current.name}</strong> ({current.sku}). Chọn thiết bị thay thế bên dưới — số lượng giữ nguyên.
+            Đang chọn: <strong>{current.name}</strong> ({current.sku}). Chọn sản phẩm thay thế bên dưới — số lượng giữ nguyên.
           </p>
         )}
         {current && current.priceMode !== "fixed" && (
@@ -3280,7 +3300,7 @@ function LineProductSwap({ products, markups = [], current, line, onSetFactor, o
               <span className="pi-meta">{p.sku}{p.supplier ? ` · ${p.supplier}` : ""}</span>
             </button>
           ))}
-          {filtered.length === 0 && <div className="empty-hint">Không tìm thấy thiết bị.</div>}
+          {filtered.length === 0 && <div className="empty-hint">Không tìm thấy sản phẩm.</div>}
         </div>
         <div className="modal-actions">
           <button className="btn-ghost" onClick={onClose}>Hủy</button>
@@ -3292,7 +3312,7 @@ function LineProductSwap({ products, markups = [], current, line, onSetFactor, o
 
 function ProductPicker({ products, priceOf, onPick, onCreate, onClose }) {
   const [q, setQ] = useState("");
-  const [creating, setCreating] = useState(null); // draft thiết bị mới đang tạo
+  const [creating, setCreating] = useState(null); // draft sản phẩm mới đang tạo
 
   const filtered = products.filter(
     (p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.sku || "").toLowerCase().includes(q.toLowerCase())
@@ -3310,11 +3330,11 @@ function ProductPicker({ products, priceOf, onPick, onCreate, onClose }) {
 
   const submitCreate = () => {
     if (!creating.name.trim() && !creating.sku.trim()) {
-      notify.warning("Nhập tên hoặc mã thiết bị.");
+      notify.warning("Nhập tên hoặc mã sản phẩm.");
       return;
     }
     if (!creating.costPrice || creating.costPrice <= 0) {
-      notify.warning("Nhập giá gốc của thiết bị.");
+      notify.warning("Nhập giá gốc của sản phẩm.");
       return;
     }
     onCreate(creating);
@@ -3327,15 +3347,15 @@ function ProductPicker({ products, priceOf, onPick, onCreate, onClose }) {
     return (
       <div className="picker">
         <div className="picker-create-head">
-          <strong>Thêm thiết bị mới vào danh mục</strong>
+          <strong>Thêm sản phẩm mới vào danh mục</strong>
           <button className="btn-ghost" onClick={() => setCreating(null)}>← Quay lại</button>
         </div>
         <div className="picker-create-grid">
-          <label className="field"><span>Tên thiết bị *</span>
+          <label className="field"><span>Tên sản phẩm *</span>
             <input autoFocus value={creating.name} onChange={(e) => setCreating({ ...creating, name: e.target.value })} /></label>
           <label className="field"><span>Mã sản phẩm (SKU)</span>
             <input value={creating.sku} onChange={(e) => setCreating({ ...creating, sku: e.target.value })} /></label>
-          <label className="field"><span>Nhóm thiết bị</span>
+          <label className="field"><span>Nhóm sản phẩm</span>
             <input value={creating.category} onChange={(e) => setCreating({ ...creating, category: e.target.value })} /></label>
           <label className="field"><span>Nhà cung cấp</span>
             <input value={creating.supplier} onChange={(e) => setCreating({ ...creating, supplier: e.target.value })} /></label>
@@ -3378,7 +3398,7 @@ function ProductPicker({ products, priceOf, onPick, onCreate, onClose }) {
       <button className="picker-create-btn" onClick={startCreate}>
         {q.trim() && filtered.length === 0
           ? "+ Thêm mới vào danh mục"
-          : "+ Tạo thiết bị mới (chưa có trong danh mục)"}
+          : "+ Tạo sản phẩm mới (chưa có trong danh mục)"}
       </button>
     </div>
   );
@@ -3466,9 +3486,9 @@ function AskSupplier({ products, company, suppliers, setSuppliers }) {
     <div className="ask-grid">
       <div className="ask-main">
         <section className="card">
-          <h2>Chọn thiết bị cần hỏi giá</h2>
+          <h2>Chọn sản phẩm cần hỏi giá</h2>
           <p className="tab-intro" style={{ margin: "0 0 12px" }}>
-            Chọn từ bảng giá có sẵn, hoặc gõ mã thiết bị mới (chưa có trong bảng giá) để hỏi.
+            Chọn từ bảng giá có sẵn, hoặc gõ mã sản phẩm mới (chưa có trong bảng giá) để hỏi.
           </p>
 
           <div className="ask-add-row">
@@ -3866,7 +3886,7 @@ function AIReader({ products, setProducts, company, markups = [], onCreateQuote,
       .map(([name, lines]) => ({ id: uid("room"), name, lines }))
       .filter((r) => r.lines.length > 0);
 
-    if (!rooms.length) { notify.warning("Chưa có thiết bị nào được ghép. Hãy chọn thiết bị cho các dòng chưa map."); return; }
+    if (!rooms.length) { notify.warning("Chưa có sản phẩm nào được ghép. Hãy chọn sản phẩm cho các dòng chưa map."); return; }
     onCreateQuote(rooms, {});
   };
 
@@ -4653,7 +4673,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
               >
                 <div className="ai-drop-icon">📋</div>
                 <div className="ai-drop-text">Kéo thả hoặc bấm để chọn file BOM / dự toán Excel</div>
-                <div className="ai-drop-sub">Hỗ trợ cột: Tên thiết bị · Model · Số lượng · ĐVT · Phòng/khu vực · Ghi chú</div>
+                <div className="ai-drop-sub">Hỗ trợ cột: Tên sản phẩm · Model · Số lượng · ĐVT · Hạng mục/khu vực · Ghi chú</div>
               </div>
               <input ref={bomFileRef} type="file" accept=".xlsx,.xls" hidden onChange={handleBomFile} />
               {bomStatus === "loading" && <p className="tab-intro" style={{ marginTop: 12 }}>Đang đọc BOM và tách phòng/khu vực…</p>}
@@ -7119,7 +7139,7 @@ Hãy bấm "Tôi đã kiểm tra cột giá" hoặc chọn lại cột giá trư
   );
 }
 
-function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrade, onOpenImportHub, importOnly = false, onImportDone, importSourceKind = "catalog" }) {
+function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrade, onOpenImportHub, importOnly = false, onImportDone, importSourceKind = "catalog", industryProfile = getIndustryProfile("generic") }) {
   const [q, setQ] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
   const [editing, setEditing] = useState(null);
@@ -7290,7 +7310,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
 
   const autoFetchImages = async () => {
     const targets = products.filter((p) => !p.image);
-    if (targets.length === 0) { notify.success("Tất cả thiết bị đã có ảnh rồi!"); return; }
+    if (targets.length === 0) { notify.success("Tất cả sản phẩm đã có ảnh rồi!"); return; }
     if (!guardFeature(cloud, "product_enrich", 1, onUpgrade)) return;
     if (!(await confirmAction({
       title: "Tìm ảnh tự động?",
@@ -7324,7 +7344,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
       await new Promise((r) => setTimeout(r, 200));
     }
     cloud?.refreshBilling?.();
-    setAutoImg({ running: false, done, total: targets.length, errors, log: `✓ Hoàn tất! Tìm được ${done} ảnh, ${errors} thiết bị chưa tìm thấy ảnh.` });
+    setAutoImg({ running: false, done, total: targets.length, errors, log: `✓ Hoàn tất! Tìm được ${done} ảnh, ${errors} sản phẩm chưa tìm thấy ảnh.` });
   };
   const handleExcelFile = async (e) => {
     const file = e.target.files?.[0];
@@ -7595,7 +7615,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
           <span className={autoImg.errors > 0 ? "warn" : ""}>{autoImg.log}</span>
           {!autoImg.running && autoImg.done > 0 && (
             <span className="muted" style={{ marginLeft: 8 }}>
-              ({autoImg.errors} thiết bị không tìm được ảnh — có thể dán URL thủ công)
+              ({autoImg.errors} sản phẩm không tìm được ảnh — có thể dán URL thủ công)
             </span>
           )}
           {!autoImg.running && (
@@ -7647,7 +7667,7 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
 
       <table className="cat-table" style={{ display: products.length === 0 ? "none" : "table" }}>
         <thead>
-          <tr><th style={{width:"52px"}}>Ảnh</th><th>Thiết bị</th><th>Mã</th><th>Nhà cung cấp</th><th className="num">Giá gốc/nhập</th><th className="num">Giá bán</th><th className="num">Lợi nhuận</th><th></th></tr>
+          <tr><th style={{width:"52px"}}>Ảnh</th><th>Sản phẩm</th><th>Mã</th><th>Nhà cung cấp</th><th className="num">Giá gốc/nhập</th><th className="num">Giá bán</th><th className="num">Lợi nhuận</th><th></th></tr>
         </thead>
         <tbody>
           {filtered.map((p) => {
@@ -7690,9 +7710,9 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
           })}
         </tbody>
       </table>
-      {filtered.length === 0 && <p className="empty-hint pad">Không có thiết bị nào khớp.</p>}
+      {filtered.length === 0 && <p className="empty-hint pad">Không có sản phẩm nào khớp.</p>}
 
-      {editing && <ProductEditor product={editing} suppliers={suppliers} onSave={saveProduct} onCancel={() => setEditing(null)} />}
+      {editing && <ProductEditor product={editing} suppliers={suppliers} industryProfile={industryProfile} onSave={saveProduct} onCancel={() => setEditing(null)} />}
 
       {showEnricher && (
         <ProductEnrichmentModal
@@ -7920,22 +7940,38 @@ function ProductEnrichmentModal({ products, setProducts, company, cloud, onUpgra
 }
 
 
-function ProductEditor({ product, suppliers, onSave, onCancel }) {
+function ProductEditor({ product, suppliers, industryProfile = getIndustryProfile("generic"), onSave, onCancel }) {
   const [f, setF] = useState(product);
   const set = (k, v) => setF({ ...f, [k]: v });
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>{product.id ? "Sửa thiết bị" : "Thêm thiết bị"}</h2>
+        <h2>{product.id ? "Sửa sản phẩm" : "Thêm sản phẩm"}</h2>
         <div className="field-grid">
-          <Field label="Tên thiết bị" value={f.name} onChange={(v) => set("name", v)} />
+          <Field label="Tên sản phẩm" value={f.name} onChange={(v) => set("name", v)} />
           <Field label="Mã (SKU)" value={f.sku} onChange={(v) => set("sku", v)} />
-          <Field label="Nhóm" value={f.category} onChange={(v) => set("category", v)} />
+          <Field label="Nhóm" value={f.category} onChange={(v) => set("category", v)} list={industryProfile.defaultCategories || []} />
           <Field label="Nhà cung cấp" value={f.supplier} onChange={(v) => set("supplier", v)} list={suppliers} />
           <Field label="Đơn vị tính" value={f.unit} onChange={(v) => set("unit", v)} />
           <NumField label="Giá nhập/giá đại lý (đ)" value={f.costPrice} onChange={(v) => set("costPrice", v)} />
           <NumField label="Giá công bố/niêm yết (đ)" value={f.listPrice || 0} onChange={(v) => { setF({ ...f, listPrice: v, publicPrice: v, priceMode: v > 0 ? "fixed" : (f.priceMode || "markup") }); }} />
         </div>
+        {(industryProfile.productAttributes || []).length > 0 && (
+          <div className="industry-attributes" style={{ marginTop: 14 }}>
+            <div className="section-mini-title">Thông số ngành · {industryProfile.name}</div>
+            <div className="field-grid">
+              {industryProfile.productAttributes.map((attribute) => (
+                <Field
+                  key={attribute.key}
+                  label={attribute.label}
+                  value={(f.attributes || {})[attribute.key] ?? ""}
+                  onChange={(value) => setF({ ...f, attributes: { ...(f.attributes || {}), [attribute.key]: value } })}
+                  placeholder={attribute.placeholder || ""}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         <label className="field full" style={{ marginTop: 12 }}>
           <span>Thông số kỹ thuật (hiện trong báo giá gửi khách)</span>
           <textarea
@@ -7962,13 +7998,13 @@ function ProductEditor({ product, suppliers, onSave, onCancel }) {
             )}
           </div>
           <p className="side-note" style={{ marginTop: 4 }}>
-            Không cần ảnh cho mọi sản phẩm — chỉ thêm những cái hay nhầm lẫn (công tắc 1/2/3 nút, các loại đèn...).
+            Không cần ảnh cho mọi sản phẩm — chỉ thêm những sản phẩm dễ nhầm lẫn hoặc cần nhận diện trực quan.
             Trình duyệt tự cache, app không bị nặng.
           </p>
         </label>
         <div className="modal-actions">
           <button className="btn-ghost" onClick={onCancel}>Hủy</button>
-          <button className="btn-primary" onClick={() => { if (!f.name) { notify.warning("Nhập tên thiết bị."); return; } onSave(f); }}>Lưu</button>
+          <button className="btn-primary" onClick={() => { if (!f.name) { notify.warning("Nhập tên sản phẩm."); return; } onSave(f); }}>Lưu</button>
         </div>
       </div>
     </div>
@@ -7985,8 +8021,8 @@ function ImportPreview({ preview, onApply, onCancel }) {
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
         <h2>Xem trước cập nhật giá</h2>
         <p className="tab-intro" style={{ marginBottom: 14 }}>
-          Từ file <strong>{fileName}</strong>: <strong>{matched.length}</strong> thiết bị đổi giá,{" "}
-          <strong>{unchanged.length}</strong> giữ nguyên, <strong>{newItems.length}</strong> thiết bị mới chưa có trong bảng giá.
+          Từ file <strong>{fileName}</strong>: <strong>{matched.length}</strong> sản phẩm đổi giá,{" "}
+          <strong>{unchanged.length}</strong> giữ nguyên, <strong>{newItems.length}</strong> sản phẩm mới chưa có trong bảng giá.
         </p>
         {importResult && (
           <div className="ci-import-summary" style={{ marginBottom: 14 }}>
@@ -8002,10 +8038,10 @@ function ImportPreview({ preview, onApply, onCancel }) {
 
         {matched.length > 0 && (
           <>
-            <h4 className="imp-sub">Thiết bị thay đổi giá nhập</h4>
+            <h4 className="imp-sub">Sản phẩm thay đổi giá nhập</h4>
             <div className="imp-scroll">
               <table className="cat-table">
-                <thead><tr><th>Thiết bị</th><th>Mã</th><th className="num">Giá nhập cũ</th><th className="num">Giá nhập mới</th><th className="num">Thay đổi</th></tr></thead>
+                <thead><tr><th>Sản phẩm</th><th>Mã</th><th className="num">Giá nhập cũ</th><th className="num">Giá nhập mới</th><th className="num">Thay đổi</th></tr></thead>
                 <tbody>
                   {matched.map((m) => {
                     const diff = m.newCost - (m.existing.costPrice || 0);
@@ -8028,7 +8064,7 @@ function ImportPreview({ preview, onApply, onCancel }) {
 
         {newItems.length > 0 && (
           <>
-            <h4 className="imp-sub">Thiết bị mới (chưa có trong bảng giá)</h4>
+            <h4 className="imp-sub">Sản phẩm mới (chưa có trong bảng giá)</h4>
             <div className="imp-scroll short">
               <table className="cat-table">
                 <thead><tr><th>Tên / Mã</th><th className="num">Giá nhập</th></tr></thead>
@@ -8050,7 +8086,7 @@ function ImportPreview({ preview, onApply, onCancel }) {
           {newItems.length > 0 && (
             <label className="chk">
               <input type="checkbox" checked={addNew} onChange={(e) => setAddNew(e.target.checked)} />
-              <span>Thêm {newItems.length} thiết bị mới vào bảng giá</span>
+              <span>Thêm {newItems.length} sản phẩm mới vào bảng giá</span>
             </label>
           )}
         </div>
@@ -8085,7 +8121,7 @@ function Templates({ products, productById, templates, setTemplates, markups = [
     setEditing(null);
   };
   const deleteTpl = async (id) => {
-    if (await confirmAction({ title: "Xóa gói phòng?", message: "Gói phòng này sẽ bị xóa khỏi thư viện mẫu.", confirmLabel: "Xóa", tone: "danger" })) setTemplates((ts) => ts.filter((t) => t.id !== id));
+    if (await confirmAction({ title: "Xóa bộ sản phẩm?", message: "Bộ sản phẩm này sẽ bị xóa khỏi thư viện mẫu.", confirmLabel: "Xóa", tone: "danger" })) setTemplates((ts) => ts.filter((t) => t.id !== id));
   };
 
   const templateFactor = Number(markups?.[0]?.value) > 0 ? Number(markups[0].value) : 1;
@@ -8096,19 +8132,19 @@ function Templates({ products, productById, templates, setTemplates, markups = [
     <div className="templates">
       {templates.length > 0 ? (
         <div className="cat-toolbar">
-          <p className="tab-intro">Gói phòng gom các sản phẩm thường dùng để bạn thêm cả nhóm vào báo giá chỉ trong một bước.</p>
-          <button className="btn-primary" style={{ width: "auto" }} onClick={() => setEditing({ name: "", items: [] })}>+ Tạo gói phòng</button>
+          <p className="tab-intro">Bộ sản phẩm gom các sản phẩm thường dùng để bạn thêm cả nhóm vào báo giá chỉ trong một bước.</p>
+          <button className="btn-primary" style={{ width: "auto" }} onClick={() => setEditing({ name: "", items: [] })}>+ Tạo bộ sản phẩm</button>
         </div>
       ) : null}
 
       {templates.length === 0 ? (
         <section className="room-pack-empty">
           <div className="room-pack-empty-icon" aria-hidden="true">▦</div>
-          <div className="room-pack-empty-kicker">Thư viện gói phòng</div>
-          <h2>Chưa có gói phòng</h2>
-          <p>Gom các sản phẩm thường đi cùng nhau thành một gói, ví dụ “Phòng ngủ tiêu chuẩn” hoặc “Căn hộ 2 phòng ngủ”. Khi báo giá, bạn chỉ cần thêm cả gói thay vì chọn từng sản phẩm.</p>
-          <div className="room-pack-example"><strong>Ví dụ:</strong> 1 bộ điều khiển + 2 công tắc + 1 cảm biến + phụ kiện</div>
-          <button className="btn-primary" style={{ width: "auto" }} onClick={() => setEditing({ name: "", items: [] })}>+ Tạo gói đầu tiên</button>
+          <div className="room-pack-empty-kicker">Thư viện bộ sản phẩm</div>
+          <h2>Chưa có bộ sản phẩm</h2>
+          <p>Gom các sản phẩm thường đi cùng nhau thành một bộ, ví dụ “Camera ngoài trời”, “Chiếu sáng tầng 1” hoặc “Bộ tiêu chuẩn”. Khi báo giá, bạn chỉ cần thêm cả bộ thay vì chọn từng sản phẩm.</p>
+          <div className="room-pack-example"><strong>Ví dụ:</strong> 4 sản phẩm chính + phụ kiện thường dùng</div>
+          <button className="btn-primary" style={{ width: "auto" }} onClick={() => setEditing({ name: "", items: [] })}>+ Tạo bộ đầu tiên</button>
         </section>
       ) : (
       <div className="tpl-grid">
@@ -8121,9 +8157,9 @@ function Templates({ products, productById, templates, setTemplates, markups = [
             <ul className="tpl-items">
               {t.items.map((it, i) => {
                 const p = productById[it.productId];
-                return <li key={i}><span>{p ? p.name : "(thiết bị đã xóa)"}</span><span className="muted">×{it.qty}</span></li>;
+                return <li key={i}><span>{p ? p.name : "(sản phẩm đã xóa)"}</span><span className="muted">×{it.qty}</span></li>;
               })}
-              {t.items.length === 0 && <li className="muted">Chưa có thiết bị</li>}
+              {t.items.length === 0 && <li className="muted">Chưa có sản phẩm</li>}
             </ul>
             <div className="tpl-card-actions">
               <button className="link" onClick={() => setEditing(t)}>Sửa</button>
@@ -8158,13 +8194,13 @@ function TemplateEditor({ template, products, productById, onSave, onCancel }) {
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-        <h2>{template.id ? "Sửa gói phòng" : "Tạo gói phòng"}</h2>
-        <Field label="Tên gói" value={f.name} onChange={(v) => setF({ ...f, name: v })} />
+        <h2>{template.id ? "Sửa bộ sản phẩm" : "Tạo bộ sản phẩm"}</h2>
+        <Field label="Tên bộ" value={f.name} onChange={(v) => setF({ ...f, name: v })} />
 
         <div className="tpl-editor-cols">
           <div>
-            <h4>Thiết bị trong gói</h4>
-            {f.items.length === 0 && <p className="empty-hint">Chọn thiết bị từ danh sách bên phải.</p>}
+            <h4>Sản phẩm trong bộ</h4>
+            {f.items.length === 0 && <p className="empty-hint">Chọn sản phẩm từ danh sách bên phải.</p>}
             <ul className="tpl-edit-items">
               {f.items.map((it) => {
                 const p = productById[it.productId];
@@ -8179,7 +8215,7 @@ function TemplateEditor({ template, products, productById, onSave, onCancel }) {
             </ul>
           </div>
           <div>
-            <h4>Thêm thiết bị</h4>
+            <h4>Thêm sản phẩm</h4>
             <input className="search" value={q} onChange={(e) => setQ(e.target.value)} />
             <div className="tpl-pick-list">
               {filtered.map((p) => (
@@ -8195,7 +8231,7 @@ function TemplateEditor({ template, products, productById, onSave, onCancel }) {
 
         <div className="modal-actions">
           <button className="btn-ghost" onClick={onCancel}>Hủy</button>
-          <button className="btn-primary" onClick={() => { if (!f.name) { notify.warning("Nhập tên gói."); return; } onSave(f); }}>Lưu gói</button>
+          <button className="btn-primary" onClick={() => { if (!f.name) { notify.warning("Nhập tên bộ sản phẩm."); return; } onSave(f); }}>Lưu bộ</button>
         </div>
       </div>
     </div>
@@ -8206,7 +8242,7 @@ function TemplateEditor({ template, products, productById, onSave, onCancel }) {
 // ============================================================
 // TAB 4A — Mẫu báo giá theo từng công ty
 // ============================================================
-function QuoteTemplateSettings({ company, setCompany, products, rooms, productById }) {
+function QuoteTemplateSettings({ company, setCompany, products, rooms, productById, industryProfile = getIndustryProfile("generic") }) {
   const cfg = normalizeQuoteTemplateConfig(company?.quoteTemplate || {});
   const setCfg = (next) => setCompany({ ...company, quoteTemplate: normalizeQuoteTemplateConfig(next) });
   const setPath = (section, key, value) => setCfg({ ...cfg, [section]: { ...(cfg[section] || {}), [key]: value } });
@@ -8216,6 +8252,7 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
   const updateLabel = (key, value) => setPath("labels", key, value);
   const updateTerm = (key, value) => setPath("terms", key, value);
   const applyPreset = (presetId) => setCfg(applyQuoteTemplatePreset(cfg, presetId));
+  const visibleQuotePresets = QUOTE_TEMPLATE_PRESET_LIST.filter((preset) => preset.industry === "generic" || preset.industry === industryProfile.id);
 
   const logoFileRef = useRef(null);
   const uploadLogo = (file) => {
@@ -8230,7 +8267,7 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
     reader.readAsDataURL(file);
   };
 
-  const sampleRooms = rooms?.some((r) => r.lines?.length) ? rooms : [{ id: "sample-room", name: "Phòng khách / Demo", lines: products.slice(0, 2).map((p, idx) => ({ id: `sample-${idx}`, productId: p.id, qty: idx + 1, factor: 1, note: idx === 0 ? "Khu vực chính" : "Hạng mục bổ sung" })) }];
+  const sampleRooms = rooms?.some((r) => r.lines?.length) ? rooms : [{ id: "sample-room", name: `${industryProfile.labels.section} demo`, lines: products.slice(0, 2).map((p, idx) => ({ id: `sample-${idx}`, productId: p.id, qty: idx + 1, factor: 1, note: idx === 0 ? "Khu vực chính" : "Hạng mục bổ sung" })) }];
   const sampleProductById = productById || Object.fromEntries((products || []).map((p) => [p.id, p]));
   const sampleLineSalePrice = (p, l) => Number(p?.priceMode === "fixed" ? (p.publicPrice || p.listPrice || p.costPrice || 0) : (p.costPrice || p.listPrice || p.publicPrice || 0) * (l?.factor || 1)) || 0;
   const sampleCalc = { deviceTotal: 0, laborTotal: 0, grand: 0, pointCount: 0 };
@@ -8478,7 +8515,7 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
             Mỗi đại lý có thể chọn mẫu theo ngành, đổi logo/màu/cột hiển thị/điều khoản. Mẫu này sẽ được dùng khi bấm <strong>Xuất PDF</strong>.
           </p>
           <div className="quote-template-presets">
-            {QUOTE_TEMPLATE_PRESET_LIST.map((preset) => (
+            {visibleQuotePresets.map((preset) => (
               <button key={preset.id} className={cfg.presetId === preset.id ? "active" : ""} onClick={() => applyPreset(preset.id)}>
                 <strong>{preset.name}</strong>
                 <span>{preset.description}</span>
@@ -8701,7 +8738,7 @@ function QuoteTemplateSettings({ company, setCompany, products, rooms, productBy
 // ============================================================
 // TAB 4 — Cài đặt + Xuất/Nhập dữ liệu
 // ============================================================
-function Settings({ company, setCompany, markups, setMarkups, data, onImport }) {
+function Settings({ company, setCompany, markups, setMarkups, industryProfile, businessType, onWorkspaceProfileChange, data, onImport }) {
   const fileRef = useRef();
   const set = (k, v) => setCompany({ ...company, [k]: v });
 
@@ -8750,13 +8787,58 @@ function Settings({ company, setCompany, markups, setMarkups, data, onImport }) 
             <Field label="Tên công ty" value={company.name} onChange={(v) => set("name", v)} />
             <Field label="Mã số thuế" value={company.taxCode} onChange={(v) => set("taxCode", v)} />
             <Field label="Điện thoại công ty" value={company.phone} onChange={(v) => set("phone", v)} />
-            <NumField label="Nhân công, lập trình (% tiền hàng)" value={company.laborPercent} onChange={(v) => set("laborPercent", v)} />
+            <NumField label="Nhân công / dịch vụ (% tiền hàng)" value={company.laborPercent} onChange={(v) => set("laborPercent", v)} />
             <NumField label="VAT mặc định (%)" value={company.vatPercent ?? 8} onChange={(v) => set("vatPercent", Math.max(0, Math.min(100, v)))} />
             <Field label="Địa chỉ" value={company.address} onChange={(v) => set("address", v)} full />
             <Field label="Website" value={company.website || ""} onChange={(v) => set("website", v)} full />
             <Field label="Người báo giá" value={company.salesPerson || ""} onChange={(v) => set("salesPerson", v)} />
             <Field label="SĐT người báo giá" value={company.salesPhone || ""} onChange={(v) => set("salesPhone", v)} />
+            <label className="field">
+              <span>Ngành nghề</span>
+              <select
+                value={industryProfile?.id || "generic"}
+                disabled={!onWorkspaceProfileChange}
+                onChange={async (e) => {
+                  const nextIndustry = e.target.value;
+                  if (nextIndustry === industryProfile?.id) return;
+                  const next = getIndustryProfile(nextIndustry);
+                  const ok = await confirmAction({
+                    title: `Đổi ngành sang ${next.name}?`,
+                    message: "Thay đổi ngành chỉ đổi thuật ngữ, trường thông tin và gợi ý trong SmartQuote. Danh mục, báo giá và snapshot Final hiện có sẽ không bị xóa.",
+                    confirmLabel: "Đổi ngành",
+                  });
+                  if (!ok) return;
+                  try {
+                    await onWorkspaceProfileChange({ industryProfile: nextIndustry, businessType });
+                    notify.success(`Đã đổi ngành sang ${next.name}.`);
+                  } catch (error) {
+                    notify.error(error?.message || "Không đổi được ngành nghề.");
+                  }
+                }}
+              >
+                {INDUSTRY_PROFILE_LIST.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+              </select>
+            </label>
+            <label className="field">
+              <span>Mô hình doanh nghiệp</span>
+              <select
+                value={businessType || ""}
+                disabled={!onWorkspaceProfileChange}
+                onChange={async (e) => {
+                  try {
+                    await onWorkspaceProfileChange({ industryProfile: industryProfile?.id || "generic", businessType: e.target.value || null });
+                    notify.success("Đã cập nhật mô hình doanh nghiệp.");
+                  } catch (error) {
+                    notify.error(error?.message || "Không cập nhật được mô hình doanh nghiệp.");
+                  }
+                }}
+              >
+                <option value="">Chưa chọn</option>
+                {BUSINESS_TYPES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+            </label>
           </div>
+          <p className="side-note" style={{ margin: "10px 0 0" }}>Ngành nghề chỉ điều chỉnh cách SmartQuote hiển thị thuật ngữ, thuộc tính và gợi ý. Pricing, Final Quote Gate và dữ liệu lịch sử không thay đổi.</p>
         </div>
       </section>
 

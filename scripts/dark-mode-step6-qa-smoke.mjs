@@ -51,7 +51,7 @@ assert(src.includes('.rail-footer-actions{margin:0 0 0 auto;flex-direction:row;g
 assert(src.includes('.theme-toggle,.rail-logout{width:40px;height:40px;padding:0;justify-content:center;}'), 'compact mobile/tablet theme controls missing');
 
 // Required screen inventory from spec.
-for (const needle of ['label: "Báo giá"','label: "Danh mục"','label: "Nhập file"','label: "Mẫu & Gói"','label: "Cài đặt"']) {
+for (const needle of ['label: "Báo giá"','label: "Danh mục"','label: "Nhập file"','label: "Mẫu"','label: "Cài đặt"']) {
   assert(src.includes(needle), `screen missing: ${needle}`);
 }
 

@@ -52,6 +52,35 @@ export async function ensureDealerWorkspace(dealerName = "Đại lý SmartQuote"
   return data;
 }
 
+
+export async function loadDealerWorkspaceProfile(dealerId) {
+  if (!supabase || !dealerId) return null;
+  const { data, error } = await supabase
+    .from("dealers")
+    .select("id, name, industry_profile, business_type, industry_profile_version, updated_at")
+    .eq("id", dealerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+export async function updateDealerWorkspaceProfile(dealerId, { industryProfile, businessType = null, version = 1 } = {}) {
+  if (!supabase || !dealerId) throw new Error("Supabase chưa được cấu hình.");
+  const payload = {
+    industry_profile: industryProfile || null,
+    business_type: businessType || null,
+    industry_profile_version: Number(version || 1),
+  };
+  const { data, error } = await supabase
+    .from("dealers")
+    .update(payload)
+    .eq("id", dealerId)
+    .select("id, name, industry_profile, business_type, industry_profile_version, updated_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function loadCloudState(dealerId) {
   if (!supabase || !dealerId) return emptyState;
   const { data, error } = await supabase

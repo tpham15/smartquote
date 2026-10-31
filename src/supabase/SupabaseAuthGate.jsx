@@ -1,13 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
+import IndustryOnboarding from "../ui/IndustryOnboarding.jsx";
+import { INDUSTRY_PROFILE_VERSION, isIndustryProfileId, normalizeBusinessType } from "../config/industryProfiles.js";
 import { isSupabaseConfigured, supabase } from "./client.js";
 import {
   ensureDealerWorkspace,
   loadDealerBilling,
+  loadDealerWorkspaceProfile,
   requestPasswordReset,
   signInDealer,
   signOutDealer,
   signUpDealer,
   updateCurrentUserPassword,
+  updateDealerWorkspaceProfile,
 } from "./cloudState.js";
 
 function passwordResetRedirectUrl() {
@@ -27,6 +31,9 @@ export default function SupabaseAuthGate({ children }) {
   const [status, setStatus] = useState("Đang kiểm tra đăng nhập...");
   const [billing, setBilling] = useState(null);
   const [billingStatus, setBillingStatus] = useState("");
+  const [workspaceProfile, setWorkspaceProfile] = useState(null);
+  const [profileStatus, setProfileStatus] = useState("");
+  const [profileError, setProfileError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -63,6 +70,9 @@ export default function SupabaseAuthGate({ children }) {
       setDealerId(null);
       setBilling(null);
       setBillingStatus("");
+      setWorkspaceProfile(null);
+      setProfileStatus("");
+      setProfileError("");
       return;
     }
 
@@ -75,11 +85,28 @@ export default function SupabaseAuthGate({ children }) {
         setDealerId(id);
         setStatus("");
         setBillingStatus("Đang tải gói sử dụng...");
+        setProfileStatus("Đang tải cấu hình ngành...");
+        setProfileError("");
         try {
-          const nextBilling = await loadDealerBilling(id);
-          if (!cancelled) setBilling(nextBilling);
+          const [nextBilling, nextProfile] = await Promise.all([
+            loadDealerBilling(id),
+            loadDealerWorkspaceProfile(id),
+          ]);
+          if (!cancelled) {
+            setBilling(nextBilling);
+            setWorkspaceProfile(nextProfile);
+          }
+        } catch (error) {
+          if (!cancelled) {
+            console.error(error);
+            setProfileError(error?.message || "Không tải được cấu hình ngành.");
+          }
+          throw error;
         } finally {
-          if (!cancelled) setBillingStatus("");
+          if (!cancelled) {
+            setBillingStatus("");
+            setProfileStatus("");
+          }
         }
       })
       .catch((error) => {
@@ -103,25 +130,88 @@ export default function SupabaseAuthGate({ children }) {
     }
   };
 
+  const saveWorkspaceProfile = async ({ industryProfile, businessType = null } = {}) => {
+    if (!dealerId) throw new Error("Workspace chưa sẵn sàng.");
+    if (!isIndustryProfileId(industryProfile)) throw new Error("Ngành nghề không hợp lệ.");
+    setProfileStatus("Đang lưu ngành nghề...");
+    setProfileError("");
+    try {
+      const next = await updateDealerWorkspaceProfile(dealerId, {
+        industryProfile,
+        businessType: normalizeBusinessType(businessType),
+        version: INDUSTRY_PROFILE_VERSION,
+      });
+      setWorkspaceProfile(next);
+      return next;
+    } catch (error) {
+      setProfileError(error?.message || "Không lưu được ngành nghề.");
+      throw error;
+    } finally {
+      setProfileStatus("");
+    }
+  };
+
   const cloudProps = useMemo(() => ({
     enabled: Boolean(isSupabaseConfigured && session && dealerId),
     session,
     dealerId,
-    status: billingStatus || status,
+    status: billingStatus || profileStatus || status,
     billing,
+    workspaceProfile,
+    industryProfile: workspaceProfile?.industry_profile || null,
+    businessType: workspaceProfile?.business_type || null,
+    updateIndustryProfile: saveWorkspaceProfile,
     refreshBilling,
     onLogout: async () => {
       await signOutDealer();
       setSession(null);
       setDealerId(null);
       setBilling(null);
+      setWorkspaceProfile(null);
+      setProfileError("");
       setMode("login");
     },
-  }), [session, dealerId, status, billingStatus, billing]);
+  }), [session, dealerId, status, billingStatus, profileStatus, billing, workspaceProfile]);
 
-  if (!isSupabaseConfigured) return children({ enabled: false });
+  if (!isSupabaseConfigured) return children({ enabled: false, industryProfile: "generic", businessType: null });
 
-  if (session && dealerId && mode !== "update_password") return children(cloudProps);
+  if (session && dealerId && mode !== "update_password") {
+    if (!workspaceProfile) {
+      return (
+        <div className="sq-auth-page">
+          <style>{AUTH_CSS}</style>
+          <div className="sq-auth-card">
+            <div className="sq-auth-brand" aria-label="SmartQuote">
+              <div className="sq-auth-brand-mark" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 13l5 5L20 6" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="sq-auth-brand-name">Smart<span>Quote</span></div>
+            </div>
+            <div className="sq-auth-heading">
+              <h1>{profileError ? "Không tải được workspace" : "Đang mở workspace…"}</h1>
+              <p>{profileError || profileStatus || status || "Đang tải cấu hình doanh nghiệp."}</p>
+            </div>
+            {profileError && (
+              <button type="button" className="sq-auth-submit" onClick={() => window.location.reload()}>Thử lại</button>
+            )}
+          </div>
+        </div>
+      );
+    }
+    if (workspaceProfile && !workspaceProfile.industry_profile) {
+      return (
+        <IndustryOnboarding
+          dealerName={workspaceProfile.name || ""}
+          busy={Boolean(profileStatus)}
+          error={profileError}
+          onSave={saveWorkspaceProfile}
+        />
+      );
+    }
+    if (workspaceProfile?.industry_profile) return children(cloudProps);
+  }
 
   const submit = async (e) => {
     e.preventDefault();

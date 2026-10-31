@@ -1932,3 +1932,28 @@ revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, te
 revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from anon;
 revoke all on function public.admin_activate_dealer_plan(uuid, text, integer, text) from authenticated;
 grant execute on function public.admin_activate_dealer_plan(uuid, text, integer, text) to service_role;
+
+-- SmartQuote P1.5 — Industry-Neutral Core + Workspace Industry Profile
+alter table public.dealers add column if not exists industry_profile text;
+alter table public.dealers add column if not exists business_type text;
+alter table public.dealers add column if not exists industry_profile_version integer not null default 1;
+
+-- This update marks only rows that exist when the fresh schema/migration is executed.
+-- Future ensure_dealer_workspace inserts leave industry_profile NULL and trigger onboarding.
+update public.dealers
+set industry_profile = 'smarthome', industry_profile_version = 1, updated_at = now()
+where industry_profile is null;
+
+alter table public.dealers alter column industry_profile drop default;
+alter table public.dealers drop constraint if exists dealers_industry_profile_check;
+alter table public.dealers add constraint dealers_industry_profile_check
+  check (industry_profile is null or industry_profile in ('generic','lighting','cctv','smarthome','electrical','hvac'));
+alter table public.dealers drop constraint if exists dealers_business_type_check;
+alter table public.dealers add constraint dealers_business_type_check
+  check (business_type is null or business_type in ('distributor','dealer','system_integrator','contractor','manufacturer','other'));
+alter table public.dealers drop constraint if exists dealers_industry_profile_version_check;
+alter table public.dealers add constraint dealers_industry_profile_version_check
+  check (industry_profile_version >= 1 and industry_profile_version <= 1000);
+
+revoke update on table public.dealers from authenticated;
+grant update (name, phone, address, industry_profile, business_type, industry_profile_version) on table public.dealers to authenticated;

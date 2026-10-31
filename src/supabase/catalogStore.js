@@ -38,6 +38,7 @@ export function normalizeCatalogProduct(product = {}) {
     minRetailPrice: asNumber(product.minRetailPrice ?? product.min_retail_price, 0),
     priceMode: asText(product.priceMode || product.price_mode || 'markup') || 'markup',
     specs: product.specs && typeof product.specs === 'object' ? product.specs : {},
+    attributes: product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes) ? product.attributes : {},
     image: pickImage(product),
     sourceUrl: pickSourceUrl(product),
   };
@@ -74,6 +75,7 @@ export function serializeProductsForCatalog(products = []) {
     image: p.image || '',
     sourceUrl: p.sourceUrl || '',
     specs: p.specs || {},
+    attributes: p.attributes || {},
   })));
 }
 
@@ -118,6 +120,7 @@ export function catalogRowToProduct(row = {}) {
     image: row.image_url || raw.image || '',
     sourceUrl: row.source_url || raw.sourceUrl || '',
     specs: row.specs || raw.specs || {},
+    attributes: raw.attributes || {},
   });
 }
 
