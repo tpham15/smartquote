@@ -2050,6 +2050,10 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   const [quoteListOpen, setQuoteListOpen] = useState(false);
   const [quoteManageOpen, setQuoteManageOpen] = useState(false);
   const [customerDetailsOpen, setCustomerDetailsOpen] = useState(false);
+  // Quote UX v1.1: upload to the same dealer catalog image store as Catalog.
+  const quoteImageInputRef = useRef(null);
+  const quoteImageTargetRef = useRef(null);
+  const [quoteImageBusyId, setQuoteImageBusyId] = useState("");
   // UX v1: default to a short quoting workflow, without changing any quote math or gates.
   const [advancedQuoteView, setAdvancedQuoteView] = useState(false);
   const [showQuoteReview, setShowQuoteReview] = useState(false);
@@ -2077,6 +2081,64 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     if (!isFinalQuote) return true;
     notify.warning("Báo giá Final đã khóa nội dung. Hãy tạo revision mới trước khi chỉnh sửa.");
     return false;
+  };
+
+  const chooseQuoteProductImage = (catalogProduct) => {
+    if (isFinalQuote || quoteImageBusyId || !catalogProduct?.id) return;
+    quoteImageTargetRef.current = catalogProduct;
+    if (quoteImageInputRef.current) {
+      quoteImageInputRef.current.value = "";
+      quoteImageInputRef.current.click();
+    }
+  };
+
+  const handleQuoteProductImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    const target = quoteImageTargetRef.current;
+    event.target.value = "";
+    quoteImageTargetRef.current = null;
+    if (!file || !target?.id || isFinalQuote || quoteImageBusyId) return;
+    try {
+      assertDealerCatalogImageFile(file);
+      setQuoteImageBusyId(target.id);
+      let image = "";
+      let storagePath = "";
+      if (cloud?.enabled && cloud.dealerId) {
+        const uploaded = await uploadDealerCatalogImage({
+          dealerId: cloud.dealerId,
+          productId: target.id,
+          file,
+          previousPath: target?._meta?.imageStoragePath || "",
+        });
+        image = uploaded.publicUrl;
+        storagePath = uploaded.storagePath;
+      } else {
+        image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(String(e.target?.result || ""));
+          reader.onerror = () => reject(new Error("Không đọc được ảnh sản phẩm."));
+          reader.readAsDataURL(file);
+        });
+      }
+      setProducts((current) => current.map((product) => product.id === target.id ? {
+        ...product,
+        image,
+        _meta: {
+          ...(product._meta || {}),
+          imageSource: "dealer_upload",
+          imageLocked: true,
+          imageStoragePath: storagePath || product?._meta?.imageStoragePath || "",
+          imageUploadedAt: new Date().toISOString(),
+          imageUploadedName: file.name || "",
+        },
+      } : product));
+      notify.success(`Đã cập nhật ảnh cho “${target.name}” trong Danh mục.`);
+    } catch (error) {
+      console.error("Không thể tải ảnh sản phẩm từ báo giá:", error);
+      notify.error(String(error?.message || "Không tải được ảnh. Hãy thử trong Danh mục."));
+    } finally {
+      setQuoteImageBusyId("");
+    }
   };
   const excelQuoteTemplates = useMemo(() => normalizeExcelQuoteTemplates(company?.excelQuoteTemplates), [company?.excelQuoteTemplates]);
   const defaultExcelTemplateId = company?.defaultExcelQuoteTemplateId
@@ -2817,6 +2879,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
 
   return (
     <div className="quote-grid">
+      <input ref={quoteImageInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+        onChange={handleQuoteProductImageUpload} style={{ display: "none" }} tabIndex={-1} aria-hidden="true" />
       <div className="quote-main">
         <div className="sq-quote-workflow-head">
           <div>
@@ -2998,6 +3062,9 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                   {room.lines.map((l, lineIdx) => {
                     const p = productById[l.productId];
                     if (!p) return null;
+                    const quoteImage = isFinalQuote
+                      ? (p.image || p.imageUrl || "")
+                      : (catalogProductById?.[p.id]?.image || catalogProductById?.[p.id]?.imageUrl || p.image || p.imageUrl || "");
                     const isFixed = p.priceMode === "fixed";
                     const base = listPriceOf(p);
                     const sp = lineSalePrice(p, l);
@@ -3050,8 +3117,19 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                           />
                         </td>}
                         <td>
-                          <div className="ln-name">{p.name}</div>
-                          <div className="ln-sku">{p.sku}{p.supplier ? ` · ${p.supplier}` : ""}</div>
+                          <div className="sq-quote-item">
+                            <button type="button" className="sq-image-change"
+                              disabled={isFinalQuote || Boolean(quoteImageBusyId) || !catalogProductById?.[p.id]}
+                              aria-label={`${quoteImage ? "Thay" : "Thêm"} ảnh sản phẩm ${p.name}`}
+                              title={isFinalQuote ? "Ảnh tại thời điểm chốt báo giá" : (quoteImageBusyId === p.id ? "Đang tải ảnh..." : "Bấm để thêm hoặc thay ảnh trong Danh mục")}
+                              onClick={() => chooseQuoteProductImage(catalogProductById?.[p.id])}>
+                              <QuoteProductImage image={quoteImage} />
+                            </button>
+                            <div className="sq-quote-item-copy">
+                              <div className="ln-name">{p.name}</div>
+                              <div className="ln-sku">{p.sku}{p.supplier ? ` · ${p.supplier}` : ""}</div>
+                            </div>
+                          </div>
                         </td>
                         {advancedQuoteView && <td className="num">
                           {missingPrice ? (
@@ -3612,6 +3690,34 @@ function LineProductSwap({ products, markups = [], current, line, learningInsigh
   );
 }
 
+// The same catalog image is used in quote lines and search. No fabricated product photos.
+// On a failed proxy fetch, try the original URL, then show a neutral placeholder.
+function QuoteProductImage({ image = "" }) {
+  const url = typeof image === "string" ? image.trim() : "";
+  const [direct, setDirect] = useState(false);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setDirect(false); setFailed(false); }, [url]);
+  const proxied = url ? imgSrc(url) : "";
+  const hasImage = Boolean(proxied && !failed);
+  return (
+    <span className={`sq-product-image ${!hasImage ? "sq-product-image-empty" : ""}`} aria-hidden="true">
+      {hasImage ? (
+        <img src={direct ? url : proxied} alt="" loading="lazy" decoding="async"
+          onError={() => {
+            if (!direct && proxied !== url) setDirect(true);
+            else setFailed(true);
+          }} />
+      ) : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="m4 17 5-5 4 4 3-3 5 5" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 // UX Redesign v1 — quick product lookup directly in the quote form.
 function QuickQuoteProductSearch({ products = [], onPick, onBrowse, disabled = false }) {
   const [query, setQuery] = useState("");
@@ -3653,7 +3759,9 @@ function QuickQuoteProductSearch({ products = [], onPick, onBrowse, disabled = f
             <button type="button" role="option" aria-selected={active === index}
               className={`sq-search-result ${active === index ? "active" : ""}`}
               key={p.id} onMouseDown={(e) => e.preventDefault()} onClick={() => choose(p)}>
-              <span><strong>{p.name}</strong><small>{p.sku || "Chưa có SKU"}</small></span><span className="sq-result-add">+ Thêm</span>
+              <QuoteProductImage image={p.image || p.imageUrl} />
+              <span className="sq-search-result-copy"><strong>{p.name}</strong><small>{p.sku || "Chưa có SKU"}</small></span>
+              <span className="sq-result-add">+ Thêm</span>
             </button>
           )) : <div className="sq-search-no-results">Không tìm thấy sản phẩm phù hợp.</div>}
         </div>
@@ -11681,6 +11789,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .sq-quick-line-table th{font-size:10px;letter-spacing:0;text-transform:none;font-weight:700;padding:10px 9px;}
 .sq-quick-line-table td{padding:12px 9px;}
 .sq-quick-line-table .ln-name{max-width:250px;line-height:1.4;font-size:12.5px;}
+/* UX v1.1: product images from the authoritative catalog, compact and responsive. */
+.sq-quote-item{display:flex;align-items:center;gap:10px;min-width:0;text-align:left;}
+.sq-quote-item-copy{flex:1;min-width:0;}
+.sq-image-change{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:48px;height:48px;padding:0;border:0;border-radius:10px;background:transparent;cursor:pointer;}
+.sq-image-change:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
+.sq-image-change:disabled{cursor:default;}
+.sq-product-image{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;flex:0 0 46px;overflow:hidden;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--muted);}
+.sq-product-image img{display:block;width:100%;height:100%;object-fit:contain;background:var(--surface);}
+.sq-product-image-empty{border-style:dashed;}
+.sq-image-change:not(:disabled):hover .sq-product-image{border-color:var(--brand);color:var(--brand);}
+.sq-search-result .sq-product-image{width:36px;height:36px;flex-basis:36px;border-radius:7px;}
+.sq-search-result-copy{flex:1;min-width:0;}
+.sq-search-result-copy strong,.sq-search-result-copy small{overflow-wrap:anywhere;}
 .sq-quick-line-table .qty-col{width:72px;}
 .sq-quick-line-table .qty-input{height:34px;width:52px;border-radius:8px;}
 .sq-sale-price-col{min-width:120px;}
@@ -11702,6 +11823,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
  .sq-quote-workflow-head h1{font-size:23px;}
  .sq-advanced-toggle{align-self:flex-end;}
  .sq-quick-product-area{padding:12px 13px 2px;}
+ .sq-product-image{width:40px;height:40px;flex-basis:40px;}
+ .sq-image-change{width:42px;height:42px;}
+ .sq-quote-item{gap:8px;}
  .sq-quote-room .room-head{padding:13px;}
  .sq-quote-room .picker{margin:0 13px 12px;}
  .sq-quick-search-foot{flex-wrap:wrap;}
