@@ -124,14 +124,14 @@ const mapFor = (products) => Object.fromEntries(products.map((p) => [p.id, p]));
 {
   const ui = fs.readFileSync(new URL('../src/SmartQuote.jsx', import.meta.url), 'utf8');
   for (const required of [
-    'Engineering checks',
+    'Kiểm tra kỹ thuật',
     'ENGINEERING_ROLE_OPTIONS',
     'buildEngineeringAssessment',
     'buildEngineeringValidationSnapshot',
     'engineeringValidationOverride',
     'engineeringOverrideReason',
     'Chốt báo giá với Engineering override?',
-    'Engineering Rules · P2.3',
+    'shouldShowEngineeringPanel(engineeringAssessment, industryProfile?.id)',
   ]) assert.ok(ui.includes(required), `missing P2.3 UI/lifecycle integration: ${required}`);
 }
 

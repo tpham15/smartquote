@@ -1,3 +1,4 @@
+import { buildCatalogMatchIndex, resolveCatalogMatch } from "./productIdentity.js";
 // ============================================================
 // Phase 14.0 — deterministic business validator
 // Independent from OCR/model confidence. Validates commercial invariants on
@@ -87,9 +88,47 @@ export function validateCommercialItem(item = {}, context = {}, index = 0, rules
     }
   }
 
-  const existing = context.existingBySku?.get(sk) || context.existingByName?.get(key(item.name));
+  const match = resolveCatalogMatch(item, context.catalogIndex);
+  const existing = match.kind === "update" ? context.catalogIndex.items[match.index] : null;
+  const role = String(item?._meta?.priceColumnRole || "").toLowerCase();
   const previousCost = num(existing?.costPrice ?? existing?.price);
-  if (cost > 0 && previousCost > 0 && cost !== previousCost) {
+  const previousList = num(existing?.listPrice || existing?.publicPrice);
+
+  if (role === "list") {
+    if (retail > 0 && previousList > 0 && retail !== previousList) {
+      const ratio = Math.abs(retail - previousList) / previousList;
+      const pct = Math.round(ratio * 1000) / 10;
+      if (ratio >= rules.priceChangeErrorRatio) {
+        issues.push(issue(
+          "list_price_change_extreme",
+          "error",
+          `Giá bán thay đổi ${pct}% (${previousList.toLocaleString("vi-VN")}đ → ${retail.toLocaleString("vi-VN")}đ)`,
+          "listPrice",
+          "Kiểm tra lại giá bán/niêm yết trong file nguồn trước khi cập nhật",
+          { previousList, currentList: retail, changeRatio: ratio }
+        ));
+      } else if (ratio >= rules.priceChangeWarnRatio) {
+        issues.push(issue(
+          "list_price_change_outlier",
+          "warning",
+          `Giá bán thay đổi ${pct}% (${previousList.toLocaleString("vi-VN")}đ → ${retail.toLocaleString("vi-VN")}đ)`,
+          "listPrice",
+          "Xác nhận đây là thay đổi giá bán thật",
+          { previousList, currentList: retail, changeRatio: ratio }
+        ));
+      }
+    }
+    if (retail > 0 && previousCost > 0 && retail < previousCost) {
+      issues.push(issue(
+        "list_below_existing_cost",
+        "warning",
+        `Giá bán thấp hơn giá nhập đang có (${retail.toLocaleString("vi-VN")}đ < ${previousCost.toLocaleString("vi-VN")}đ)`,
+        "listPrice",
+        "Kiểm tra lại giá bán hoặc cập nhật giá nhập hiện hành",
+        { currentList: retail, previousCost }
+      ));
+    }
+  } else if (cost > 0 && previousCost > 0 && cost !== previousCost) {
     const ratio = Math.abs(cost - previousCost) / previousCost;
     const pct = Math.round(ratio * 1000) / 10;
     if (ratio >= rules.priceChangeErrorRatio) {
@@ -146,15 +185,8 @@ export function buildCommercialValidationContext(items = [], existingProducts = 
     duplicateSkuItemsMap.get(sk).push({ index, item });
   });
 
-  const existingBySku = new Map();
-  const existingByName = new Map();
-  (existingProducts || []).forEach((item) => {
-    const sk = skuKey(item?.sku);
-    if (sk) existingBySku.set(sk, item);
-    const nk = key(item?.name);
-    if (nk) existingByName.set(nk, item);
-  });
-  return { duplicateSkuMap, duplicateSkuItemsMap, existingBySku, existingByName };
+  const catalogIndex = buildCatalogMatchIndex(existingProducts || []);
+  return { duplicateSkuMap, duplicateSkuItemsMap, catalogIndex };
 }
 
 export function applyCommercialValidation(items = [], { existingProducts = [], rules = PILOT_BUSINESS_RULES_V1 } = {}) {

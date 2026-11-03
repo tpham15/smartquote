@@ -19,15 +19,15 @@ assertIncludes('Kiểm tra giá', 'visible price-check label');
 
 // B6.2: price-column uncertainty must show a mandatory confirmation strip.
 assertIncludes('ci-price-confirm-strip', 'price confirmation strip');
-assertIncludes('Chúng tôi chưa chắc cột nào là GIÁ MUA VÀO.', 'mandatory price confirmation copy');
-assertIncludes('Tôi đã kiểm tra cột giá', 'explicit price-confirm action');
-assertIncludes('Chọn lại cột giá', 'remap price column action');
+assertIncludes('Cột “Đơn giá” trong file này là giá nào?', 'mandatory price-role question');
+assertIncludes('Giá nhập / giá vốn', 'cost role action');
+assertIncludes('Giá bán / niêm yết', 'list role action');
 assertIncludes('confirmPriceColumnSafety', 'price confirmation handler');
 
 // B6.3: saving catalog is blocked while unconfirmed red-price rows remain.
 assertIncludes('priceColumnUncertainRows().length > 0 && !priceColumnConfirmed', 'blocking condition for unconfirmed price column');
-assertIncludes('Cần xác nhận cột GIÁ MUA VÀO trước khi lưu', 'disabled-save title');
+assertIncludes('Cần xác nhận vai trò cột Đơn giá trước khi lưu', 'disabled-save title');
 assertIncludes('Chưa thể lưu catalog vì còn', 'applyImport hard block message');
-assertIncludes('acceptedAtPreview: true', 'confirmed rows are explicitly marked user accepted');
+if (readFileSync('src/import-engine/priceRoleDecision.js','utf8').includes('acceptedAtPreview: true')) fail('price-role helper must not auto-approve rows');
 
 console.log('UX B6 price warning smoke: PASS');

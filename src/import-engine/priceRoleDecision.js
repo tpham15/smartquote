@@ -22,40 +22,60 @@ export function applyAmbiguousPriceRole(products = [], role = "") {
   const confirmedAt = new Date().toISOString();
 
   return products.map((product) => {
-    if (!hasAmbiguousPriceRole(product)) return product;
+    const meta = product?._meta || {};
+    const hasRoleHistory = !!meta.priceColumnConfirmed && Number(meta.priceColumnOriginalValue || 0) > 0;
+    if (!hasAmbiguousPriceRole(product) && !hasRoleHistory) return product;
+
     const sourceIssues = baseIssues(product);
-    const retainedIssues = sourceIssues.filter((it) => issueCode(it) !== 'price_column_uncertain');
-    const sourcePrice = Number(product?.costPrice || product?.price || 0) || 0;
+    const retainedIssues = sourceIssues.filter((it) => {
+      const code = issueCode(it);
+      if (code === 'price_column_uncertain') return false;
+      if (['price_role_confirmed_cost','price_role_confirmed_list','missing_cost_price'].includes(code)) return false;
+      return !/(?:^|pilot_business_)(?:price_change_|list_price_change_|list_below_existing_cost)/.test(code);
+    });
+
+    const sourcePrice = Number(meta.priceColumnOriginalValue || product?.costPrice || product?.price || product?.listPrice || product?.publicPrice || 0) || 0;
+    const originalListPrice = Number(meta.priceColumnOriginalListPrice ?? product?.listPrice ?? product?.publicPrice ?? 0) || 0;
+    const originalPriceMode = meta.priceColumnOriginalPriceMode || product?.priceMode || 'markup';
+    const nextBaseMeta = {
+      ...meta,
+      priceColumnOriginalValue: sourcePrice,
+      priceColumnOriginalListPrice: originalListPrice,
+      priceColumnOriginalPriceMode: originalPriceMode,
+      priceColumnConfirmed: true,
+      priceColumnRole: role,
+      priceColumnConfirmedAt: confirmedAt,
+    };
 
     if (role === 'cost') {
       return {
         ...product,
+        price: sourcePrice,
+        costPrice: sourcePrice,
+        listPrice: originalListPrice,
+        publicPrice: originalListPrice,
+        priceMode: originalListPrice > 0 ? 'fixed' : originalPriceMode,
         _meta: {
-          ...(product._meta || {}),
+          ...nextBaseMeta,
           issues: retainedIssues.concat([{
             code: 'price_role_confirmed_cost',
             level: 'info',
             message: 'Người dùng xác nhận cột Đơn giá là giá nhập/giá vốn',
             field: 'costPrice',
           }]),
-          acceptedAtPreview: true,
-          priceColumnConfirmed: true,
-          priceColumnRole: 'cost',
-          priceColumnConfirmedAt: confirmedAt,
         },
       };
     }
 
-    const listPrice = sourcePrice || Number(product?.listPrice || product?.publicPrice || 0) || 0;
     return {
       ...product,
       price: 0,
       costPrice: 0,
-      listPrice,
-      publicPrice: listPrice,
+      listPrice: sourcePrice,
+      publicPrice: sourcePrice,
       priceMode: 'fixed',
       _meta: {
-        ...(product._meta || {}),
+        ...nextBaseMeta,
         issues: retainedIssues.concat([
           {
             code: 'price_role_confirmed_list',
@@ -65,16 +85,12 @@ export function applyAmbiguousPriceRole(products = [], role = "") {
           },
           {
             code: 'missing_cost_price',
-            level: 'warning',
+            level: 'info',
             message: 'File không cung cấp giá nhập sau khi xác nhận Đơn giá là giá bán',
             field: 'costPrice',
             suggestedFix: 'Bổ sung giá nhập khi có bảng giá nhà cung cấp',
           },
         ]),
-        acceptedAtPreview: true,
-        priceColumnConfirmed: true,
-        priceColumnRole: 'list',
-        priceColumnConfirmedAt: confirmedAt,
       },
     };
   });

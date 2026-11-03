@@ -1,4 +1,4 @@
-import io, sys
+import io, sys, os
 from pathlib import Path
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
@@ -6,7 +6,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'api'))
 from xlsx_lossless import build_lossless_workbook
 
 ROOT=Path(__file__).resolve().parents[1]
-TEMPLATE=Path('/mnt/data/BG KH a Phúc 22-06-26(2).xlsx')
+TEMPLATE=Path(os.environ.get('SMARTQUOTE_PRIVATE_QUOTE_TEMPLATE','')).expanduser() if os.environ.get('SMARTQUOTE_PRIVATE_QUOTE_TEMPLATE') else None
+if not TEMPLATE or not TEMPLATE.exists():
+    print('SKIPPED (private corpus): thiếu SMARTQUOTE_PRIVATE_QUOTE_TEMPLATE')
+    raise SystemExit(0)
 raw=TEMPLATE.read_bytes()
 with ZipFile(io.BytesIO(raw)) as z:
     # pick a normal product image from the template package

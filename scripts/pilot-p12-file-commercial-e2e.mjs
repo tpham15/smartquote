@@ -8,6 +8,8 @@ import assert from 'node:assert/strict';
 let XLSX;
 try {
   XLSX = await import('xlsx');
+  // SheetJS ≥0.20 ESM build: Node file I/O must be wired explicitly (RC16.1 upgrade).
+  if (typeof XLSX.set_fs === 'function') XLSX.set_fs(fs);
 } catch (err) {
   console.error('✗ Pilot P1.2 File Commercial E2E BLOCKED_DEPENDENCY: package "xlsx" is not installed. Run npm ci first.');
   process.exit(3);

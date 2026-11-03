@@ -23,9 +23,9 @@ assertIncludes('Tạo bản sao', 'copy quote still available in management pane
 
 // B5.3 / Pilot P1.1 hierarchy — Draft must Final first; only Final exposes primary Excel export.
 assertIncludes('Chốt & khóa báo giá', 'Draft primary finalize action');
-assertIncludes('disabled={exporting || !finalQuoteGate.ready} onClick={exportExcel}', 'Final-only primary Excel export');
+assertIncludes('disabled={exporting || !combinedFinalReady} onClick={exportExcel}', 'Final-only primary Excel export');
 assertIncludes('`Xuất báo giá · Rev ${quoteRevision}`', 'revision-aware primary export label');
-assertIncludes('disabled={!finalQuoteGate.ready} onClick={exportPDF}>Xuất PDF</button>', 'Final-only secondary PDF button');
+assertIncludes('disabled={!combinedFinalReady} onClick={exportPDF}>Xuất PDF</button>', 'Final-only secondary PDF button');
 assertIncludes('Lưu nháp', 'Draft save action');
 assertIncludes('Tạo Rev {quoteRevision + 1}', 'Final revision action');
 assertNotIncludes('<button className="btn-pdf" onClick={exportPDF}>Xuất PDF</button>', 'PDF as primary action');

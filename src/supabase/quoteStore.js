@@ -73,8 +73,40 @@ export async function listCloudQuotes(dealerId, { limit = 50, status } = {}) {
 export async function saveCloudQuote(dealerId, quote) {
   if (!supabase || !dealerId) throw new Error('Supabase chưa được cấu hình hoặc chưa có workspace.');
   const quoteInput = buildQuotePayload(dealerId, quote);
+  if (String(quoteInput?.calc?.workflow?.lifecycle || '').toLowerCase() === 'final') {
+    throw new Error('Dùng finalize_quote để chốt báo giá');
+  }
   const { data, error } = await supabase.rpc('save_quote', { quote_input: quoteInput });
   if (error) throw error;
+  return data;
+}
+
+
+export async function finalizeCloudQuote(dealerId, quote) {
+  if (!supabase || !dealerId) throw new Error('Supabase chưa được cấu hình hoặc chưa có workspace.');
+  const quoteInput = buildQuotePayload(dealerId, quote);
+  const { data, error } = await supabase.rpc('finalize_quote', {
+    target_quote_id: quoteInput.id || null,
+    quote_input: quoteInput,
+  });
+  if (error) throw error;
+  return data || {};
+}
+
+
+export async function updateCloudFinalQuoteStatus(dealerId, quoteId, status) {
+  if (!supabase || !dealerId || !quoteId) throw new Error('Thiếu workspace hoặc báo giá.');
+  const allowed = new Set(['draft','sent','won','lost']);
+  const nextStatus = String(status || '').toLowerCase();
+  if (!allowed.has(nextStatus)) throw new Error('Trạng thái báo giá không hợp lệ.');
+  const { data, error } = await supabase.rpc('set_quote_sales_status', {
+    target_quote_id: quoteId,
+    status_input: nextStatus,
+  });
+  if (error) throw error;
+  if (!data || String(data.status || '').toLowerCase() !== nextStatus) {
+    throw new Error('Không cập nhật được trạng thái báo giá');
+  }
   return data;
 }
 

@@ -52,9 +52,7 @@ for (const scenario of bundle.scenarios) {
     ? 'unmatched'
     : variant.completenessRequiredOpen > 0
       ? 'required_completeness'
-      : variant.pricingNeedsReviewCount > 0
-        ? 'pricing_review'
-        : null;
+      : null;
   const shouldReachQuote = !preQuoteBlock;
   assert.equal(shouldReachQuote, Boolean(scenario.expected?.shouldReachQuote), `${scenario.id}: shouldReachQuote`);
   if (!shouldReachQuote) {
@@ -120,5 +118,5 @@ if (process.env.SQ_PILOT_GOLDEN_REPORT) {
 }
 console.log(`✓ Pilot P1.2 Commercial Golden smoke PASS — ${report.scenarios.length} scenarios`);
 console.log('  - resolved BOM -> pricing -> snapshot -> Final -> reopen -> revision');
-console.log('  - unmatched / x1 markup / required completeness block before quote');
-console.log('  - below-cost Draft is blocked by Final Quote Gate');
+console.log('  - unmatched / required completeness block; x1 or below-cost price is an acknowledged warning');
+console.log('  - below-cost Final is allowed with explicit frontend confirmation and intact cost snapshot');

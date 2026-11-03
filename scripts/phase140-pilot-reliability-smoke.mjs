@@ -29,7 +29,10 @@ const telemetry = await import(`../src/import-engine/correctionTelemetry.js?smok
 // 1) Independent business validator: dealer <= retail, duplicates, history anomaly.
 const business = applyCommercialValidation([
   { name: "Công tắc Lumi", sku: "LM-S1", costPrice: 1_800_000, listPrice: 1_500_000, _meta: { issues: [] } },
-  { name: "Công tắc Lumi duplicate", sku: "LM-S1", costPrice: 1_000_000, listPrice: 1_500_000, _meta: { issues: [] } },
+  // RC16 note: since the Roger FU fix (RC14/RC15) the same code with a DIFFERENT
+  // name is a legitimate "supplier_code_reused" warning, not a duplicate. A true
+  // in-file duplicate is the same code AND the same name.
+  { name: "Công tắc Lumi", sku: "LM-S1", costPrice: 1_000_000, listPrice: 1_500_000, _meta: { issues: [] } },
   { name: "Cảm biến", sku: "LM-MS", costPrice: 2_000_000, listPrice: 2_500_000, _meta: { issues: [] } },
 ], {
   existingProducts: [{ name: "Cảm biến", sku: "LM-MS", costPrice: 1_000_000 }],
@@ -38,6 +41,14 @@ assert.ok(business.products[0]._meta.issues.some((x) => x.code === "pilot_busine
 assert.ok(business.products[0]._meta.issues.some((x) => x.code === "pilot_business_duplicate_sku_in_import"));
 assert.ok(business.products[2]._meta.issues.some((x) => x.code === "pilot_business_price_change_extreme"));
 assert.equal(business.products[0]._meta.canonicalStatus, "need_review");
+{
+  const reused = applyCommercialValidation([
+    { name: "Bộ điều khiển cổng FU 1 kênh", sku: "FU", costPrice: 1_450_000, _meta: { issues: [] } },
+    { name: "Bộ điều khiển cổng FU 2 kênh", sku: "FU", costPrice: 1_690_000, _meta: { issues: [] } },
+  ]);
+  assert.ok(reused.products.every((p) => p._meta.issues.some((x) => x.code === "pilot_business_supplier_code_reused")));
+  assert.ok(reused.products.every((p) => !p._meta.issues.some((x) => x.code === "pilot_business_duplicate_sku_in_import")));
+}
 
 // 1b) Human approval may accept a warning, but never bypass a hard business error.
 const acceptedWarning = applyCommercialValidation([{
@@ -156,7 +167,11 @@ assert.equal(telemetry.getCorrectionTelemetryStats().unexported, 0);
 
 // 7) Static pilot wiring: click-to-source viewer + API coordinates + no new OCR routing.
 const smartQuote = fs.readFileSync(path.join(root, "src/SmartQuote.jsx"), "utf8");
-const api = fs.readFileSync(path.join(root, "api/pdf-extract.js"), "utf8");
+// RC16 note: page geometry moved from api/pdf-extract.js into api/_lib/pdfTextGeometry.js
+// (imported by pdf-extract). Check the endpoint wiring + the geometry module together.
+const api = fs.readFileSync(path.join(root, "api/pdf-extract.js"), "utf8")
+  + "\n" + fs.readFileSync(path.join(root, "api/_lib/pdfTextGeometry.js"), "utf8");
+assert.match(api, /extractPagesFromPdf/);
 assert.match(smartQuote, /PdfGroundingViewer/);
 assert.match(smartQuote, /ci-ground-price/);
 assert.match(smartQuote, /applyCommercialValidation/);

@@ -150,7 +150,11 @@ import { technicalVariantsCompatible } from '../src/import-engine/productIdentit
   const excelBuilder = fs.readFileSync(new URL('../api/excel_builder.py', import.meta.url), 'utf8');
   const lossless = fs.readFileSync(new URL('../api/xlsx_lossless.py', import.meta.url), 'utf8');
   assert.match(appSource, /quotePartyValueForLabel/);
-  assert.match(appSource, /p\.origin \|\| p\.attributes\?\.origin \|\| p\.supplier/);
+  // RC16 note: the default Excel export still prints origin first and falls back to
+  // supplier, but through customerFacingParty() so a supplier guessed from an
+  // import file name is never printed on the customer's quote.
+  assert.match(appSource, /const party = customerFacingParty\(p\);/);
+  assert.match(appSource, /party\.origin \|\| party\.supplier/);
   assert.match(excelBuilder, /p\.get\("origin"\).*p\.get\("supplier"/s);
   assert.match(lossless, /"origin": \["xuat xu", "origin", "country of origin"\]/);
   assert.match(lossless, /"brand": \["thuong hieu", "brand", "hang", "nsx", "nha san xuat"\]/);

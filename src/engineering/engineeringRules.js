@@ -184,11 +184,11 @@ export function buildEngineeringAssessment({
     const knownNvrs = nvrs.filter((row) => Number.isFinite(row.engineering.maxChannels) && row.engineering.maxChannels > 0);
     const availableKnown = knownNvrs.reduce((sum, row) => sum + row.qty * row.engineering.maxChannels, 0);
     if (availableKnown >= required) {
-      checks.push(check({ ruleCode: "CCTV_NVR_CHANNEL_CAPACITY", family: "capacity", status: "PASS", severity: "INFO", title: "Recording capacity đủ", detail: `${required} camera channel · ${availableKnown} channel khả dụng.`, evidence: { required, available: availableKnown, unit: "channels" }, affectedLines: [...cameras, ...nvrs] }));
+      checks.push(check({ ruleCode: "CCTV_NVR_CHANNEL_CAPACITY", family: "capacity", status: "PASS", severity: "INFO", title: "Đầu ghi đủ kênh", detail: `${required} camera channel · ${availableKnown} channel khả dụng.`, evidence: { required, available: availableKnown, unit: "channels" }, affectedLines: [...cameras, ...nvrs] }));
     } else if (knownNvrs.length !== nvrs.length) {
       checks.push(check({ ruleCode: "CCTV_NVR_CHANNEL_CAPACITY", family: "capacity", status: "UNKNOWN", severity: "WARNING", title: "Chưa xác minh đủ channel của NVR", detail: `${availableKnown}/${required} channel đã xác minh; còn NVR chưa có maxChannels.`, evidence: { required, availableKnown, unknownProviderCount: nvrs.length - knownNvrs.length, unit: "channels" }, affectedLines: [...cameras, ...nvrs], resolution: "Bổ sung maxChannels cho NVR trước khi chốt cấu hình." }));
     } else {
-      checks.push(check({ ruleCode: "CCTV_NVR_CHANNEL_CAPACITY", family: "capacity", status: "FAIL", severity: "ERROR", title: "Recording capacity không đủ", detail: `${required} camera channel yêu cầu · ${availableKnown} channel khả dụng.`, evidence: { required, available: availableKnown, shortfall: required - availableKnown, unit: "channels" }, affectedLines: [...cameras, ...nvrs], resolution: "Tăng số NVR hoặc chọn NVR có nhiều channel hơn." }));
+      checks.push(check({ ruleCode: "CCTV_NVR_CHANNEL_CAPACITY", family: "capacity", status: "FAIL", severity: "ERROR", title: "Đầu ghi không đủ kênh", detail: `${required} camera channel yêu cầu · ${availableKnown} channel khả dụng.`, evidence: { required, available: availableKnown, shortfall: required - availableKnown, unit: "channels" }, affectedLines: [...cameras, ...nvrs], resolution: "Tăng số NVR hoặc chọn NVR có nhiều channel hơn." }));
     }
 
     // Incoming bandwidth is independently constrained from channel count.
@@ -204,7 +204,7 @@ export function buildEngineeringAssessment({
       } else {
         const requiredMbps = bitrateRows.reduce((sum, row) => sum + row.qty * row.effectiveBitrate, 0);
         const availableMbps = knownBandwidthNvrs.reduce((sum, row) => sum + row.qty * row.engineering.maxIncomingBandwidthMbps, 0);
-        checks.push(check({ ruleCode: "CCTV_NVR_INCOMING_BANDWIDTH", family: "capacity", status: availableMbps >= requiredMbps ? "PASS" : "FAIL", severity: availableMbps >= requiredMbps ? "INFO" : "ERROR", title: availableMbps >= requiredMbps ? "Incoming bandwidth đủ" : "Incoming bandwidth không đủ", detail: `${Math.round(requiredMbps * 10) / 10} Mbps yêu cầu · ${Math.round(availableMbps * 10) / 10} Mbps khả dụng.`, evidence: { required: requiredMbps, available: availableMbps, shortfall: Math.max(0, requiredMbps - availableMbps), unit: "Mbps" }, affectedLines: [...cameras, ...nvrs], resolution: availableMbps >= requiredMbps ? "" : "Tăng recording bandwidth hoặc giảm/điều chỉnh bitrate theo thiết kế thực tế." }));
+        checks.push(check({ ruleCode: "CCTV_NVR_INCOMING_BANDWIDTH", family: "capacity", status: availableMbps >= requiredMbps ? "PASS" : "FAIL", severity: availableMbps >= requiredMbps ? "INFO" : "ERROR", title: availableMbps >= requiredMbps ? "Băng thông đầu ghi đủ" : "Băng thông đầu ghi không đủ", detail: `${Math.round(requiredMbps * 10) / 10} Mbps yêu cầu · ${Math.round(availableMbps * 10) / 10} Mbps khả dụng.`, evidence: { required: requiredMbps, available: availableMbps, shortfall: Math.max(0, requiredMbps - availableMbps), unit: "Mbps" }, affectedLines: [...cameras, ...nvrs], resolution: availableMbps >= requiredMbps ? "" : "Tăng recording bandwidth hoặc giảm/điều chỉnh bitrate theo thiết kế thực tế." }));
       }
     }
   }
@@ -218,7 +218,7 @@ export function buildEngineeringAssessment({
       checks.push(check({ ruleCode: "POE_PORT_CAPACITY", family: "power", status: "UNKNOWN", severity: "WARNING", title: "Chưa xác minh nguồn PoE", detail: `${requiredPorts} cổng PoE được yêu cầu nhưng chưa có sản phẩm khai báo poePorts. Có thể nguồn PoE nằm ngoài báo giá.`, evidence: { required: requiredPorts, availableKnown: 0, unit: "ports" }, affectedLines: poeConsumers, resolution: "Khai báo poePorts cho NVR/switch cấp PoE hoặc xác nhận hạ tầng PoE bên ngoài." }));
     } else {
       const availablePorts = poeProviders.reduce((sum, row) => sum + row.qty * Math.max(0, row.engineering.poePorts - row.engineering.reservedPorts), 0);
-      checks.push(check({ ruleCode: "POE_PORT_CAPACITY", family: "power", status: availablePorts >= requiredPorts ? "PASS" : "FAIL", severity: availablePorts >= requiredPorts ? "INFO" : "ERROR", title: availablePorts >= requiredPorts ? "PoE ports đủ" : "PoE ports không đủ", detail: `${requiredPorts} port yêu cầu · ${availablePorts} port usable.`, evidence: { required: requiredPorts, available: availablePorts, shortfall: Math.max(0, requiredPorts - availablePorts), unit: "ports" }, affectedLines: [...poeConsumers, ...poeProviders], resolution: availablePorts >= requiredPorts ? "" : "Tăng số switch/NVR PoE hoặc chọn model có nhiều port usable hơn." }));
+      checks.push(check({ ruleCode: "POE_PORT_CAPACITY", family: "power", status: availablePorts >= requiredPorts ? "PASS" : "FAIL", severity: availablePorts >= requiredPorts ? "INFO" : "ERROR", title: availablePorts >= requiredPorts ? "Số cổng PoE đủ" : "Số cổng PoE không đủ", detail: `${requiredPorts} port yêu cầu · ${availablePorts} port usable.`, evidence: { required: requiredPorts, available: availablePorts, shortfall: Math.max(0, requiredPorts - availablePorts), unit: "ports" }, affectedLines: [...poeConsumers, ...poeProviders], resolution: availablePorts >= requiredPorts ? "" : "Tăng số switch/NVR PoE hoặc chọn model có nhiều port usable hơn." }));
     }
 
     const missingPower = poeConsumers.filter((row) => !(Number.isFinite(row.engineering.powerW) && row.engineering.powerW > 0));
@@ -228,7 +228,7 @@ export function buildEngineeringAssessment({
     } else {
       const requiredW = poeConsumers.reduce((sum, row) => sum + row.qty * row.engineering.powerW, 0);
       const availableW = budgetProviders.reduce((sum, row) => sum + row.qty * row.engineering.poeBudgetW, 0);
-      checks.push(check({ ruleCode: "POE_POWER_BUDGET", family: "power", status: availableW >= requiredW ? "PASS" : "FAIL", severity: availableW >= requiredW ? "INFO" : "ERROR", title: availableW >= requiredW ? "PoE power budget đủ" : "PoE power budget không đủ", detail: `${Math.round(requiredW * 10) / 10}W yêu cầu · ${Math.round(availableW * 10) / 10}W khả dụng.`, evidence: { required: requiredW, available: availableW, shortfall: Math.max(0, requiredW - availableW), unit: "W" }, affectedLines: [...poeConsumers, ...budgetProviders], resolution: availableW >= requiredW ? "" : "Tăng PoE budget hoặc phân bổ tải sang nguồn/switch khác." }));
+      checks.push(check({ ruleCode: "POE_POWER_BUDGET", family: "power", status: availableW >= requiredW ? "PASS" : "FAIL", severity: availableW >= requiredW ? "INFO" : "ERROR", title: availableW >= requiredW ? "Công suất PoE đủ" : "Công suất PoE không đủ", detail: `${Math.round(requiredW * 10) / 10}W yêu cầu · ${Math.round(availableW * 10) / 10}W khả dụng.`, evidence: { required: requiredW, available: availableW, shortfall: Math.max(0, requiredW - availableW), unit: "W" }, affectedLines: [...poeConsumers, ...budgetProviders], resolution: availableW >= requiredW ? "" : "Tăng PoE budget hoặc phân bổ tải sang nguồn/switch khác." }));
     }
   }
 
@@ -346,6 +346,16 @@ export function buildEngineeringAssessment({
     lineCount: lines.length,
     evaluatedAt: new Date().toISOString(),
   };
+}
+
+
+export function shouldShowEngineeringPanel(assessment = {}, industryId = "") {
+  const id = String(industryId || "").toLowerCase();
+  return (assessment?.checks?.length || 0) > 0 || id === "cctv" || id === "smarthome";
+}
+
+export function shouldShowCctvRequirementInputs(assessment = {}) {
+  return (assessment?.checks || []).some((row) => String(row?.ruleCode || "").startsWith("CCTV_"));
 }
 
 export function buildEngineeringValidationSnapshot(assessment = {}, overrideReason = "") {

@@ -77,6 +77,7 @@ export async function runImport(file, ctx = {}) {
   // ---- Trích items từ tất cả sheet/region ----
   let allRaw = [];
   let minMapConf = 1;
+  const skippedRows = []; // RC16 S3: rows refused with a user-visible reason
   const extractionStats = { totalRows: 0, skipped: 0, contextSubtotals: 0, notes: 0, totals: 0, sections: 0, headers: 0, blank: 0, products: 0 };
   for (const ps of perSheet) {
     const { sheet, headerRow, headerIndex, map, mapConfidence } = ps;
@@ -101,6 +102,7 @@ export async function runImport(file, ctx = {}) {
       const out = extractItemsWithStats(sheet, region, map, headerSourceRow, wb.fileSupplier);
       allRaw = allRaw.concat(out.items);
       for (const [k, v] of Object.entries(out.stats || {})) extractionStats[k] = (extractionStats[k] || 0) + (Number(v) || 0);
+      if (Array.isArray(out.skippedRows)) skippedRows.push(...out.skippedRows);
     }
   }
 
@@ -211,12 +213,27 @@ export async function runImport(file, ctx = {}) {
     stats,
     needsReview: stats.review > 0 || stats.rejected > 0,
     engine,
-    warnings,
+    warnings: skippedRows.length
+      ? [...warnings, ...skippedRowWarnings(skippedRows)]
+      : warnings,
+    skippedRows,
   }, fileName);
 }
 
+function skippedRowWarnings(skippedRows = []) {
+  const byReason = new Map();
+  for (const s of skippedRows) {
+    if (!byReason.has(s.reason)) byReason.set(s.reason, []);
+    byReason.get(s.reason).push(s);
+  }
+  return [...byReason.entries()].map(([reason, rows]) => {
+    const sample = rows.slice(0, 3).map((s) => `dòng ${s.row}${s.rawText ? ` “${String(s.rawText).slice(0, 60)}”` : ""}`).join("; ");
+    return `Đã bỏ qua ${rows.length} dòng: ${reason} (${sample}${rows.length > 3 ? "; …" : ""}).`;
+  });
+}
+
 function attachCanonicalPreview(result, fileName) {
-  const preview = engineResultToImportPreviewResult(result, fileName);
+  const preview = { ...engineResultToImportPreviewResult(result, fileName), skippedRows: result.skippedRows || [] };
   // Backward compatible: giữ items/stats cũ, đồng thời expose schema Phase 2 trực tiếp.
   return {
     ...result,

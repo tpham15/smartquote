@@ -41,7 +41,7 @@ assertNotIncludes('className="upgrade-hero"', 'old upgrade hero');
 
 // CSS block was appended.
 assertIncludes('.plan-page{max-width:1080px', 'new plan page CSS');
-assertIncludes('.pp-bar.warn>i{background:var(--c-warn,#c98a00);}', 'meter warning CSS');
+assertIncludes('.pp-bar.warn>i{background:var(--c-warn);}', 'meter warning CSS');
 assertIncludes('.pp-modal-bg{position:fixed;', 'modal CSS');
 assertIncludes('.pp-more{margin-top:28px;', 'details CSS');
 

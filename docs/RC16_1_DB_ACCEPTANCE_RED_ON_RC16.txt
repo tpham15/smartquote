@@ -1,0 +1,51 @@
+ B01 sales yêu cầu nâng gói                                               | f  | bị chặn: không được phép                                        | (không có lỗi — lẽ ra phải bị chặn)
+ B02 owner yêu cầu nâng gói                                               | t  | thành công                                                      | 
+ C01 viewer đồng bộ danh mục                                              | f  | bị chặn: không được phép                                        | (không có lỗi — lẽ ra phải bị chặn)
+ C02 sales đồng bộ danh mục                                               | t  | thành công                                                      | 
+ C03 viewer ghi log nhập danh mục                                         | f  | bị chặn: không được phép                                        | (không có lỗi — lẽ ra phải bị chặn)
+ C04 viewer thử sửa products trong dealer_app_state (RLS lọc)             | t  | thành công                                                      | 
+ C04b products không bị viewer sửa                                        | f  | không có hack                                                   | điều kiện sai
+ C05 sales đổi thông tin công ty (số tài khoản in trên báo giá)           | f  | bị chặn: thông tin công ty                                      | (không có lỗi — lẽ ra phải bị chặn)
+ C06 sales đổi hệ số giá                                                  | f  | bị chặn: hệ số giá                                              | (không có lỗi — lẽ ra phải bị chặn)
+ C07 sales lưu dữ liệu workspace khác (templates)                         | t  | thành công                                                      | 
+ C08 admin đổi thông tin công ty                                          | t  | thành công                                                      | 
+ C08b thông tin công ty đã đổi bởi admin                                  | t  | bankInfo = STK công ty                                          | 
+ C09 viewer tải ảnh sản phẩm lên                                          | f  | bị chặn: row-level security|policy                              | (không có lỗi — lẽ ra phải bị chặn)
+ C10 sales tải ảnh sản phẩm lên                                           | t  | thành công                                                      | 
+ F01 viewer chốt báo giá                                                  | f  | bị chặn: không được phép                                        | (không có lỗi — lẽ ra phải bị chặn)
+ F02 chốt với tổng cộng bị sửa (grand +1.000đ)                            | f  | bị chặn: không khớp                                             | Chỉ báo giá Draft mới được Final
+ F03 chốt khi tiền hàng khai thấp hơn các dòng (tổng nhất quán nhưng sai) | f  | bị chặn: không khớp                                             | Chỉ báo giá Draft mới được Final
+ F04 chốt với % nhân công ngoài 0–100                                     | f  | bị chặn: không hợp lệ                                           | Chỉ báo giá Draft mới được Final
+ F05 chốt khi thiếu tổng tiền (calc rỗng)                                 | f  | bị chặn: không khớp                                             | Chỉ báo giá Draft mới được Final
+ F06 chốt khi cột total bên ngoài calc bị sửa                             | f  | bị chặn: không khớp                                             | Chỉ báo giá Draft mới được Final
+ F06b báo giá vẫn là Draft sau các lần chốt bị từ chối                    | f  | lifecycle = draft                                               | điều kiện sai
+ F07 sales chốt với tổng đúng (7,5% nhân công, 8% VAT, có làm tròn)       | f  | thành công                                                      | Chỉ báo giá Draft mới được Final
+ F07b Final lưu tổng do server tính                                       | f  | total = 1.452.410; serverVerifiedTotals có                      | điều kiện sai
+ F08 owner xóa báo giá Final                                              | t  | bị chặn: không thể xóa                                          | Báo giá Final không thể xóa
+ F09 sửa nội dung Final bằng save_quote (bất biến)                        | f  | bị chặn: bất biến|Final                                         | (không có lỗi — lẽ ra phải bị chặn)
+ F10 sales đánh dấu Final là đã gửi                                       | t  | thành công                                                      | 
+ F10b nội dung Final không đổi khi đổi trạng thái                         | f  | status = sent, total giữ nguyên                                 | điều kiện sai
+ F11 trạng thái không hợp lệ                                              | t  | bị chặn: không hợp lệ                                           | Trạng thái báo giá không hợp lệ
+ F12 viewer ghi dữ liệu học từ Final                                      | f  | bị chặn: không được phép                                        | Learning requires a server-finalized quote
+ F13 sales ghi dữ liệu học từ Final                                       | f  | thành công                                                      | Learning requires a server-finalized quote
+ F13b đúng 1 dòng học được lưu (từ snapshot, không phải từ trình duyệt)   | f  | 1 dòng, giá 333.333                                             | điều kiện sai
+ F14 anon chốt báo giá                                                    | t  | bị chặn: permission denied|not authenticated                    | Not authenticated
+ M01 viewer tự thêm mình làm owner                                        | t  | bị chặn: row-level security|quản lý thành viên|duplicate|unique | new row violates row-level security policy for table "dealer_members"
+ M02 sales thử tự nâng vai trò (RLS lọc)                                  | t  | thành công                                                      | 
+ M02b vai trò sales không đổi                                             | t  | role = sales                                                    | 
+ M03 owner workspace B thêm mình vào workspace A                          | t  | bị chặn: row-level security|quản lý thành viên                  | new row violates row-level security policy for table "dealer_members"
+ R01 viewer lưu báo giá                                                   | f  | bị chặn: không được phép                                        | (không có lỗi — lẽ ra phải bị chặn)
+ R02 sales lưu báo giá Draft                                              | t  | thành công                                                      | 
+ R03 owner lưu báo giá Draft                                              | t  | thành công                                                      | 
+ R04 người ngoài lưu báo giá vào workspace A                              | t  | bị chặn: not a member                                           | Not a member of this dealer workspace
+ R05 viewer thử xóa Draft của sales (RLS lọc, không lỗi)                  | t  | thành công                                                      | 
+ R05b Draft của sales vẫn còn sau khi viewer xóa                          | f  | còn dòng                                                        | điều kiện sai
+ R06 sales khác thử xóa Draft không phải của mình                         | t  | thành công                                                      | 
+ R06b Draft vẫn còn sau khi sales khác xóa                                | f  | còn dòng                                                        | điều kiện sai
+ R07 viewer đổi trạng thái bán hàng                                       | f  | bị chặn: không được phép                                        | Quote not found in this dealer workspace
+ R08 sales đổi trạng thái bán hàng                                        | f  | thành công                                                      | Quote not found in this dealer workspace
+ R09 sales xóa Draft của chính mình                                       | t  | thành công                                                      | 
+ R09b Draft của sales đã bị xóa                                           | t  | không còn dòng                                                  | 
+ TOTAL                                                                    | f  | 50 ca                                                           | failed = 26
+ W1 owner tạo workspace A                                                 | t  | thành công                                                      | 
+ W2 outsider tạo workspace B                                              | t  | thành công                                                      | 

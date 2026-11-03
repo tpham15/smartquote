@@ -17,6 +17,7 @@ const scenarios = JSON.parse(fs.readFileSync(scenarioPath, 'utf8'));
 const extraction = JSON.parse(fs.readFileSync(extractionPath, 'utf8'));
 
 assert.equal(lock.schemaVersion, 'sq-pilot-golden-freeze-lock-v1');
+assert.equal(lock.version, scenarios.version, 'golden scenario version differs from lock version');
 assert.equal(lock.commercialScenariosSha256, sha(scenarioPath), 'commercial golden fixture mutated without version bump');
 assert.equal(lock.extractionSeedSha256, sha(extractionPath), 'extraction seed reference mutated without version bump');
 assert.equal(lock.scenarioCount, scenarios.scenarios.length);

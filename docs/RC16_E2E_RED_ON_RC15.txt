@@ -1,0 +1,45 @@
+✓ bang_gia_den.xlsx · catalog trống · Đơn giá = Giá bán (Thêm 5 → +5 / ~0)
+✗ S1-3 bang_gia_den.xlsx · catalog trống · Đơn giá = Giá nhập
+    S1-3 new product must be labelled _meta.supplierSource="file_name"
+
+'' !== 'file_name'
+
+✗ S1-2 bang_gia_den.xlsx · catalog có DL-12W-30 không NCC
+    S1-2 empty supplier must stay empty, not "den"
+
+'den' !== ''
+
+✗ S1-1 bang_gia_den.xlsx · catalog có DL-12W-30 NCC "Rạng Đông"
+    S1-1 filename supplier must not create an ambiguous match (DL-12W-30)
+
+1 !== 0
+
+✗ S1-4 bang_gia_cot_ncc.xlsx (cột NCC "Duhal") · catalog "Rạng Đông"
+    Expected values to be strictly equal:
+
+'' !== 'column'
+
+✗ S2-1 bao_gia_cu_lech_cot.xlsx · Báo giá cũ
+    S2-1 commercial name recovered from the specs column
+✗ S3-1/S3-3 bao_gia_cu_metadata.xlsx · Báo giá cũ
+    S3-1 exactly 3 products
++ actual - expected
+
+  [
++   '',
+    'LM-1G2W-C(G)',
+    'LM-2G2W-C(G)',
+    'LM-PCB'
+  ]
+
+✗ S2-5 bang_gia_ma_bao_hanh.xlsx · bảng giá NCC, cột Mã "BH 12 tháng"
+    S2-5 row carries warranty_in_sku_column
+✓ ma_ncc_dung_lai.xlsx · nhập 2 lần (Thêm 4 → +0 / ~4)
+✗ S1-5 bang_gia_cot_ncc.xlsx: lost product.source.sheet, product.source.documentCategory, product.source.rowIndex, _meta.source.rowIndex, product.source.cellRefs, _meta.source.cellRefs, product.source.rawText, product.source.supplierSource, _meta.source.supplierSource, product.source.rawSku, product.source.canonicalSkuEvidence
+✗ S1-5 bang_gia_den.xlsx: lost product.source.sheet, product.source.documentCategory, product.source.rowIndex, _meta.source.rowIndex, product.source.cellRefs, _meta.source.cellRefs, product.source.rawText, product.source.supplierSource, _meta.source.supplierSource, product.source.rawSku, product.source.canonicalSkuEvidence
+✗ S1-5 bang_gia_ma_bao_hanh.xlsx: lost product.source.sheet, product.source.documentCategory, product.source.rowIndex, _meta.source.rowIndex, product.source.cellRefs, _meta.source.cellRefs, product.source.rawText, product.source.supplierSource, _meta.source.supplierSource, product.source.rawSku, product.source.canonicalSkuEvidence
+✗ S1-5 bao_gia_cu_lech_cot.xlsx: lost product.source.sheet, product.source.documentCategory, product.source.rowIndex, _meta.source.rowIndex, product.source.cellRefs, _meta.source.cellRefs, product.source.rawText, product.source.supplierSource, _meta.source.supplierSource, product.source.rawSku, product.source.canonicalSkuEvidence
+✗ S1-5 bao_gia_cu_metadata.xlsx: lost product.source.sheet, product.source.documentCategory, product.source.rowIndex, _meta.source.rowIndex, product.source.cellRefs, _meta.source.cellRefs, product.source.rawText, product.source.supplierSource, _meta.source.supplierSource, product.source.rawSku, product.source.canonicalSkuEvidence
+✗ S1-5 ma_ncc_dung_lai.xlsx: lost product.source.sheet, product.source.documentCategory, product.source.rowIndex, _meta.source.rowIndex, product.source.cellRefs, _meta.source.cellRefs, product.source.rawText, product.source.supplierSource, _meta.source.supplierSource, product.source.rawSku, product.source.canonicalSkuEvidence
+
+✗ e2e-import: 14 failure(s)

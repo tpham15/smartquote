@@ -81,11 +81,15 @@ export async function importManyForUI(files, opts = {}) {
     }
   }
 
-  const preview = combineImportPreviewResults(previews, {
-    fileName: `${files.length} files`,
-    importType: "catalog_batch",
-    engine: "mixed",
-  });
+  const preview = {
+    ...combineImportPreviewResults(previews, {
+      fileName: `${files.length} files`,
+      importType: "catalog_batch",
+      engine: "mixed",
+    }),
+    // RC16 S3: keep per-row skip reasons visible in the batch preview too.
+    skippedRows: previews.flatMap((p, i) => (p?.skippedRows || []).map((s) => ({ ...s, fileName: files[i]?.name || "" }))),
+  };
 
   const deduped = dedupeCatalogIdentities(all);
   const products = deduped.products;

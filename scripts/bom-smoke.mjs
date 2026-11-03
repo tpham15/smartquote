@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import * as XLSX from 'xlsx';
+// SheetJS ≥0.20 ESM build: Node file I/O must be wired explicitly (RC16.1 upgrade).
+if (typeof XLSX.set_fs === 'function') XLSX.set_fs(fs);
 import { parseBomPreviewFile, buildBomSmokeWorkbook } from '../src/import-engine/bom/bomPreviewParser.js';
 import { buildBomQuoteVariants } from '../src/import-engine/bom/bomQuoteComposer.js';
 

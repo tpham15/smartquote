@@ -1,0 +1,51 @@
+ B01 sales yêu cầu nâng gói                                               | t  | bị chặn: không được phép                                        | Vai trò "sales" không được phép thêm thanh toán gói trong workspace này.
+ B02 owner yêu cầu nâng gói                                               | t  | thành công                                                      | 
+ C01 viewer đồng bộ danh mục                                              | t  | bị chặn: không được phép                                        | Vai trò "viewer" không được phép thêm danh mục sản phẩm trong workspace này.
+ C02 sales đồng bộ danh mục                                               | t  | thành công                                                      | 
+ C03 viewer ghi log nhập danh mục                                         | t  | bị chặn: không được phép                                        | Vai trò "viewer" không được phép thêm lịch sử nhập trong workspace này.
+ C04 viewer thử sửa products trong dealer_app_state (RLS lọc)             | t  | thành công                                                      | 
+ C04b products không bị viewer sửa                                        | t  | không có hack                                                   | 
+ C05 sales đổi thông tin công ty (số tài khoản in trên báo giá)           | t  | bị chặn: thông tin công ty                                      | Vai trò "sales" không được phép đổi thông tin công ty (ngân hàng, mẫu báo giá). Hãy nhờ chủ/quản trị workspace.
+ C06 sales đổi hệ số giá                                                  | t  | bị chặn: hệ số giá                                              | Vai trò "sales" không được phép đổi hệ số giá. Hãy nhờ chủ/quản trị workspace.
+ C07 sales lưu dữ liệu workspace khác (templates)                         | t  | thành công                                                      | 
+ C08 admin đổi thông tin công ty                                          | t  | thành công                                                      | 
+ C08b thông tin công ty đã đổi bởi admin                                  | t  | bankInfo = STK công ty                                          | 
+ C09 viewer tải ảnh sản phẩm lên                                          | t  | bị chặn: row-level security|policy                              | new row violates row-level security policy for table "objects"
+ C10 sales tải ảnh sản phẩm lên                                           | t  | thành công                                                      | 
+ F01 viewer chốt báo giá                                                  | t  | bị chặn: không được phép                                        | Vai trò "viewer" không được phép chốt báo giá trong workspace này.
+ F02 chốt với tổng cộng bị sửa (grand +1.000đ)                            | t  | bị chặn: không khớp                                             | Tổng tiền báo giá không khớp với các dòng sản phẩm (server tính 1,452,410 đ, trình duyệt gửi 1453410 đ). Hãy tải lại báo giá rồi chốt lại.
+ F03 chốt khi tiền hàng khai thấp hơn các dòng (tổng nhất quán nhưng sai) | t  | bị chặn: không khớp                                             | Tổng tiền báo giá không khớp với các dòng sản phẩm (server tính 1,452,410 đ, trình duyệt gửi 1161000 đ). Hãy tải lại báo giá rồi chốt lại.
+ F04 chốt với % nhân công ngoài 0–100                                     | t  | bị chặn: không hợp lệ                                           | Tỷ lệ nhân công/VAT không hợp lệ (nhân công %: 150, VAT %: 8).
+ F05 chốt khi thiếu tổng tiền (calc rỗng)                                 | t  | bị chặn: không khớp                                             | Tổng tiền báo giá không khớp với các dòng sản phẩm (server tính 1,250,999 đ, trình duyệt gửi ? đ). Hãy tải lại báo giá rồi chốt lại.
+ F06 chốt khi cột total bên ngoài calc bị sửa                             | t  | bị chặn: không khớp                                             | Tổng tiền báo giá không khớp với các dòng sản phẩm (server tính 1,452,410 đ, trình duyệt gửi 1452410 đ). Hãy tải lại báo giá rồi chốt lại.
+ F06b báo giá vẫn là Draft sau các lần chốt bị từ chối                    | t  | lifecycle = draft                                               | 
+ F07 sales chốt với tổng đúng (7,5% nhân công, 8% VAT, có làm tròn)       | t  | thành công                                                      | 
+ F07b Final lưu tổng do server tính                                       | t  | total = 1.452.410; serverVerifiedTotals có                      | 
+ F08 owner xóa báo giá Final                                              | t  | bị chặn: không thể xóa                                          | Báo giá Final không thể xóa
+ F09 sửa nội dung Final bằng save_quote (bất biến)                        | t  | bị chặn: bất biến|Final                                         | Báo giá Final là bất biến; hãy tạo revision mới
+ F10 sales đánh dấu Final là đã gửi                                       | t  | thành công                                                      | 
+ F10b nội dung Final không đổi khi đổi trạng thái                         | t  | status = sent, total giữ nguyên                                 | 
+ F11 trạng thái không hợp lệ                                              | t  | bị chặn: không hợp lệ                                           | Trạng thái báo giá không hợp lệ
+ F12 viewer ghi dữ liệu học từ Final                                      | t  | bị chặn: không được phép                                        | Vai trò "viewer" không được phép thêm dữ liệu học báo giá trong workspace này.
+ F13 sales ghi dữ liệu học từ Final                                       | t  | thành công                                                      | 
+ F13b đúng 1 dòng học được lưu (từ snapshot, không phải từ trình duyệt)   | t  | 1 dòng, giá 333.333                                             | 
+ F14 anon chốt báo giá                                                    | t  | bị chặn: permission denied|not authenticated                    | Not authenticated
+ M01 viewer tự thêm mình làm owner                                        | t  | bị chặn: row-level security|quản lý thành viên|duplicate|unique | Chỉ chủ workspace (owner) mới được quản lý thành viên.
+ M02 sales thử tự nâng vai trò (RLS lọc)                                  | t  | thành công                                                      | 
+ M02b vai trò sales không đổi                                             | t  | role = sales                                                    | 
+ M03 owner workspace B thêm mình vào workspace A                          | t  | bị chặn: row-level security|quản lý thành viên                  | Chỉ chủ workspace (owner) mới được quản lý thành viên.
+ R01 viewer lưu báo giá                                                   | t  | bị chặn: không được phép                                        | Vai trò "viewer" không được phép thêm khách hàng trong workspace này.
+ R02 sales lưu báo giá Draft                                              | t  | thành công                                                      | 
+ R03 owner lưu báo giá Draft                                              | t  | thành công                                                      | 
+ R04 người ngoài lưu báo giá vào workspace A                              | t  | bị chặn: not a member                                           | Not a member of this dealer workspace
+ R05 viewer thử xóa Draft của sales (RLS lọc, không lỗi)                  | t  | thành công                                                      | 
+ R05b Draft của sales vẫn còn sau khi viewer xóa                          | t  | còn dòng                                                        | 
+ R06 sales khác thử xóa Draft không phải của mình                         | t  | thành công                                                      | 
+ R06b Draft vẫn còn sau khi sales khác xóa                                | t  | còn dòng                                                        | 
+ R07 viewer đổi trạng thái bán hàng                                       | t  | bị chặn: không được phép                                        | Vai trò "viewer" không được phép sửa báo giá trong workspace này.
+ R08 sales đổi trạng thái bán hàng                                        | t  | thành công                                                      | 
+ R09 sales xóa Draft của chính mình                                       | t  | thành công                                                      | 
+ R09b Draft của sales đã bị xóa                                           | t  | không còn dòng                                                  | 
+ TOTAL                                                                    | t  | 50 ca                                                           | failed = 0
+ W1 owner tạo workspace A                                                 | t  | thành công                                                      | 
+ W2 outsider tạo workspace B                                              | t  | thành công                                                      | 

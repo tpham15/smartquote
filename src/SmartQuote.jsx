@@ -12,12 +12,11 @@ import { rememberQuoteCompletenessDecision } from "./import-engine/bom/quoteComp
 import { mapBomRowsWithClaude, mapTakeoffColumnsWithClaude, autoMapCatalogColumnsWithClaude } from "./import-engine/legacy/legacyClaudeMapper.js";
 import { parsePdfCatalogWithClaude, parseSupplierPriceFile, guessCatalogColumnsByName, buildCatalogPreview, readCatalogRowsForManualMapping } from "./import-engine/legacy/legacyCatalogImport.js";
 import { sanitizeCatalogProducts, dedupeCatalogIdentities, isUnsafeImportedProduct, isNonBlockingImportAdvisoryIssue, parseSafePrice, isLikelyOldQuoteFileName, isLikelyOldQuoteAggregateProduct } from "./import-engine/productSanitizer.js";
-import { productIdentityKey, canAutoMergeIdentity } from "./import-engine/productIdentity.js";
-import { canonicalizeLegacyProductForMatching } from "./import-engine/productSemantics.js";
+import { annotateCatalogMatches, findDuplicateSkuGroups, normalizeIdentitySku, customerFacingParty } from "./import-engine/productIdentity.js";
 import { webScrapeItemsToProducts } from "./import-engine/web/webCatalogImport.js";
 import { loadCloudState, saveCloudState } from "./supabase/cloudState.js";
 import { listCloudCatalog, syncCloudCatalogSnapshot, logCloudCatalogImport, serializeProductsForCatalog, deleteCloudCatalogItems, replaceCloudCatalog } from "./supabase/catalogStore.js";
-import { deleteCloudQuote, listCloudQuotes, saveCloudQuote } from "./supabase/quoteStore.js";
+import { deleteCloudQuote, listCloudQuotes, saveCloudQuote, finalizeCloudQuote, updateCloudFinalQuoteStatus } from "./supabase/quoteStore.js";
 import { recordCloudQuoteLearning, listCloudQuoteLearningObservations } from "./supabase/learningStore.js";
 import { requestManualUpgrade, listBillingEvents, getPlanPriceVnd, formatVnd, buildVietQrUrl, markManualBillingPaid } from "./supabase/billingStore.js";
 import { smartQuoteFetch } from "./supabase/apiFetch.js";
@@ -43,6 +42,8 @@ import {
 } from "./import-engine/correctionLearning.js";
 import { applyCommercialValidation } from "./import-engine/businessValidator.js";
 import { applyAmbiguousPriceRole } from "./import-engine/priceRoleDecision.js";
+import { mergeCatalogImport, projectedCatalogCount } from "./import-engine/catalogImportMerge.js";
+import { prepareCatalogImportProducts, isCatalogSkippedProduct as isCatalogSkippedImportProduct, splitCatalogPreviewProducts as splitCatalogImportPreview, isBlockingImportIssue, applyPriceRoleDecision, applyCatalogMatchDecision, approveImportRow, finalizeCatalogImport, isOldQuoteImport, effectiveImportSupplier, applyImportLearning, learnFromImportedRows, buildManualMappingPreview, prepareMultiFileImport } from "./import-engine/catalogImportPipeline.js";
 import { recordCorrectionEvent, getCorrectionTelemetryStats, buildCorrectionEvidenceExport, markCorrectionEvidenceExported } from "./import-engine/correctionTelemetry.js";
 import {
   buildFinalQuoteLearningObservations,
@@ -53,7 +54,7 @@ import {
   listQuoteLearningStats,
 } from "./learning/quoteLearning.js";
 import { calculateQuoteTotals, normalizePercent } from "./quoteMath.js";
-import { ENGINEERING_ROLE_OPTIONS, buildEngineeringAssessment, buildEngineeringValidationSnapshot } from "./engineering/engineeringRules.js";
+import { ENGINEERING_ROLE_OPTIONS, buildEngineeringAssessment, buildEngineeringValidationSnapshot, shouldShowEngineeringPanel, shouldShowCctvRequirementInputs } from "./engineering/engineeringRules.js";
 import {
   chooseDefaultMarkupFactor,
   productDisplayBasePrice,
@@ -510,9 +511,8 @@ function buildQuoteExportRows({ rooms = [], productById = {}, lineSalePrice }) {
         name: p.name || "",
         sku: p.sku || "",
         specs: excelSafeDisplayText(p.specs || p.description || ""),
-        supplier: p.supplier || "",
-        brand: p.brand || "",
-        origin: p.origin || p.attributes?.origin || "",
+        // RC16: never print a supplier/brand guessed from an import file name.
+        ...customerFacingParty(p),
         unit: p.unit || "Cái",
         qty,
         unitPrice,
@@ -542,9 +542,8 @@ function buildQuoteExportSections({ rooms = [], productById = {}, lineSalePrice 
             name: p.name || "",
             sku: p.sku || "",
             specs: p.specs || p.description || "",
-            supplier: p.supplier || "",
-            brand: p.brand || "",
-            origin: p.origin || p.attributes?.origin || "",
+            // RC16: never print a supplier/brand guessed from an import file name.
+            ...customerFacingParty(p),
             unit: p.unit || "Cái",
             qty,
             unitPrice,
@@ -2124,7 +2123,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setRooms((r) =>
       r.map((room) =>
         room.id === roomId
-          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, productId: newProductId, productSnapshot: undefined, salePriceSnapshot: undefined, costPriceSnapshot: undefined, snapshotVersion: undefined, factor: (catalogProductById?.[newProductId]?.priceMode === "fixed" ? 1 : defaultMarkupFactor) } : l)) }
+          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, productId: newProductId, productSnapshot: undefined, salePriceSnapshot: undefined, costPriceSnapshot: undefined, snapshotVersion: undefined, manualSalePrice: undefined, factor: (catalogProductById?.[newProductId]?.priceMode === "fixed" ? 1 : defaultMarkupFactor) } : l)) }
           : room
       )
     );
@@ -2137,10 +2136,24 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setRooms((r) =>
       r.map((room) =>
         room.id === roomId
-          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, factor, salePriceSnapshot: undefined } : l)) }
+          ? { ...room, lines: room.lines.map((l) => (l.id === lineId ? { ...l, factor, manualSalePrice: undefined, salePriceSnapshot: undefined } : l)) }
           : room
       )
     );
+  };
+
+  // Giá thương lượng riêng cho báo giá; không thay đổi giá catalog.
+  const setLineManualSalePrice = (roomId, lineId, value) => {
+    if (!ensureDraftEditable()) return;
+    const manual = Number(value);
+    setRooms((previous) => previous.map((room) => room.id !== roomId ? room : ({
+      ...room,
+      lines: room.lines.map((line) => line.id !== lineId ? line : ({
+        ...line,
+        manualSalePrice: value !== null && value !== "" && Number.isFinite(manual) && manual > 0 ? Math.round(manual) : undefined,
+        salePriceSnapshot: undefined,
+      })),
+    })));
   };
 
   // Cập nhật ghi chú phân bổ tầng cho 1 dòng (vd "Tầng 1: 10, Tầng 2: 7")
@@ -2520,6 +2533,9 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
       });
       if (!accepted) return;
     }
+    // Selling at/below cost is a deliberate commercial decision, never a hard
+    // blocker. Require a human acknowledgement once, when making the Final.
+    if (!(await confirmCommercialWarnings("chốt báo giá"))) return;
     const finalEngineeringValidation = buildEngineeringValidationSnapshot(finalEngineeringAssessment, overrideReason);
     const finalizedAt = new Date().toISOString();
     const companySnapshot = snapshotQuoteCompany(company);
@@ -2533,18 +2549,24 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     });
 
     let savedId = activeQuoteId;
+    let effectiveFinalizedAt = finalizedAt;
     if (cloud?.enabled && cloud.dealerId) {
       const isNewQuote = !activeQuoteId;
       if (isNewQuote && !guardFeature(cloud, "quotes_per_month", 1, onUpgrade)) return;
       setQuoteSaving(true);
       try {
-        savedId = await saveCloudQuote(cloud.dealerId, buildQuoteSnapshot({
+        const finalized = await finalizeCloudQuote(cloud.dealerId, buildQuoteSnapshot({
           roomsOverride: frozenRooms,
           customerOverride: finalCustomer,
           lifecycleOverride: QUOTE_LIFECYCLE_FINAL,
           workflowOverride: workflow,
           engineeringValidationOverride: finalEngineeringValidation,
         }));
+        savedId = finalized?.id || finalized?.quote_id || activeQuoteId;
+        if (finalized?.finalized_at) {
+          effectiveFinalizedAt = finalized.finalized_at;
+          workflow.finalizedAt = finalized.finalized_at;
+        }
         await Promise.all([reloadQuotes(), cloud?.refreshBilling?.()]);
       } catch (error) {
         console.error(error);
@@ -2559,7 +2581,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setCustomer(finalCustomer);
     setActiveQuoteId(savedId || null);
     setQuoteLifecycle(QUOTE_LIFECYCLE_FINAL);
-    setQuoteFinalizedAt(finalizedAt);
+    setQuoteFinalizedAt(effectiveFinalizedAt);
     setQuoteCompanySnapshot(companySnapshot);
     setPickerRoomId(null);
     setEditingLine(null);
@@ -2577,7 +2599,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           revision: quoteRevision,
           rooms: frozenRooms,
           customer: finalCustomer,
-          finalizedAt,
+          effectiveFinalizedAt,
           industryId: industryProfile?.id || "generic",
         });
         const localLearning = recordQuoteLearningObservations(observations);
@@ -2670,6 +2692,21 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     if (isNewQuote && !guardFeature(cloud, "quotes_per_month", 1, onUpgrade)) return;
     setQuoteSaving(true);
     try {
+      if (isFinalQuote && activeQuoteId && !asCopy) {
+        const previousStatus = quoteList.find((q) => q.id === activeQuoteId)?.status || "draft";
+        try {
+          const savedStatus = await updateCloudFinalQuoteStatus(cloud.dealerId, activeQuoteId, quoteStatus);
+          if (String(savedStatus?.status || "").toLowerCase() !== String(quoteStatus || "").toLowerCase()) {
+            throw new Error("Server không xác nhận trạng thái báo giá mới");
+          }
+          await reloadQuotes();
+          notify.success("Đã lưu trạng thái bán hàng. Nội dung Final không thay đổi.");
+        } catch (statusError) {
+          setQuoteStatus(previousStatus);
+          throw statusError;
+        }
+        return;
+      }
       const savedId = await saveCloudQuote(cloud.dealerId, buildQuoteSnapshot({ asCopy }));
       setActiveQuoteId(savedId);
       await Promise.all([reloadQuotes(), cloud?.refreshBilling?.()]);
@@ -3033,19 +3070,19 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                 ? (commercialAssessment.unknownCostCount > 0 ? `Lãi gộp — · thiếu giá vốn ${commercialAssessment.unknownCostCount} dòng` : "Lãi gộp —")
                 : `${grossMarginPct < 0 ? "▼" : "▲"} Lãi gộp ${grossMarginPct}%`}
             </div>
-            <div className={`engineering-panel ${engineeringAssessment.status.toLowerCase()}`}>
+            {shouldShowEngineeringPanel(engineeringAssessment, industryProfile?.id) && <div className={`engineering-panel ${engineeringAssessment.status.toLowerCase()}`}>
               <div className="engineering-panel-head">
                 <div>
-                  <strong>Engineering checks</strong>
-                  <span>P2.3 · constraint kỹ thuật deterministic</span>
+                  <strong>Kiểm tra kỹ thuật</strong>
+                  <span>Số kênh đầu ghi, nguồn PoE, dung lượng lưu trữ và tương thích thiết bị</span>
                 </div>
                 <b>{engineeringAssessment.counts.error > 0 ? `${engineeringAssessment.counts.error} lỗi` : engineeringAssessment.counts.warning > 0 ? `${engineeringAssessment.counts.warning} cần xem` : engineeringAssessment.counts.total > 0 ? "Đạt" : "Chưa có dữ liệu"}</b>
               </div>
-              {!isFinalQuote && (
+              {!isFinalQuote && shouldShowCctvRequirementInputs(engineeringAssessment) && (
                 <div className="engineering-requirements">
-                  <label><span>Retention (ngày)</span><input type="number" min="0" value={engineeringRequirements.retentionDays || 0} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, retentionDays: Math.max(0, Number(e.target.value) || 0) }))} /></label>
-                  <label><span>Bitrate mặc định (Mbps)</span><input type="number" min="0" step="0.1" value={engineeringRequirements.defaultCameraBitrateMbps || 0} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, defaultCameraBitrateMbps: Math.max(0, Number(e.target.value) || 0) }))} /></label>
-                  <label><span>Storage safety (%)</span><input type="number" min="0" max="100" value={engineeringRequirements.storageSafetyPercent ?? 10} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, storageSafetyPercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))} /></label>
+                  <label><span>Thời gian lưu (ngày)</span><input type="number" min="0" value={engineeringRequirements.retentionDays || 0} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, retentionDays: Math.max(0, Number(e.target.value) || 0) }))} /></label>
+                  <label><span>Bitrate camera mặc định (Mbps)</span><input type="number" min="0" step="0.1" value={engineeringRequirements.defaultCameraBitrateMbps || 0} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, defaultCameraBitrateMbps: Math.max(0, Number(e.target.value) || 0) }))} /></label>
+                  <label><span>Dự phòng lưu trữ (%)</span><input type="number" min="0" max="100" value={engineeringRequirements.storageSafetyPercent ?? 10} onChange={(e) => setEngineeringRequirements((r) => ({ ...r, storageSafetyPercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }))} /></label>
                 </div>
               )}
               {engineeringAssessment.counts.total === 0 ? (
@@ -3070,7 +3107,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                 </label>
               )}
               {engineeringAssessment.counts.pass > 0 && engineeringAssessment.issues.length > 0 && <details className="engineering-passed"><summary>{engineeringAssessment.counts.pass} kiểm tra đã đạt</summary>{engineeringAssessment.passed.slice(0, 8).map((item) => <div key={item.ruleCode}>✓ {item.title} · {item.detail}</div>)}</details>}
-            </div>
+            </div>}
             <div className={`quote-final-gate ${isFinalQuote ? "final" : (combinedFinalReady ? "ready" : "blocked")}`}>
               <div className="quote-final-gate-head">
                 <div>
@@ -3100,7 +3137,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
               <div className="quote-commercial-warning">
                 {commercialAssessment.hardErrorCount > 0
                   ? `⚠ ${commercialAssessment.hardErrorCount} dòng chưa đủ sản phẩm/giá bán — chưa thể chốt hoặc xuất.`
-                  : `⚠ ${commercialAssessment.atOrBelowCostCount} dòng bán bằng hoặc dưới giá vốn — cần kiểm tra trước khi xuất.`}
+                  : `⚠ ${commercialAssessment.atOrBelowCostCount} dòng bán bằng hoặc dưới giá vốn (${commercialAssessment.negativeMarginCount} dòng bán lỗ). Được phép chốt sau khi xác nhận.`}
               </div>
             )}
             <div className="s-rows">
@@ -3178,9 +3215,10 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           products={products}
           markups={markups}
           current={productById[editingLine.line.productId]}
-          line={editingLine.line}
+          line={rooms.find((room) => room.id === editingLine.roomId)?.lines.find((line) => line.id === editingLine.line.id) || editingLine.line}
           learningInsight={getQuoteLearningInsight(productById[editingLine.line.productId] || {})}
           onSetFactor={(factor) => setLineFactor(editingLine.roomId, editingLine.line.id, factor)}
+          onSetSalePrice={(value) => setLineManualSalePrice(editingLine.roomId, editingLine.line.id, value)}
           onSwap={(pid) => swapLineProduct(editingLine.roomId, editingLine.line.id, pid)}
           onClose={() => setEditingLine(null)}
         />
@@ -3442,7 +3480,7 @@ function SolutionFamilies({ products, solutionFamilies = [], setSolutionFamilies
 }
 
 // Modal đổi thiết bị cho 1 dòng (giữ nguyên SL & hệ số)
-function LineProductSwap({ products, markups = [], current, line, learningInsight = null, onSetFactor, onSwap, onClose }) {
+function LineProductSwap({ products, markups = [], current, line, learningInsight = null, onSetFactor, onSetSalePrice, onSwap, onClose }) {
   const [q, setQ] = useState("");
   const filtered = products.filter(
     (p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.sku || "").toLowerCase().includes(q.toLowerCase())
@@ -3472,9 +3510,12 @@ function LineProductSwap({ products, markups = [], current, line, learningInsigh
               <input
                 type="number"
                 step="0.05"
-                min="1"
+                min="0.05"
                 value={line?.factor || 1}
-                onChange={(e) => onSetFactor?.(parseFloat(e.target.value) || 1)}
+                onChange={(e) => {
+                  const factor = Number(e.target.value);
+                  if (Number.isFinite(factor) && factor > 0) onSetFactor?.(factor);
+                }}
               />
             </label>
             <div className="hs-quick">
@@ -3483,7 +3524,23 @@ function LineProductSwap({ products, markups = [], current, line, learningInsigh
                 return <button key={m.id || factor} className={(line?.factor || 1) === factor ? "on" : ""} onClick={() => onSetFactor?.(factor)}>{factor}</button>;
               })}
             </div>
-            <p>Chỉ chỉnh khi dòng này cần hệ số khác markup chung.</p>
+            <p>Có thể dùng hệ số dưới 1 để bán dưới giá vốn. Giá thấp sẽ được cảnh báo khi chốt.</p>
+          </div>
+        )}
+        {current && (
+          <div className="line-detail-factor">
+            <label>
+              <span>Giá bán riêng cho báo giá này (đ/đơn vị)</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={line?.manualSalePrice ?? ""}
+                placeholder={`Theo catalog: ${VND(quoteLineSalePrice(current, { ...line, manualSalePrice: undefined }))}`}
+                onChange={(e) => onSetSalePrice?.(e.target.value === "" ? null : e.target.value)}
+              />
+            </label>
+            <p>Để trống để dùng giá catalog/hệ số; giá riêng chỉ áp dụng cho báo giá này, không thay đổi giá vốn hoặc danh mục.</p>
           </div>
         )}
         <input className="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} style={{ width: "100%", marginBottom: 10 }} />
@@ -4522,7 +4579,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
     notify.success(`Đã học: từ lần sau SmartQuote sẽ tự thêm “${recommendation.label}” cho hệ này nếu còn thiếu.`);
   };
 
-  const createQuoteFromBom = () => {
+  const createQuoteFromBom = async () => {
     if (!bomPreview) return;
     const variants = buildBomQuoteVariants({
       bomPreview,
@@ -4551,8 +4608,13 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
       return;
     }
     if (selected?.pricingNeedsReviewCount > 0) {
-      notify.warning(`Có ${selected.pricingNeedsReviewCount} dòng giá vốn chưa có hệ số giá bán > 1. Hãy chọn/nhập hệ số giá bán trước khi tạo báo giá.`);
-      return;
+      const accepted = await confirmAction({
+        title: "Tạo báo giá từ BOM với giá ưu đãi?",
+        message: `Có ${selected.pricingNeedsReviewCount} dòng dùng hệ số giá bán ≤ 1. Bạn có thể tiếp tục và điều chỉnh giá từng dòng trước khi Final.`,
+        confirmLabel: "Tạo báo giá để kiểm tra",
+        tone: "default",
+      });
+      if (!accepted) return;
     }
     if (!selected?.ready) {
       notify.warning("Chưa có dòng BOM nào đủ match để tạo báo giá. Hãy chọn sản phẩm catalog cho ít nhất một dòng.");
@@ -4977,9 +5039,9 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                     </div>
                     <label className="bom-price-factor" title="Áp cho sản phẩm dùng giá vốn/markup; sản phẩm fixed giữ nguyên giá niêm yết">
                       <span>Hệ số giá bán</span>
-                      <input type="number" min="1" step="0.05" value={bomQuoteFactor} onChange={(e) => setBomQuoteFactor(Math.max(1, Number(e.target.value) || 1))} />
+                      <input type="number" min="0.05" step="0.05" value={bomQuoteFactor} onChange={(e) => { const factor = Number(e.target.value); if (Number.isFinite(factor) && factor > 0) setBomQuoteFactor(factor); }} />
                     </label>
-                    <button className="btn-primary" style={{ width: "auto" }} disabled={!selectedQuoteVariant?.ready || coreUnresolvedLines.length > 0 || completenessAssessment.counts.required > 0 || (selectedQuoteVariant?.pricingNeedsReviewCount || 0) > 0} onClick={createQuoteFromBom}>
+                    <button className="btn-primary" style={{ width: "auto" }} disabled={!selectedQuoteVariant?.ready || coreUnresolvedLines.length > 0 || completenessAssessment.counts.required > 0} onClick={createQuoteFromBom}>
                       Tạo PA {selectedQuoteVariant?.shortLabel || "B"}: {selectedQuoteVariant?.label || "Tiêu chuẩn"} →
                     </button>
                   </div>
@@ -5044,7 +5106,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                           <span>margin {variant.marginPercent == null ? "—" : `${variant.marginPercent}%`}</span>
                         </div>
                         {variant.unmatchedCount > 0 && <div className="bom-variant-warn">Còn {variant.unmatchedCount} dòng chưa match</div>}
-                        {variant.pricingNeedsReviewCount > 0 && <div className="bom-variant-warn">{variant.pricingNeedsReviewCount} dòng chưa có markup an toàn (×{variant.defaultMarkupFactor})</div>}
+                        {variant.pricingNeedsReviewCount > 0 && <div className="bom-variant-warn">{variant.pricingNeedsReviewCount} dòng dùng hệ số ≤ 1 (×{variant.defaultMarkupFactor}) — cần xác nhận</div>}
                       </button>
                     ))}
                   </div>
@@ -5065,7 +5127,7 @@ function TakeoffReader({ products, nameMap, setNameMap, markups, company, cloud,
                   )}
                   {selectedQuoteVariant?.pricingNeedsReviewCount > 0 && (
                     <div className="bom-variant-note bom-pricing-note">
-                      Chưa thể tạo báo giá: {selectedQuoteVariant.pricingNeedsReviewCount} dòng đang dùng giá vốn với hệ số ×{bomQuoteFactor}. Nhập hệ số &gt; 1 hoặc cấu hình mức giá bán của công ty.
+                      Cảnh báo: {selectedQuoteVariant.pricingNeedsReviewCount} dòng đang dùng hệ số giá ≤ 1 (×{bomQuoteFactor}). Có thể tạo báo giá và xác nhận giá chiến lược trước khi Final.
                     </div>
                   )}
                 </div>
@@ -5723,13 +5785,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const hasCapabilityQuiet = (capabilityKey) => !cloud?.enabled || canAccessCapability(cloud.billing, capabilityKey).ok;
   const applyLearningIfAllowed = (items, meta = {}) => {
     if (!hasCapabilityQuiet("correction_learning")) return { products: items || [], hits: 0, quoteSuggestions: 0 };
-    const corrected = applyCorrectionLearning(items, meta);
-    const fromFinalQuotes = applyQuoteIdentityLearning(corrected.products || []);
-    return {
-      products: fromFinalQuotes.products,
-      hits: Number(corrected.hits || 0) + Number(fromFinalQuotes.hits || 0),
-      quoteSuggestions: Number(fromFinalQuotes.suggestions || 0),
-    };
+    return applyImportLearning(items, meta);
   };
 
   // ── TEMPLATE MEMORY: centralized in import-engine/templateMemory.js ──
@@ -5841,15 +5897,13 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
   const learnFromProducts = (items, meta = {}) => {
     if (!hasCapabilityQuiet("correction_learning")) return 0;
-    const valid = (items || []).filter((p) => p && (p.name || p.sku));
-    if (!valid.length) return 0;
-    const res = saveProductLearningBatch(valid, {
+    const saved = learnFromImportedRows(items, {
       fileName: file?.name || meta.fileName || "",
       detectedIndustry: importResult?.detectedIndustry || meta.detectedIndustry || "catalog",
       ...meta,
     });
     refreshLearningStats();
-    return res.saved || 0;
+    return saved;
   };
 
   const logCatalogImportIfCloud = (items, meta = {}) => {
@@ -5881,18 +5935,12 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     { key: "image",     label: "Ảnh URL", required: false },
   ];
 
-  const isOldQuoteImportForFile = (fileName = "") => importSourceKind === "old_quote" || isLikelyOldQuoteFileName(fileName);
-  const isCatalogSkippedProduct = (p) => {
-    const status = String(p?._meta?.canonicalStatus || p?._meta?.status || p?.status || "").toLowerCase();
-    return status === "skipped" || !!p?._skipReason || !!p?._meta?.skipReason || !!p?._meta?.oldQuoteGuardSkipped;
-  };
+  // RC16 S4: the decision pipeline lives in import-engine/catalogImportPipeline.js
+  // so scripts/e2e-import-smoke.mjs runs the very same code as this screen.
+  const isOldQuoteImportForFile = (fileName = "") => isOldQuoteImport(fileName, importSourceKind);
+  const isCatalogSkippedProduct = isCatalogSkippedImportProduct;
   const catalogSkipCount = (items = []) => (items || []).filter(isCatalogSkippedProduct).length;
-  const splitCatalogPreviewProducts = (items = []) => {
-    const all = (items || []).filter(Boolean);
-    const skipped = all.filter(isCatalogSkippedProduct);
-    const active = all.filter((p) => !isCatalogSkippedProduct(p));
-    return { active, skipped, skippedCount: skipped.length };
-  };
+  const splitCatalogPreviewProducts = splitCatalogImportPreview;
   const catalogSkipWarnings = (items = [], fileName = "", upstreamSkipped = 0) => {
     const count = catalogSkipCount(items) + Math.max(0, Number(upstreamSkipped) || 0);
     if (!count) return [];
@@ -5901,13 +5949,12 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   };
   const sanitizeImportedProducts = (items, opts = {}) => {
     const sourceName = opts.sourceFileName || opts.fileName || file?.name || "";
-    const sanitized = sanitizeCatalogProducts(items, {
+    return prepareCatalogImportProducts(items, {
       ...opts,
+      catalog: products_ref.current || [],
       sourceFileName: sourceName,
       importSourceKind,
-      oldQuoteMode: isOldQuoteImportForFile(sourceName),
     });
-    return applyCommercialValidation(sanitized, { existingProducts: products_ref.current || [] }).products;
   };
 
   // Đọc file và detect headers
@@ -5998,14 +6045,14 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     // P1.5.4 identity safety: batch import never uses bare-SKU last-file-wins.
     // Supplier/brand + SKU + variant evidence decides whether rows can be merged;
     // conflicts remain separate and are marked for review.
-    const identityBatch = dedupeCatalogIdentities(allProducts);
-    const deduped = identityBatch.products;
-    if (identityBatch.conflicts > 0) {
-      fileLog.push(`⚠ ${identityBatch.conflicts} xung đột nhận diện được giữ riêng để kiểm tra`);
+    const cleanDedupedSplit = prepareMultiFileImport(allProducts, {
+      catalog: products_ref.current || [],
+      sourceFileName: `${fileList.length} files`,
+      importSourceKind,
+    });
+    if (cleanDedupedSplit.conflicts > 0) {
+      fileLog.push(`⚠ ${cleanDedupedSplit.conflicts} xung đột nhận diện được giữ riêng để kiểm tra`);
     }
-
-    const cleanDedupedAll = sanitizeImportedProducts(deduped, { fileName: `${fileList.length} files` });
-    const cleanDedupedSplit = splitCatalogPreviewProducts(cleanDedupedAll);
     const cleanDeduped = cleanDedupedSplit.active;
     const upstreamSkipped = filePreviews.reduce((sum, p) => sum + Number(p?.summary?.skipped || 0), 0);
     const totalSkipped = upstreamSkipped + cleanDedupedSplit.skippedCount;
@@ -6016,14 +6063,14 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       ...filePreviews.flatMap((p) => p?.warnings || []),
       ...catalogSkipWarnings(cleanDedupedSplit.skipped, `${fileList.length} files`, upstreamSkipped),
     ];
-    setImportResult(productsToImportPreviewResult({
+    setImportResult({ ...productsToImportPreviewResult({
       products: cleanDeduped,
       fileName: `${fileList.length} files`,
       engine: "mixed",
       importType: "catalog_batch",
       warnings: batchWarnings,
       summary: { skipped: totalSkipped },
-    }));
+    }), skippedRows: filePreviews.flatMap((p) => p?.skippedRows || []) });
     setAiStatus(`✓ Đọc xong ${fileList.length} file — ${cleanDeduped.length} sản phẩm có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""}`);
     setStep("preview");
   };
@@ -6092,7 +6139,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       setLearningNotice(learned.hits > 0 ? `✓ Áp dụng ${learned.hits} học từ lần sửa trước` : "");
       refreshLearningStats();
       setParsed(cleanItems);
-      setImportResult(productsToImportPreviewResult({
+      setImportResult({ ...productsToImportPreviewResult({
         products: cleanItems,
         fileName: f.name,
         engine: preview?.engine || "excel-v2",
@@ -6101,7 +6148,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
         templateKnown: !!preview?.templateKnown,
         warnings: [...(preview?.warnings || []), ...catalogSkipWarnings(cleanItemsSplit.skipped, f.name, upstreamSkipped)],
         summary: { skipped: totalSkipped, noteRows: preview?.summary?.noteRows || 0 },
-      }));
+      }), skippedRows: preview?.skippedRows || [] });
       const s = result.stats;
       setBatchLog([
         `✓ ${f.name}: ${cleanItems.length} SP có thể nhập${totalSkipped ? ` · tự bỏ qua ${totalSkipped} dòng không thuộc catalog` : ""} (${result.engine}${result.domain ? ", " + result.domain : ""})`,
@@ -6341,10 +6388,10 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     const quoteTable = manualHeaderLabels.some(x => /đơn\s*giá|unit\s*price/.test(x))
       && manualHeaderLabels.some(x => /thành\s*tiền|line\s*total|amount/.test(x))
       && manualHeaderLabels.some(x => /^(số\s*lượng|sl|qty|quantity)$/.test(x));
-    const rawPreview = buildCatalogPreview(selected.rows, colMap, {
+    // RC16 S1: same file-name supplier guess as the engine path, labelled weak.
+    const rawPreview = buildManualMappingPreview(selected.rows, colMap, {
       startRowIndex: selected.start - 1,
-      defaultSupplier: file?.name?.replace(/\.(xlsx|xls)$/i, "") || "",
-      sheetName: file?.name || "manual-mapping.xlsx",
+      fileName: file?.name || "manual-mapping.xlsx",
       quoteTable,
     });
     const learned = applyLearningIfAllowed(rawPreview, { fileName: file?.name || "manual-mapping.xlsx" });
@@ -6381,7 +6428,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   };
 
   const rebuildImportResultFromParsed = (list, engine = "user-reviewed") => {
-    setImportResult(productsToImportPreviewResult({
+    setImportResult({ ...productsToImportPreviewResult({
       products: list,
       fileName: file?.name || "import",
       engine,
@@ -6390,7 +6437,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       templateKnown: !!importResult?.templateKnown,
       warnings: importResult?.warnings || [],
       summary: { skipped: importResult?.summary?.skipped || 0, noteRows: importResult?.summary?.noteRows || 0 },
-    }));
+    }), skippedRows: importResult?.skippedRows || [] });
   };
 
   const getProductLineId = (p) => p?._meta?.lineId || p?.lineId || "";
@@ -6425,7 +6472,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const hasPriceSafetyIssue = (p, index) => getPreviewIssues(p, index).some(isPriceSafetyIssue);
   // Low-evidence PDF rows must be inspected one-by-one. They may remain in review
   // to protect recall, but bulk approval must never turn them into silent false-products.
-  const isManualReviewOnlyIssue = (it) => ["pdf_ocr_uncertain"].includes(issueCode(it));
+  const isManualReviewOnlyIssue = (it) => ["pdf_ocr_uncertain", "catalog_match_ambiguous"].includes(issueCode(it));
   const hasManualReviewOnlyIssue = (p, index) => getPreviewIssues(p, index).some(isManualReviewOnlyIssue);
   const priceSafetyRows = () => parsed
     .map((p, index) => ({ p, index, issues: getPreviewIssues(p, index).filter(isPriceSafetyIssue) }))
@@ -6433,13 +6480,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
   const priceColumnUncertainRows = () => parsed
     .map((p, index) => ({ p, index, issues: getPreviewIssues(p, index).filter(isPriceColumnUncertainIssue) }))
     .filter((r) => r.issues.length);
-  const isBlockingIssue = (it) => {
-    const code = issueCode(it);
-    const msg = typeof it === "string" ? it.toLowerCase() : String(it?.message || "").toLowerCase();
-    if (issueLevel(it) === "error") return true;
-    return /missing_product_name|price_parse_failed|price_unreasonable|non_product_row|name_too_long/.test(code)
-      || /thiếu tên|không phải sản phẩm|giá nhập bất thường|không tách được giá|tên sản phẩm quá dài/.test(msg);
-  };
+  const isBlockingIssue = isBlockingImportIssue;
   const isWarningOnlyProduct = (p, index = null) => {
     const issues = getPreviewIssues(p, index);
     if (!issues.length) return false;
@@ -6550,24 +6591,23 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
 
   const approvePreviewRow = (index) => {
     const current = parsed[index];
+    if (current && getPreviewIssues(current, index).some((it) => issueCode(it) === "price_column_uncertain")) {
+      notify.warning("Cột Đơn giá chưa rõ vai trò. Hãy xác nhận Giá nhập hoặc Giá bán cho toàn bộ file trước khi duyệt dòng.");
+      return;
+    }
+    if (current && getPreviewIssues(current, index).some((it) => issueCode(it) === "catalog_match_ambiguous")) {
+      notify.warning("Dòng này khớp catalog chưa rõ. Hãy chọn Cập nhật sản phẩm hiện có hoặc Thêm thành sản phẩm mới.");
+      return;
+    }
     if (current && isBlockingPreviewRow(current, index)) {
       notify.warning("Dòng này là lỗi nặng nên không thể Duyệt nguyên dòng. Hãy bấm Sửa để chỉnh giá/tên/SKU hoặc bấm Xóa để bỏ qua.");
       goToPreviewIssue("blocking", "first");
       return;
     }
     setParsed(prev => {
-      const next = prev.map((p, i) => i === index ? {
-        ...p,
-        _meta: {
-          ...(p._meta || {}),
-          issues: [],
-          status: "new",
-          canonicalStatus: "auto_approved",
-          confidence: 0.9,
-          userApproved: true,
-        }
-      } : p);
-      if (next[index]) {
+      const approved = approveImportRow(prev, index, { issuesFor: (p) => p?._meta?.issues || p?.issues || [] });
+      const next = approved.refused ? prev : approved.items;
+      if (!approved.refused && next[index]) {
         if (hasCapabilityQuiet("correction_learning")) saveProductLearning(next[index], { fileName: file?.name || "", detectedIndustry: importResult?.detectedIndustry || "catalog", userApproved: true });
         recordPilotCorrection("approve", current, next[index], "user_approved_review_row", getPreviewIssues(current, index));
         refreshLearningStats();
@@ -6652,7 +6692,7 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     setPriceColumnConfirmed(true);
     setPriceColumnRole("cost");
     setParsed(prev => {
-      const next = applyAmbiguousPriceRole(prev, "cost");
+      const next = applyPriceRoleDecision(prev, "cost", { catalog: products_ref.current || [] });
       rebuildImportResultFromParsed(next, "price-column-confirmed-as-cost");
       return next;
     });
@@ -6674,8 +6714,16 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     setPriceColumnConfirmed(true);
     setPriceColumnRole("list");
     setParsed(prev => {
-      const next = applyAmbiguousPriceRole(prev, "list");
+      const next = applyPriceRoleDecision(prev, "list", { catalog: products_ref.current || [] });
       rebuildImportResultFromParsed(next, "price-column-confirmed-as-list");
+      return next;
+    });
+  };
+
+  const decideCatalogMatch = (index, kind, targetId = null) => {
+    setParsed(prev => {
+      const next = applyCatalogMatchDecision(prev, index, kind, targetId, { catalog: products_ref.current || [] });
+      rebuildImportResultFromParsed(next, "catalog-match-decision");
       return next;
     });
   };
@@ -6722,7 +6770,10 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
       image: String(editingDraft.image || "").trim(),
       _meta: {
         ...(editingDraft._meta || {}),
-        issues: [],
+        issues: (editingDraft._meta?.issues || []).filter((it) => {
+          const code = String(it?.code || "").toLowerCase();
+          return code === "price_column_uncertain" && !editingDraft._meta?.priceColumnConfirmed;
+        }),
         status: "new",
         canonicalStatus: "auto_approved",
         confidence: 0.92,
@@ -6736,7 +6787,8 @@ function CatalogImporter({ products, setProducts, company, onClose, cloud, onUpg
     setParsed(prev => {
       const before = prev[editingIndex];
       const rawNext = prev.map((p, i) => i === editingIndex ? edited : p);
-      const next = applyCommercialValidation(rawNext, { existingProducts: products_ref.current || [] }).products;
+      const rematched = annotateCatalogMatches(rawNext, products_ref.current || []);
+      const next = applyCommercialValidation(rematched, { existingProducts: products_ref.current || [] }).products;
       const finalEdited = next[editingIndex];
       if (hasCapabilityQuiet("correction_learning")) saveProductLearning(finalEdited, { fileName: file?.name || "", detectedIndustry: importResult?.detectedIndustry || "catalog", userEdited: true });
       recordPilotCorrection("edit", before, finalEdited, "user_edited_import_row", getPreviewIssues(before, editingIndex));
@@ -6759,9 +6811,11 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
       scrollToPreviewIndex(priceDanger[0].index);
       return;
     }
-    const cleaned = sanitizeImportedProducts(parsed, { fileName: file?.name || "import" });
-    const unsafe = cleaned.filter(isUnsafeImportedProduct);
-    const safeItems = cleaned.filter(p => !isUnsafeImportedProduct(p));
+    const { cleaned, unsafe, safe: safeItems } = finalizeCatalogImport(parsed, {
+      catalog: products_ref.current || [],
+      sourceFileName: file?.name || "import",
+      importSourceKind,
+    });
 
     if (unsafe.length > 0) {
       const sample = unsafe.slice(0, 5).map(p => `• ${p.name || "(thiếu tên)"}: ${(p._meta?.issues || []).map(i => i.message || i).slice(0, 2).join(", ")}`).join("\n");
@@ -6785,16 +6839,9 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
       return;
     }
 
-    const nextProductCount = (() => {
-      if (mergeMode === "replace") return finalItems.length;
-      const simulated = products.map((p) => canonicalizeLegacyProductForMatching(p));
-      for (const np of finalItems) {
-        const key = productIdentityKey(np);
-        const candidates = key ? simulated.filter((p) => productIdentityKey(p) === key && canAutoMergeIdentity(p, np)) : [];
-        if (candidates.length !== 1) simulated.push(np);
-      }
-      return simulated.length;
-    })();
+    const nextProductCount = mergeMode === "replace"
+      ? finalItems.length
+      : projectedCatalogCount(products, finalItems);
     if (!guardProductCount(cloud, nextProductCount, onUpgrade)) return;
 
     const learnedCount = learnFromProducts(finalItems, { acceptedAtMerge: true });
@@ -6805,56 +6852,7 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
     } else {
       // Merge by canonical identity, never by bare SKU. If the same SKU has
       // conflicting supplier/name evidence, keep it as a separate product.
-      setProducts((prev) => {
-        // P2.3.2: safely repair pre-canonicalization catalog rows when their
-        // stored source still contains an explicit Model/SKU label. This lets
-        // a re-import update the same product instead of adding a duplicate.
-        const updated = prev.map((p) => canonicalizeLegacyProductForMatching(p));
-        finalItems.forEach(np => {
-          const key = productIdentityKey(np);
-          const candidateIndexes = [];
-          if (key) {
-            updated.forEach((p, idx) => {
-              if (productIdentityKey(p) === key && canAutoMergeIdentity(p, np)) candidateIndexes.push(idx);
-            });
-          }
-          const idx = candidateIndexes.length === 1 ? candidateIndexes[0] : -1;
-          if (idx >= 0) {
-            // Cập nhật giá và thông số, giữ ảnh cũ. Name chỉ cập nhật khi incoming
-            // có tên rõ; identity gate ở trên đã xác nhận không xung đột.
-            updated[idx] = {
-              ...updated[idx],
-              name: np.name || updated[idx].name,
-              costPrice: np.costPrice || updated[idx].costPrice,
-              listPrice: np.listPrice || updated[idx].listPrice || 0,
-              publicPrice: np.publicPrice || np.listPrice || updated[idx].publicPrice || 0,
-              minRetailPrice: np.minRetailPrice || updated[idx].minRetailPrice || 0,
-              priceMode: (np.listPrice || np.publicPrice) ? "fixed" : (updated[idx].priceMode || np.priceMode || "markup"),
-              specs: np.specs || updated[idx].specs,
-              image: updated[idx].image || np.image || "",
-              category: np.category || updated[idx].category,
-              productType: np.productType || updated[idx].productType || "",
-              subtype: np.subtype || updated[idx].subtype || "",
-              model: np.model || updated[idx].model || "",
-              attributes: {
-                ...(updated[idx].attributes || {}),
-                ...(np.attributes || {}),
-                identity: {
-                  ...(updated[idx].attributes?.identity || {}),
-                  ...(np.attributes?.identity || {}),
-                },
-              },
-              supplier: np.supplier || updated[idx].supplier,
-              brand: np.brand || updated[idx].brand,
-              unit: np.unit || updated[idx].unit,
-            };
-          } else {
-            const newId = uid("p");
-            updated.push({ ...np, id: newId, priceMode: (np.listPrice || np.publicPrice) ? "fixed" : (np.priceMode || "markup") });
-          }
-        });
-        return updated;
-      });
+      setProducts((prev) => mergeCatalogImport(prev, finalItems, { idFactory: () => uid("p") }).products);
     }
     logCatalogImportIfCloud(finalItems, {
       sourceType: importResult?.importType || importResult?.engine || (webUrl ? "web" : "catalog"),
@@ -7130,6 +7128,16 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
                     <p>
                       <strong>{readyCount}</strong> sản phẩm có thể nhập · <strong>{c.actionableReview}</strong> cần duyệt · <strong>{c.advisoryOnly}</strong> cảnh báo không chặn · <strong>{skippedCount}</strong> dòng đã bỏ qua
                     </p>
+                    {(importResult?.skippedRows || []).length > 0 && (
+                      <details className="ci-skipped-rows" data-testid="import-skipped-rows">
+                        <summary>Đã bỏ qua {importResult.skippedRows.length} dòng có lý do — bấm để xem</summary>
+                        <ul>
+                          {importResult.skippedRows.slice(0, 50).map((s, i) => (
+                            <li key={`${s.sheet}-${s.row}-${i}`}><b>{s.sheet ? `${s.sheet} · ` : ""}dòng {s.row}</b>{s.rawText ? ` — “${String(s.rawText).slice(0, 90)}”` : ""}: {s.reason}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                   </div>
                   <div className="ci-import-hero-actions">
                     {hasReview && !hasBlocking && <button type="button" className="btn-ghost" onClick={() => setPreviewFilter("review")}>Xem dòng cần duyệt</button>}
@@ -7268,8 +7276,16 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
                       <td className="ci-product-cell">
                         <div className="ci-product-name">{p.name || "(thiếu tên)"}</div>
                         <div className="ci-product-meta">
-                          {[p.category, p.productType, p.subtype, p.model, p.unit, p.supplier].filter(Boolean).join(" · ")}
+                          {[p.category, p.productType, p.subtype, p.model, p.unit].filter(Boolean).join(" · ")}
+                          {(() => {
+                            const sup = effectiveImportSupplier(p);
+                            if (!sup.value) return null;
+                            return <span className={`ci-supplier-chip${sup.weak ? " weak" : ""}`} title={sup.kept ? "NCC trong danh mục được giữ nguyên khi cập nhật" : (sup.weak ? "NCC đoán từ tên file — nên kiểm tra lại" : "NCC đọc từ cột trong file")}> · {sup.value}{sup.weak ? " (đoán từ tên file)" : ""}</span>;
+                          })()}
                           {source && <span> · {source}</span>}
+                          {p?._meta?.catalogMatch?.kind === "update" && <span className="ci-match-tag update"> · Cập nhật</span>}
+                          {p?._meta?.catalogMatch?.kind === "new" && <span className="ci-match-tag new"> · Thêm mới</span>}
+                          {p?._meta?.catalogMatch?.kind === "ambiguous" && <span className="ci-match-tag ambiguous"> · Cần chọn</span>}
                         </div>
                       </td>
                       <td className="ci-sku-cell">{p.sku || "—"}</td>
@@ -7286,8 +7302,21 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
                       </td>
                       <td>
                         <div className="ci-row-actions clean">
+                          {p?._meta?.catalogMatch?.kind === "ambiguous" && (
+                            <>
+                              {p._meta.catalogMatch.candidates?.length === 1 ? (
+                                <button type="button" onClick={() => decideCatalogMatch(i, "update", p._meta.catalogMatch.candidates[0].id)}>Cập nhật {p._meta.catalogMatch.candidates[0].name || p._meta.catalogMatch.candidates[0].sku}</button>
+                              ) : (
+                                <select defaultValue="" onChange={(e) => { if (e.target.value) decideCatalogMatch(i, "update", e.target.value); }}>
+                                  <option value="">Chọn sản phẩm cập nhật…</option>
+                                  {(p._meta.catalogMatch.candidates || []).map((c) => <option key={c.id || c.index} value={c.id || ""}>{c.name || c.sku || c.id}</option>)}
+                                </select>
+                              )}
+                              <button type="button" onClick={() => decideCatalogMatch(i, "new")}>Thêm thành sản phẩm mới</button>
+                            </>
+                          )}
                           <button type="button" onClick={() => startEditPreviewRow(i)}>{isBlockingPreviewRow(p, i) ? "Sửa lỗi" : "Sửa"}</button>
-                          {issues.length > 0 && !isBlockingPreviewRow(p, i) && <button type="button" onClick={() => approvePreviewRow(i)}>Duyệt</button>}
+                          {issues.length > 0 && !isBlockingPreviewRow(p, i) && p?._meta?.catalogMatch?.kind !== "ambiguous" && <button type="button" onClick={() => approvePreviewRow(i)}>Duyệt</button>}
                           <button type="button" className="danger" onClick={() => removePreviewRow(i)}>Xóa</button>
                         </div>
                       </td>
@@ -7439,6 +7468,7 @@ Hãy chọn “Giá nhập / giá vốn”, “Giá bán / niêm yết” hoặc
 function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrade, onOpenImportHub, importOnly = false, onImportDone, importSourceKind = "catalog", industryProfile = getIndustryProfile("generic") }) {
   const [q, setQ] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
+  const [showDuplicateSkuOnly, setShowDuplicateSkuOnly] = useState(false);
   const [editing, setEditing] = useState(null);
   const [bulk, setBulk] = useState({ supplier: "", percent: "" });
   const [bulkError, setBulkError] = useState("");
@@ -7451,6 +7481,8 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
   const importRef = useRef();
 
   const suppliers = useMemo(() => [...new Set(products.map((p) => p.supplier).filter(Boolean))], [products]);
+  const duplicateSkuGroups = useMemo(() => findDuplicateSkuGroups(products), [products]);
+  const duplicateSkuSet = useMemo(() => new Set(duplicateSkuGroups.flatMap((g) => g.entries.map((e) => normalizeIdentitySku(e.item?.sku)))), [duplicateSkuGroups]);
 
   const parseBulkPercent = (value) => {
     const text = String(value || "")
@@ -7470,7 +7502,8 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
   const filtered = products.filter((p) => {
     const matchQ = p.name.toLowerCase().includes(q.toLowerCase()) || (p.sku || "").toLowerCase().includes(q.toLowerCase());
     const matchS = !supplierFilter || p.supplier === supplierFilter;
-    return matchQ && matchS;
+    const matchD = !showDuplicateSkuOnly || duplicateSkuSet.has(normalizeIdentitySku(p.sku));
+    return matchQ && matchS && matchD;
   });
 
   const openProductImagePicker = (product) => {
@@ -7741,6 +7774,9 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
       let next = ps.map((p) => {
         const hit = preview.matched.find((m) => m.existing.id === p.id);
         if (!hit) return p;
+        if (hit.priceColumnRole === "list") {
+          return { ...p, listPrice: Math.round(hit.newList ?? hit.newCost), publicPrice: Math.round(hit.newList ?? hit.newCost), priceMode: "fixed" };
+        }
         return { ...p, costPrice: Math.round(hit.newCost) };
       });
       if (opts.addNew) {
@@ -7751,7 +7787,11 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
           category: "",
           supplier: it.supplier || "",
           unit: "Cái",
-          costPrice: Math.round(it.costPrice),
+          costPrice: it?._meta?.priceColumnRole === "list" ? 0 : Math.round(it.costPrice),
+          listPrice: it?._meta?.priceColumnRole === "list" ? Math.round(it.listPrice || it.publicPrice || it.costPrice || 0) : 0,
+          publicPrice: it?._meta?.priceColumnRole === "list" ? Math.round(it.listPrice || it.publicPrice || it.costPrice || 0) : 0,
+          priceMode: it?._meta?.priceColumnRole === "list" ? "fixed" : "markup",
+          _meta: it._meta || {},
         }));
         next = [...next, ...toAdd];
       }
@@ -7960,6 +8000,13 @@ function Catalog({ products, setProducts, company, markups = [], cloud, onUpgrad
           </div>
         </details>
       </div>
+
+      {duplicateSkuGroups.length > 0 && (
+        <div className="catalog-duplicate-warning">
+          <span>⚠️ Danh mục có {duplicateSkuGroups.length} nhóm SKU trùng cùng tên từ dữ liệu cũ. SmartQuote không tự gộp để tránh mất dữ liệu.</span>
+          <button className="btn-ghost" onClick={() => setShowDuplicateSkuOnly((v) => !v)}>{showDuplicateSkuOnly ? "Xem toàn bộ" : "Xem nhóm trùng"}</button>
+        </div>
+      )}
 
       {/* Drop zone kéo thả ảnh / folder thẳng từ Finder */}
       <div
@@ -9432,9 +9479,9 @@ function Row({ label, value }) {
 
 function quotePartyValueForLabel(product = {}, label = "") {
   const normalized = normalizeExcelTemplateText(label);
-  const origin = product.origin || product.attributes?.origin || "";
-  const brand = product.brand || "";
-  const supplier = product.supplier || "";
+  // RC16: customer-facing values only — a supplier/brand SmartQuote guessed from
+  // an import file name ("den", "Book1") is never printed on the quote.
+  const { origin, brand, supplier } = customerFacingParty(product);
   if (normalized.includes("xuat xu") || normalized === "origin" || normalized.includes("country of origin")) {
     return origin || supplier || brand || ""; // supplier fallback only for legacy catalog rows.
   }
@@ -9654,9 +9701,8 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
                   product: {
                     name: p.name,
                     sku: p.sku || "",
-                    supplier: p.supplier || "",
-                    brand: p.brand || "",
-                    origin: p.origin || p.attributes?.origin || "",
+                    // RC16: never print a supplier/brand guessed from an import file name.
+                    ...customerFacingParty(p),
                     unit: p.unit || "Cái",
                     specs: p.specs || "",
                     image: p.image || "",
@@ -9751,7 +9797,8 @@ async function exportQuoteExcel({ company, customer, rooms, productById, lineSal
       const lineTotal = sp * l.qty;
       sectionSum += lineTotal;
       const er = R + 1;
-      push([sttGlobal, l.note || "", p.name, p.specs || "", p.image || "", p.sku || "", p.origin || p.attributes?.origin || p.supplier || "", p.unit || "Cái", l.qty, sp, ""]);
+      const party = customerFacingParty(p); // RC16: no file-name guesses on customer quotes
+      push([sttGlobal, l.note || "", p.name, p.specs || "", p.image || "", p.sku || "", party.origin || party.supplier || "", p.unit || "Cái", l.qty, sp, ""]);
       formulas.push({ r: R-1, c: 10, f: `I${er}*J${er}`, v: lineTotal });
       money.push([R-1, 9]); money.push([R-1, 10]);
     });
@@ -10011,6 +10058,8 @@ const CSS = `
 .cat-thumb-button:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}
 .cat-thumb-source{position:absolute;right:-3px;top:-3px;width:15px;height:15px;border-radius:999px;background:#10b981;color:#fff;border:2px solid var(--surface);font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;}
 .cat-toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
+.catalog-duplicate-warning{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--amber-border,#d8a821);background:var(--amber-bg,#fff8dc);border-radius:10px;font-size:12px;}
+.ci-supplier-chip.weak{color:var(--c-warn,#b77900)}.ci-match-tag{font-weight:800}.ci-match-tag.update{color:var(--green)}.ci-match-tag.new{color:var(--brand)}.ci-match-tag.ambiguous{color:var(--c-warn,#b77900)}
 .cat-toolbar .search,.search{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;}
 .cat-toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;}
 .cat-advanced-tools{position:relative;}

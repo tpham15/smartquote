@@ -105,13 +105,21 @@ export function buildFinalQuoteGate({
     { id: "product", label: "Không có dòng mất sản phẩm", pass: missingProductCount === 0, detail: missingProductCount ? `${missingProductCount} dòng` : "0 dòng" },
     { id: "sale_price", label: "Không có dòng thiếu giá bán", pass: missingSalePriceCount === 0, detail: missingSalePriceCount ? `${missingSalePriceCount} dòng` : "0 dòng" },
     { id: "cost", label: "Đủ giá vốn để kiểm tra margin", pass: unknownCostCount === 0, detail: unknownCostCount ? `${unknownCostCount} dòng thiếu giá vốn` : "Đầy đủ" },
-    { id: "margin", label: "Không bán bằng / dưới giá vốn", pass: atOrBelowCostCount === 0, detail: atOrBelowCostCount ? `${atOrBelowCostCount} dòng (${negativeMarginCount} dòng bán lỗ)` : "0 dòng" },
     { id: "snapshot", label: "Hoàn tất dữ liệu sản phẩm và giá", pass: lineCount > 0 && frozenLineCount === lineCount, detail: `${frozenLineCount}/${lineCount} dòng sẵn sàng` },
   ];
+  // Commercial price strategy belongs to the business owner: selling at cost
+  // or at a loss is allowed after explicit confirmation. Never treat it as a
+  // hard Final/Export gate. Keep the warning and cost snapshot intact.
+  const warnings = atOrBelowCostCount > 0 ? [{
+    id: "margin",
+    label: `Có ${atOrBelowCostCount} dòng bán bằng/dưới giá vốn`,
+    detail: `${negativeMarginCount} dòng bán lỗ. Cần xác nhận chủ động trước khi chốt.`,
+  }] : [];
   const blockers = checks.filter((check) => !check.pass);
   return {
     ready: blockers.length === 0,
     checks,
+    warnings,
     blockers,
     blockerCount: blockers.length,
     frozenLineCount,

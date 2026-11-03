@@ -1,5 +1,5 @@
 import { inferCategoryForProduct } from "./categoryInference.js";
-import { productIdentityKey, canAutoMergeIdentity, appendIdentityReviewIssue, normalizeIdentitySku } from "./productIdentity.js";
+import { productIdentityKey, canAutoMergeIdentity, appendIdentityReviewIssue, normalizeIdentitySku, normalizeIdentityName, isClearModelSku, technicalVariantsCompatible, isWeakSupplierEvidence, isWeakBrandEvidence, effectiveSupplierSource, effectiveBrandSource } from "./productIdentity.js";
 import { applyProductSemantics } from "./productSemantics.js";
 
 // ============================================================
@@ -64,12 +64,11 @@ function getIssueLevel(it) {
 
 function isHardIssueAfterUserAcceptance(it, product) {
   const code = getIssueCode(it);
-  if (["missing_product_name", "non_product_row"].includes(code)) return true;
-  if (["price_parse_failed", "price_unreasonable"].includes(code)) {
-    // Nếu user đã duyệt nhưng vẫn không có giá nhập hợp lệ thì bắt sửa giá.
-    // Nếu đã có giá nhập dương, coi như user đã xác nhận giá đó và không chặn merge nữa.
-    return !(Number(product?.costPrice || product?.price || 0) > 0);
-  }
+  const level = getIssueLevel(it);
+  // RC14 B2 / RC15 F3: generic per-row approval may dismiss ordinary
+  // warnings, but it must never replace a required workflow decision.
+  if (level === "error") return true;
+  if (["price_scale_suspect", "price_column_uncertain", "catalog_match_ambiguous"].includes(code)) return true;
   return false;
 }
 
@@ -648,6 +647,57 @@ function mergeIssues(a = [], b = []) {
   return out;
 }
 
+function relabelSource(product, key, value) {
+  const out = { ...product };
+  if (out._meta) {
+    out._meta = { ...out._meta, [key]: value };
+    if (out._meta.source && typeof out._meta.source === "object") out._meta.source = { ...out._meta.source, [key]: value };
+  }
+  if (out.source && typeof out.source === "object") out.source = { ...out.source, [key]: value };
+  return out;
+}
+
+function preferStrongPartyEvidence(merged, winner = {}, loser = {}) {
+  let out = merged;
+  const loserSupplier = text(loser.supplier);
+  if (loserSupplier && !isWeakSupplierEvidence(loser) && (isWeakSupplierEvidence(winner) || !text(winner.supplier))) {
+    out = relabelSource({ ...out, supplier: loserSupplier }, "supplierSource", effectiveSupplierSource(loser));
+  }
+  const loserBrand = text(loser.brand);
+  if (loserBrand && !isWeakBrandEvidence(loser) && (isWeakBrandEvidence(winner) || !text(winner.brand))) {
+    out = relabelSource({ ...out, brand: loserBrand }, "brandSource", effectiveBrandSource(loser));
+  }
+  return out;
+}
+
+// RC16 perf: candidates are looked up through an index of clear-model SKUs
+// (normalized SKU → positions in `out`), so dedupe stays O(n) instead of the
+// O(n²) scan that made 5,000-row files take seconds.
+function indexClearSku(skuIndex, product, position) {
+  const sku = normalizeIdentitySku(product?.sku);
+  if (!sku || !isClearModelSku(sku)) return;
+  const list = skuIndex.get(sku);
+  if (!list) skuIndex.set(sku, [position]);
+  else if (!list.includes(position)) list.push(position);
+}
+
+function findVariantCompatibleOccurrence(out = [], item = {}, skuIndex = new Map()) {
+  const sku = normalizeIdentitySku(item.sku);
+  if (!sku || !isClearModelSku(sku)) return -1;
+  const positions = skuIndex.get(sku);
+  if (!positions || !positions.length) return -1;
+  const name = normalizeIdentityName(item.name);
+  for (const i of positions) {
+    const candidate = out[i];
+    if (normalizeIdentitySku(candidate?.sku) !== sku) continue;
+    if (normalizeIdentityName(candidate?.name) !== name) continue;
+    if (!canAutoMergeIdentity(candidate, item)) continue;
+    if (!technicalVariantsCompatible(candidate, item)) continue;
+    return i;
+  }
+  return -1;
+}
+
 /**
  * Catalog import phải trả về PRODUCT IDENTITIES, không phải mọi occurrence trong báo giá.
  * Exact SKU được ưu tiên; thiếu SKU mới fallback theo supplier+name. Nếu cùng identity có
@@ -656,6 +706,7 @@ function mergeIssues(a = [], b = []) {
 export function dedupeCatalogIdentities(products = []) {
   const out = [];
   const byKey = new Map();
+  const skuIndex = new Map();
   let deduped = 0;
   let conflicts = 0;
 
@@ -663,26 +714,46 @@ export function dedupeCatalogIdentities(products = []) {
     if (!original) continue;
     const item = { ...original };
     const key = productIdentityKey(item);
-    if (!key || !byKey.has(key)) {
+    let idx = key && byKey.has(key) ? byKey.get(key) : -1;
+    if (idx < 0) {
+      // RC16 S2: the identity key of an unknown-party SKU embeds the variant
+      // signature, so the same clear model written once with "4000K" and once
+      // without it got two keys. For an exact clear model SKU + same name, look
+      // for a variant-compatible earlier occurrence (missing token = compatible,
+      // same-dimension conflict = not).
+      idx = findVariantCompatibleOccurrence(out, item, skuIndex);
+      if (idx >= 0 && key) byKey.set(key, idx);
+    }
+    if (idx < 0) {
       if (key) byKey.set(key, out.length);
+      indexClearSku(skuIndex, item, out.length);
       out.push(item);
       continue;
     }
 
-    const idx = byKey.get(key);
     const previous = out[idx];
     if (!canAutoMergeIdentity(previous, item)) {
       // Same coarse key but conflicting visible identity: preserve both and force review.
       const reviewedPrevious = appendIdentityReviewIssue(previous);
       const reviewedItem = appendIdentityReviewIssue(item);
       out[idx] = reviewedPrevious;
+      indexClearSku(skuIndex, reviewedItem, out.length);
       out.push(reviewedItem);
       conflicts += 1;
       continue;
     }
 
     deduped += 1;
-    const winner = productEvidenceScore(item) > productEvidenceScore(previous) ? item : previous;
+    // RC16: a row whose supplier comes from the document beats a row whose
+    // supplier is only a file-name guess — as a whole (supplier AND its price),
+    // so a merged identity never pairs "Duhal" with another file's price.
+    const strongSupplier = (p) => !!text(p?.supplier) && !isWeakSupplierEvidence(p);
+    const weakSupplier = (p) => !!text(p?.supplier) && isWeakSupplierEvidence(p);
+    const winner = strongSupplier(item) && weakSupplier(previous)
+      ? item
+      : strongSupplier(previous) && weakSupplier(item)
+        ? previous
+        : (productEvidenceScore(item) > productEvidenceScore(previous) ? item : previous);
     const loser = winner === item ? previous : item;
     const previousPrice = Number(previous?.costPrice ?? previous?.price ?? 0) || 0;
     const itemPrice = Number(item?.costPrice ?? item?.price ?? 0) || 0;
@@ -711,6 +782,11 @@ export function dedupeCatalogIdentities(products = []) {
       sourceOccurrences: sources.map(({ _k, ...source }) => source),
     };
 
+    // RC16 S1: when two occurrences merge, a supplier/brand guessed from a FILE
+    // NAME never wins over one read from the document (e.g. multi-file import of
+    // bang_gia_den.xlsx + a file with an NCC column "Duhal").
+    merged = preferStrongPartyEvidence(merged, winner, loser);
+
     if (priceConflict) {
       conflicts += 1;
       merged.issues = mergeIssues(merged.issues, [issue(
@@ -726,6 +802,7 @@ export function dedupeCatalogIdentities(products = []) {
     }
 
     out[idx] = merged;
+    indexClearSku(skuIndex, merged, idx);
   }
 
   return { products: out, deduped, conflicts };
@@ -827,6 +904,9 @@ export function sanitizeCatalogProduct(product, opts = {}) {
   p.specs = stripWeird(split.specs);
   issues.push(...split.issues);
 
+  const priceRole = p?._meta?.priceColumnRole || "";
+  const existingIssueCodes = new Set(existingIssues.map(getIssueCode));
+  const scaledFromHeader = existingIssueCodes.has("price_scaled_from_header") || existingIssueCodes.has("price_scale_suspect");
   const priceRawText = [p.costPrice, p.price, p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" ");
   // P1.3: an explicit ambiguous-price decision from the geometry engine is
   // stronger than generic text recovery. Never resurrect a guessed price from
@@ -835,21 +915,43 @@ export function sanitizeCatalogProduct(product, opts = {}) {
     || (String(p._meta?.engine || "").includes("column-v2") && p._meta?.source?.priceRole === "unknown");
   const hasPdfConfigurationPrices = Array.isArray(p?.attributes?.pdfPriceOptions)
     && p.attributes.pdfPriceOptions.some((x) => parseSafePrice(x?.costPrice || 0) >= MIN_NORMAL_PRICE);
-  const price = hasPdfConfigurationPrices && !parseSafePrice(p.costPrice || 0)
-    ? { costPrice: 0, issues: [] }
-    : suppressAmbiguousPdfPriceRecovery
-      ? { costPrice: parseSafePrice(p.costPrice || 0) || 0, issues: [] }
-      : normalizePriceWithIssues(p.costPrice ?? p.price, priceRawText);
-  p.costPrice = price.costPrice;
+
+  // RC14 B1/B2: explicit list-price role is authoritative. Never reconstruct
+  // supplier cost from raw row text after the user said this column is retail/list.
+  let price = { costPrice: 0, issues: [] };
+  if (priceRole !== "list") {
+    if (scaledFromHeader && Number(p.costPrice ?? p.price ?? 0) > MAX_NORMAL_PRICE) {
+      // Keep price_scale_suspect from extraction and do not recover an unscaled
+      // token from raw text (e.g. 2,500,000 from a (1.000đ) column).
+      price = { costPrice: 0, issues: [] };
+    } else {
+      price = hasPdfConfigurationPrices && !parseSafePrice(p.costPrice || 0)
+        ? { costPrice: 0, issues: [] }
+        : suppressAmbiguousPdfPriceRecovery
+          ? { costPrice: parseSafePrice(p.costPrice || 0) || 0, issues: [] }
+          : normalizePriceWithIssues(p.costPrice ?? p.price, priceRawText);
+    }
+  }
+  p.costPrice = priceRole === "list" ? 0 : price.costPrice;
   issues.push(...price.issues);
 
   const hasExplicitListPrice = hasMeaningfulPriceInput(p.listPrice) || hasMeaningfulPriceInput(p.publicPrice);
   const listTextForRecovery = [p.specs, p._meta?.source?.rawText, p.rawText].filter(Boolean).join(" ");
   const mayInferListPrice = !suppressAmbiguousPdfPriceRecovery && /giá\s*(công\s*bố|cong\s*bo|niêm\s*yết|niem\s*yet|bán\s*lẻ|ban\s*le|giá\s*bán|gia\s*ban|giá\s*lẻ|gia\s*le)/i.test(listTextForRecovery);
-  const listPrice = hasExplicitListPrice || mayInferListPrice
-    ? normalizePriceWithIssues(p.listPrice ?? p.publicPrice, [p.listPrice, p.publicPrice, listTextForRecovery].filter(Boolean).join(" "))
-    : { costPrice: 0, issues: [] };
+  let listPrice = { costPrice: 0, issues: [] };
+  if (priceRole === "list") {
+    const rawListValue = p.listPrice ?? p.publicPrice;
+    const n = Number(rawListValue || 0);
+    if (Number.isFinite(n) && n >= MIN_NORMAL_PRICE && n <= MAX_NORMAL_PRICE) {
+      listPrice = { costPrice: Math.round(n), issues: [] };
+    } else {
+      listPrice = { costPrice: 0, issues: [issue("list_price_unreasonable", "error", "Giá bán/niêm yết bất thường", "listPrice", "Kiểm tra lại đơn vị và cột giá")] };
+    }
+  } else if (hasExplicitListPrice || mayInferListPrice) {
+    listPrice = normalizePriceWithIssues(p.listPrice ?? p.publicPrice, [p.listPrice, p.publicPrice, listTextForRecovery].filter(Boolean).join(" "));
+  }
   p.listPrice = listPrice.costPrice || 0;
+  issues.push(...listPrice.issues);
   p.publicPrice = p.listPrice;
   // Không biến thiếu giá công bố thành lỗi; nhiều catalog chỉ có giá nhập.
   if (p.listPrice > 0 && p.costPrice > 0 && p.listPrice < p.costPrice) {
@@ -1059,6 +1161,14 @@ export function sanitizeCatalogProduct(product, opts = {}) {
     };
   }
 
+  if (p?.source?.supplierSource) {
+    p._meta = {
+      ...(p._meta || {}),
+      supplierSource: p.source.supplierSource,
+      source: { ...(p._meta?.source || {}), ...(p.source || {}) },
+    };
+  }
+
   return p;
 }
 
@@ -1069,6 +1179,7 @@ export function sanitizeCatalogProducts(products, opts = {}) {
 const NON_BLOCKING_IMPORT_ADVISORY_CODES = new Set([
   "supplier_sku_reused_for_distinct_products",
   "pilot_business_supplier_code_reused",
+  "missing_cost_price",
 ]);
 
 export function isNonBlockingImportAdvisoryIssue(it) {
@@ -1093,6 +1204,10 @@ export function isUnsafeImportedProduct(product) {
   // provenance while still being safe to import. Unknown review states with no
   // explicit advisory evidence remain unsafe/fail-closed.
   const isReviewState = status === "review" || canonicalStatus === "need_review";
-  if (isReviewState) return !(issues.length > 0 && actionableIssues.length === 0);
+  if (isReviewState) {
+    // Info/provenance does not make a row unsafe. If no actionable warning/error
+    // remains after role confirmation, recalculate the row as importable.
+    return actionableIssues.some((it) => ["error", "warning"].includes(getIssueLevel(it)));
+  }
   return false;
 }

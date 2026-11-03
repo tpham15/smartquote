@@ -21,7 +21,7 @@ assert.doesNotMatch(app, /tab !== "data" \|\| effectiveSubView !== "import"[\s\S
 
 assert.doesNotMatch(app, /Duyệt cảnh báo nhẹ/, 'competing preview CTA wording must be removed');
 assert.doesNotMatch(app, /Merge[^\n]{0,80}catalog/, 'technical Merge wording must not be the primary import CTA');
-assert.match(app, /Thêm \$\{getPreviewCounts\(parsed\)\.clean\} sản phẩm vào danh mục/, 'clear import primary action missing');
+assert.match(app, /Thêm \$\{getPreviewCounts\(parsed\)\.willImport\} sản phẩm vào danh mục/, 'clear import primary action missing');
 assert.match(app, /Xem \{importResult\.summary\.needReview\} dòng cần kiểm tra/, 'review rows secondary action missing');
 
 assert.match(app, /Chưa có bộ sản phẩm/, 'product-pack empty state title missing');

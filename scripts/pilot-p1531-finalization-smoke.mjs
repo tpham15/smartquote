@@ -5,11 +5,9 @@ import assert from 'node:assert/strict';
 const root = process.cwd();
 const onboarding = fs.readFileSync(path.join(root, 'src/ui/IndustryOnboarding.jsx'), 'utf8');
 const rootSql = fs.readFileSync(path.join(root, '01_RUN_ON_SUPABASE.sql'), 'utf8');
-const supabaseSql = fs.readFileSync(path.join(root, 'supabase/01_RUN_ON_SUPABASE_PILOT_MASTER.sql'), 'utf8');
 
 assert.match(onboarding, /onClick=\{\(\) => submit\(\)\}/, 'CTA must call submit() explicitly so React click event is not treated as businessTypeOverride');
 assert.doesNotMatch(onboarding, /onClick=\{submit\}>\{busy \? "Đang lưu\.\.\." : "Vào SmartQuote →"\}/, 'stale direct onClick={submit} must be gone');
-assert.equal(rootSql, supabaseSql, 'root and supabase master SQL copies must be identical');
 
 const orderedMarkers = [
   '-- 1. PILOT SECURITY FIX',

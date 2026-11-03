@@ -551,6 +551,8 @@ function priceCandidatesFromCols(row, cols = [], map = {}) {
     .filter((n) => n > 0);
 }
 
+export const WARRANTY_ONLY_SKIP_REASON = "Cột Mã chỉ có thông tin bảo hành, không có mã sản phẩm";
+
 function isExplicitCostColumn(map) {
   return map?.price != null && map.price !== map.currentListPrice && map.price !== map.listPrice && map.price !== map.minRetailPrice;
 }
@@ -563,7 +565,7 @@ function isExplicitCostColumn(map) {
  * @param {string} fileSupplier
  * @returns {?Object} raw item (chưa validate/match)
  */
-function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentContext = {}) {
+function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentContext = {}, hooks = {}) {
   const get = (key) => {
     const idx = map[key];
     return idx != null && row.text[idx] != null ? String(row.text[idx]).trim() : "";
@@ -571,44 +573,72 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
 
   let name = get("name");
   let rawSkuCell = get("sku");
+  // RC16 S2/S3: old-quote evidence is read from the ORIGINAL cells before any
+  // RC5/RC8 clearing. From RC12 to RC15 the RC5 prose-SKU rule ran first, erased
+  // "BH 36 tháng", and so both schema-drift recovery and the warranty-only skip
+  // could no longer see the evidence they need.
+  const originalSkuCell = rawSkuCell;
   let skuWasNaturalLanguageName = false;
-  if (looksLikeUnlabelledFeatureSku(rawSkuCell, map)) {
-    rawSkuCell = "";
-    // RC8: unlike prose masquerading as an SKU, technical feature tokens may
-    // coexist with a real model elsewhere in the row. Allow grounded re-scan;
-    // productSanitizer rejects the same feature token as an SKU candidate.
-  }
-  // RC5: some supplier sheets label a free-text product-name column as "Mã".
-  // Do not poison canonical identity with a prose phrase. When no stronger name
-  // exists, preserve that source phrase as the product name and leave SKU empty.
-  if (looksLikeNaturalLanguageSku(rawSkuCell)) {
-    if (!name || name === rawSkuCell) name = rawSkuCell;
-    rawSkuCell = "";
-    skuWasNaturalLanguageName = true;
-  }
+  let warrantyInSkuColumn = false;
   let schemaDriftRecovery = null;
   if (map?._quoteTable) {
-    schemaDriftRecovery = recoverQuoteSectionSchemaIdentity({ name, sku: rawSkuCell, specs: get("specs") });
-    // Nếu cột Mã chỉ chứa bảo hành nhưng cột Tên không có SKU thật thì không phải
-    // product identity an toàn. Các case SKU lặp ở Tên + Mã chỉ rewrite tên khi
-    // Specs cung cấp tên thương mại rõ ràng.
-    if (isWarrantyPseudoSku(rawSkuCell) && !schemaDriftRecovery.recovered) return null;
-    if (schemaDriftRecovery.recovered) name = schemaDriftRecovery.name;
+    schemaDriftRecovery = recoverQuoteSectionSchemaIdentity({ name, sku: originalSkuCell, specs: get("specs") });
+    // Cột Mã chỉ chứa bảo hành và không khôi phục được mã thật từ cột Tên:
+    // không phải product identity an toàn → bỏ qua, nhưng báo lý do cho preview.
+    if (isWarrantyPseudoSku(originalSkuCell) && !schemaDriftRecovery.recovered) {
+      if (typeof hooks.onSkip === "function") hooks.onSkip(WARRANTY_ONLY_SKIP_REASON);
+      return null;
+    }
+    if (schemaDriftRecovery.recovered) {
+      name = schemaDriftRecovery.name;
+      rawSkuCell = schemaDriftRecovery.sku;
+    }
+  }
+  // Only when nothing was recovered do the RC5/RC8 clean-up rules apply.
+  if (!schemaDriftRecovery?.recovered) {
+    if (looksLikeUnlabelledFeatureSku(rawSkuCell, map)) {
+      rawSkuCell = "";
+      // RC8: unlike prose masquerading as an SKU, technical feature tokens may
+      // coexist with a real model elsewhere in the row. Allow grounded re-scan;
+      // productSanitizer rejects the same feature token as an SKU candidate.
+    }
+    if (isWarrantyPseudoSku(rawSkuCell)) {
+      // RC16 S2-5: supplier price list with warranty text in the code column.
+      // Never use it as SKU nor as name; the row goes to review with a reason.
+      rawSkuCell = "";
+      warrantyInSkuColumn = true;
+    } else if (looksLikeNaturalLanguageSku(rawSkuCell)) {
+      // RC5: some supplier sheets label a free-text product-name column as "Mã".
+      // Do not poison canonical identity with a prose phrase. When no stronger name
+      // exists, preserve that source phrase as the product name and leave SKU empty.
+      if (!name || name === rawSkuCell) name = rawSkuCell;
+      rawSkuCell = "";
+      skuWasNaturalLanguageName = true;
+    }
   }
   const rawSpecsCell = get("specs");
   const quoteIdentity = map?._quoteTable
     ? resolveCanonicalQuoteIdentity({
-        rawSku: schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell,
+        rawSku: rawSkuCell,
         name,
         specs: rawSpecsCell,
         rawText: row.joined,
       })
-    : { sku: schemaDriftRecovery?.recovered ? schemaDriftRecovery.sku : rawSkuCell, sourceSku: rawSkuCell, evidence: "mapped_sku", changed: false };
+    : { sku: rawSkuCell, sourceSku: originalSkuCell, evidence: "mapped_sku", changed: false };
   let sku = cleanModelText(quoteIdentity.sku);
   sku = preferMoreSpecificSourceSku(row.joined, sku);
   const hiddenSku = extractSkuFromHiddenCells(row, map);
   if (!sku && hiddenSku) sku = hiddenSku;
   const issues = [];
+  if (warrantyInSkuColumn) {
+    issues.push(issue(
+      "warranty_in_sku_column",
+      "warning",
+      `Cột Mã chỉ ghi thông tin bảo hành ("${originalSkuCell}"), không phải mã sản phẩm — hãy nhập mã đúng hoặc để trống rồi duyệt`,
+      "sku",
+      "Nhập mã sản phẩm thật nếu có"
+    ));
+  }
   if (quoteIdentity.evidence === "explicit_model_label" && quoteIdentity.sourceSku && quoteIdentity.changed) {
     issues.push(issue(
       "canonical_sku_recovered_from_model",
@@ -833,13 +863,22 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
     issues.push(issue("billable_service_item", "info", "Hạng mục dịch vụ/nhân công được giữ trong báo giá", "name"));
   }
 
+  // RC16 S1: a brand that can only be inferred from the FILE NAME is weak
+  // evidence, exactly like a filename supplier. Label it so identity/merge can
+  // ignore it instead of treating it as a real brand.
+  const brandFromColumn = get("brand");
+  const brandFromRowContext = brandFromColumn ? "" : inferBrandFromContext(sheetName, sectionName, get("supplier"));
+  const brandFromFileName = brandFromColumn || brandFromRowContext ? "" : inferBrandFromContext("", "", fileSupplier);
+  const brandValue = brandFromColumn || brandFromRowContext || brandFromFileName || "";
+  const brandSource = brandFromColumn ? "column" : (brandFromRowContext ? "context" : (brandFromFileName ? "file_name" : ""));
+
   return {
     name,
     sku,
     kind,
     category: kind === "service" ? (earlyCategory || "Dịch vụ / Nhân công") : earlyCategory,
     supplier: get("supplier") || fileSupplier || "",
-    brand: get("brand") || inferBrandFromContext(sheetName, sectionName, get("supplier") || fileSupplier) || "",
+    brand: brandValue,
     origin: get("origin") || "",
     attributes: get("origin") ? { origin: get("origin") } : {},
     unit: get("unit") || "Cái",
@@ -868,6 +907,8 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
       rowIndex: row.r,
       cellRefs,
       rawText: row.joined,
+      supplierSource: get("supplier") ? "column" : (fileSupplier ? "file_name" : ""),
+      brandSource,
       rawSku: rawSkuCell || "",
       canonicalSkuEvidence: quoteIdentity.evidence || "",
     },
@@ -886,6 +927,7 @@ function rowToItem(row, map, sheetName, sectionName, fileSupplier, documentConte
 export function extractItemsWithStats(sheet, region, map, headerSourceRow, fileSupplier) {
   const items = [];
   const stats = { totalRows: 0, products: 0, notes: 0, totals: 0, sections: 0, blank: 0, headers: 0, skipped: 0 };
+  const skippedRows = [];
   const opt = {
     priceCol: map.price ?? null,
     nameCol: map.name ?? null,
@@ -916,12 +958,20 @@ export function extractItemsWithStats(sheet, region, map, headerSourceRow, fileS
     if (cls === ROW_CLASS.HEADER) { stats.headers += 1; stats.skipped += 1; continue; }
     if (cls !== ROW_CLASS.PRODUCT) { stats.skipped += 1; continue; }
 
-    const item = rowToItem(row, map, sheet.name, sectionName, fileSupplier, sheet.documentContext || {});
+    let skipReason = "";
+    const item = rowToItem(row, map, sheet.name, sectionName, fileSupplier, sheet.documentContext || {}, {
+      onSkip: (reason) => { skipReason = reason; },
+    });
     if (item) { items.push(item); stats.products += 1; }
-    else stats.skipped += 1;
+    else {
+      stats.skipped += 1;
+      // RC16 S3: a product-looking row we refuse must be visible in the preview
+      // ("Đã bỏ qua" + reason), not silently disappear.
+      if (skipReason) skippedRows.push({ sheet: sheet.name, row: row.r + 1, reason: skipReason, rawText: row.joined });
+    }
   }
 
-  return { items, stats };
+  return { items, stats, skippedRows };
 }
 
 export function extractItems(sheet, region, map, headerSourceRow, fileSupplier) {

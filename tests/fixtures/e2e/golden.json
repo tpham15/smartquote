@@ -1,0 +1,766 @@
+{
+  "fields": [
+    "sku",
+    "name",
+    "costPrice",
+    "listPrice",
+    "priceMode",
+    "supplier",
+    "_meta.supplierSource",
+    "category"
+  ],
+  "cases": {
+    "den_empty_list": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 0,
+        "listPrice": 180000,
+        "priceMode": "fixed",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 0,
+        "listPrice": 150000,
+        "priceMode": "fixed",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 0,
+        "listPrice": 650000,
+        "priceMode": "fixed",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 0,
+        "listPrice": 210000,
+        "priceMode": "fixed",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 0,
+        "listPrice": 320000,
+        "priceMode": "fixed",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      }
+    ],
+    "den_empty_cost": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 320000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      }
+    ],
+    "den_catalog_no_supplier": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 320000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      }
+    ],
+    "den_catalog_rang_dong": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 320000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      }
+    ],
+    "cot_ncc_rang_dong": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 170000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "",
+        "category": "Chiếu sáng"
+      },
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 175000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "column",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 310000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "column",
+        "category": "Đèn"
+      }
+    ],
+    "rang_dong_reimport_cloud": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 320000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      }
+    ],
+    "den_cloud_then_cot_ncc": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 175000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "column",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 310000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "column",
+        "category": "Đèn"
+      }
+    ],
+    "sua_mapping_rang_dong": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 320000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      }
+    ],
+    "pdf_cache_rang_dong": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 181000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 151000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "bang gia den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 321000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "document",
+        "category": "Đèn"
+      }
+    ],
+    "hoc_tu_lan_sua": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "ten ma",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "DL-9W-40",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "ten ma",
+        "_meta.supplierSource": "file_name",
+        "category": "Sản phẩm"
+      }
+    ],
+    "nhieu_file": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 170000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "",
+        "category": "Chiếu sáng"
+      },
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 175000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "column",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 310000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Duhal",
+        "_meta.supplierSource": "column",
+        "category": "Đèn"
+      }
+    ],
+    "sua_ncc_tay": [
+      {
+        "sku": "DL-12W-30",
+        "name": "Đèn downlight âm trần 12W 3000K",
+        "costPrice": 180000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DL-9W-40",
+        "name": "Đèn downlight âm trần 9W 4000K",
+        "costPrice": 150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "Rạng Đông",
+        "_meta.supplierSource": "user",
+        "category": "Đèn"
+      },
+      {
+        "sku": "DRV-DALI-40",
+        "name": "Bộ nguồn driver DALI 40W",
+        "costPrice": 650000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LS-5050",
+        "name": "Đèn LED dây 5050 12V cuộn 5m",
+        "costPrice": 210000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      },
+      {
+        "sku": "TR-10W-24",
+        "name": "Đèn ray nam châm 10W góc 24 độ",
+        "costPrice": 320000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "den",
+        "_meta.supplierSource": "file_name",
+        "category": "Đèn"
+      }
+    ],
+    "lech_cot": [
+      {
+        "sku": "LM-CS10-36W4-1",
+        "name": "Đèn spotlight vuông ốp nổi 10W - 36°",
+        "costPrice": 1134000,
+        "listPrice": 1134000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LM-D9-90-110-W4-2",
+        "name": "Đèn Downlight âm trần 9W - 110°",
+        "costPrice": 216000,
+        "listPrice": 216000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LM-HC",
+        "name": "Bộ điều khiển trung tâm",
+        "costPrice": 2970000,
+        "listPrice": 2970000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Bộ điều khiển trung tâm"
+      },
+      {
+        "sku": "LM-S1N/S",
+        "name": "Công tắc điện thông minh 1 nút",
+        "costPrice": 1944000,
+        "listPrice": 1944000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Công tắc thông minh"
+      },
+      {
+        "sku": "LM-ST12-75-55-40CrBTC-O1",
+        "name": "Đèn Spotlight âm trần 12W - 55°, chỉnh hướng",
+        "costPrice": 702000,
+        "listPrice": 702000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LM-ST12-75-55-CrBTC-T1",
+        "name": "Đèn Spotlight âm trần 12W - 55°, chỉnh hướng",
+        "costPrice": 1242000,
+        "listPrice": 1242000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LM-ST7-55-24-40CrBTC-O1",
+        "name": "Đèn Spotlight âm trần 7W - 24°, chỉnh hướng",
+        "costPrice": 648000,
+        "listPrice": 648000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LM-ST7-55-24-CrBLC-T1",
+        "name": "Đèn Spotlight âm trần 7W - 24°, chỉnh hướng, không viền",
+        "costPrice": 1080000,
+        "listPrice": 1080000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "LM-ST7-55-24-CrBTC-T1",
+        "name": "Đèn Spotlight âm trần 7W - 24°, chỉnh hướng",
+        "costPrice": 1080000,
+        "listPrice": 1080000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      },
+      {
+        "sku": "RG-AP 2200F",
+        "name": "Bộ phát wifi chuyên dụng ốp trần",
+        "costPrice": 1440000,
+        "listPrice": 1440000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Bộ điều khiển trung tâm"
+      }
+    ],
+    "metadata": [
+      {
+        "sku": "LM-1G2W-C(G)",
+        "name": "Công tắc cơ thông minh 1 nút",
+        "costPrice": 1026000,
+        "listPrice": 1026000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Công tắc thông minh"
+      },
+      {
+        "sku": "LM-2G2W-C(G)",
+        "name": "Công tắc cơ thông minh 2 nút",
+        "costPrice": 1080000,
+        "listPrice": 1080000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Công tắc thông minh"
+      },
+      {
+        "sku": "LM-PCB",
+        "name": "Cảm biến hiện diện BLE âm trần",
+        "costPrice": 1593000,
+        "listPrice": 1593000,
+        "priceMode": "fixed",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Cảm biến"
+      }
+    ],
+    "bao_hanh_bang_gia": [
+      {
+        "sku": "FL-100W",
+        "name": "Đèn pha LED 100W ngoài trời",
+        "costPrice": 890000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "",
+        "_meta.supplierSource": "",
+        "category": "Đèn"
+      }
+    ],
+    "ma_ncc_dung_lai_x2": [
+      {
+        "sku": "FU",
+        "name": "Bộ điều khiển cổng FU 1 kênh",
+        "costPrice": 1450000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "ma ncc dung lai",
+        "_meta.supplierSource": "file_name",
+        "category": "Sản phẩm"
+      },
+      {
+        "sku": "FU",
+        "name": "Bộ điều khiển cổng FU 2 kênh",
+        "costPrice": 1690000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "ma ncc dung lai",
+        "_meta.supplierSource": "file_name",
+        "category": "Sản phẩm"
+      },
+      {
+        "sku": "FU",
+        "name": "Bộ điều khiển cổng FU 4 kênh kèm remote",
+        "costPrice": 2150000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "ma ncc dung lai",
+        "_meta.supplierSource": "file_name",
+        "category": "Rèm thông minh"
+      },
+      {
+        "sku": "R-TX4",
+        "name": "Remote 4 nút tần số 433MHz",
+        "costPrice": 290000,
+        "listPrice": 0,
+        "priceMode": "markup",
+        "supplier": "ma ncc dung lai",
+        "_meta.supplierSource": "file_name",
+        "category": "Rèm thông minh"
+      }
+    ]
+  }
+}

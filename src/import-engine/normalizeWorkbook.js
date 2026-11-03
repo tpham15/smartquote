@@ -14,7 +14,7 @@ function stripVietnameseMarks(s) {
     .replace(/Đ/g, "D");
 }
 
-function guessSupplierFromFileName(fileName = "") {
+export function guessSupplierFromFileName(fileName = "") {
   const raw = String(fileName || "").replace(/\.(xlsx|xls|csv|pdf)$/i, "").replace(/[_\-]+/g, " ").trim();
   const ascii = stripVietnameseMarks(raw).toLowerCase();
   if (/lumi/.test(ascii)) return "Lumi";

@@ -174,7 +174,7 @@ function canonicalPdfBrand(value) {
   return map[key] || m;
 }
 
-function supplierFallbackName(supplierGuess = "") {
+export function supplierFallbackName(supplierGuess = "") {
   const raw = normalizeText(supplierGuess);
   if (!raw) return "PDF Catalog";
   if (knownLumiReleaseKind({ fileName: raw, supplierGuess: raw })) return "Lumi";

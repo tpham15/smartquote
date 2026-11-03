@@ -81,12 +81,16 @@ assert.ok(!adapter.includes("bản sau ghi đè"));
 
 // UI merge must also use canonical identity instead of skuMap[sku].
 const app = fs.readFileSync(path.join(root, "src/SmartQuote.jsx"), "utf8");
-assert.ok(app.includes("productIdentityKey(np)"));
-assert.ok(app.includes("canAutoMergeIdentity(p, np)"));
+assert.ok(app.includes("mergeCatalogImport(prev, finalItems"));
+assert.ok(app.includes("projectedCatalogCount(products, finalItems)"));
 assert.ok(!app.includes("skuMap[np.sku.toLowerCase()]"));
 
 // The host app has a second mixed Excel/PDF batch path; it must use the same deduper.
-assert.ok(app.includes("const identityBatch = dedupeCatalogIdentities(allProducts)"));
+// RC16 note: that stage moved into import-engine/catalogImportPipeline.js
+// (prepareMultiFileImport) so the e2e harness runs the same code.
+const importPipeline = fs.readFileSync(path.join(root, "src/import-engine/catalogImportPipeline.js"), "utf8");
+assert.ok(app.includes("prepareMultiFileImport(allProducts"));
+assert.ok(importPipeline.includes("const identityBatch = dedupeCatalogIdentities(products)"));
 assert.ok(!app.includes("deduped[seen[key]] = p"));
 
 // Supplier price updates must fail closed when a bare SKU maps to multiple catalog rows.

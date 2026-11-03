@@ -103,7 +103,7 @@ assert(!enrichApi.includes('body.serperApiKey'), 'server must not accept Serper 
 assert(enrichApi.includes('process.env.SERPER_API_KEY'), 'server-side Serper env path missing');
 
 console.log('✓ SmartQuote Pilot P0 Commercial Safety smoke PASS');
-console.log('  - BOM cost-only x1 is review-blocked; configured markup flows into quote');
+console.log('  - BOM cost-only x1 is flagged for review; configured markup flows into quote');
 console.log('  - fixed/markup margin uses true cost and negative margin stays visible');
 console.log('  - saved quote freezes product, cost and unit sale price snapshots');
 console.log('  - unresolved BOM / required completeness / matrix unmapped gates present');

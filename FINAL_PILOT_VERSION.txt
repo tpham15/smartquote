@@ -1,4 +1,5 @@
-SmartQuote Final Pilot v1.0 — RC13 Candidate
-P2.3.11 Commercial Price Safety
-Base: RC12 + generic-price role confirmation + default markup ×1.20
-Date: 2026-10-31
+SmartQuote P2.3.14.1 — RC16.1 "Pilot Locked"
+Build date: 2026-11-01
+Status: RC16.1 — fixes the 5 points of the second review (DB role enforcement, server-verified Final totals, per-workspace PDF memory, xlsx 0.20.3, path-safe scripts). No new features.
+Executed in the packaging container: smoke:all FAIL 0 (3 SKIPPED with reasons) from a normal path AND from a path with spaces/diacritics; build PASS; DB acceptance 50/50 on fresh install and on upgrade (01_RUN x2); 198/198 totals parity; xlsx 0.18.5 vs 0.20.3 read parity 51/51 files; browser UAT-18..25 PASS on a local preview.
+Still required before GO: npm ci (official SheetJS tarball) + smoke:all on Mac, Bisco/Roger real-file gates, staging SQL (01_RUN x2 + DB acceptance + qa:production), Vercel Preview UAT-1..25 + RC16.1 checks.

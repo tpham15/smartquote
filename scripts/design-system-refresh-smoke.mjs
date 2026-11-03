@@ -18,7 +18,7 @@ must(jsx.includes('grid-template-columns:236px minmax(0,1fr)'), 'desktop sidebar
 must(jsx.includes('grid-template-columns:64px minmax(0,1fr)'), 'responsive compact sidebar missing');
 must(jsx.includes('font-variant-numeric:tabular-nums'), 'tabular numbers rule missing');
 must(jsx.includes('className="s-total num"'), 'signature quote total missing');
-must(jsx.includes('className="s-margin"'), 'gross margin chip missing');
+must(/className=\{`s-margin /.test(jsx) || jsx.includes('className="s-margin"'), 'gross margin chip missing');
 must(jsx.includes('position:sticky;top:84px'), 'sticky quote summary missing');
 must(jsx.includes('var(--amber-bg)'), 'amber warning token usage missing');
 must(!jsx.includes('sessionStorage'), 'new sessionStorage usage should not exist');

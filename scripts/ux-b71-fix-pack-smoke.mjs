@@ -18,11 +18,11 @@ const count = (needle) => (src.match(new RegExp(needle.replace(/[.*+?^${}()|[\]\
 assertNotIncludes('/>\n        />', 'duplicate JSX self-close pattern');
 assertIncludes('<UnifiedImportHub', 'UnifiedImportHub render exists');
 if (src.includes('markups={markups}\n            markups={markups}')) fail('duplicate markups prop in Settings props');
-if (count('<Field label="Hạng mục"') !== 1) fail('customer field Hạng mục should appear exactly once');
+if ((src.match(/<Field[^>]*label="Hạng mục"/g) || []).length !== 1) fail('customer field Hạng mục should appear exactly once');
 
 // B7.1.2: header keeps a clear plan/upgrade entry.
 assertIncludes('className="cloud-upgrade"', 'header upgrade button');
-assertIncludes('onClick={openUpgrade}>{billingStatus?.locked ? "Gia hạn" : "Xem gói"}', 'header upgrade copy');
+assertIncludes('billingStatus?.locked && <button className="cloud-upgrade" onClick={openUpgrade}>Gia hạn</button>', 'locked-account header renewal entry');
 
 // B7.1.3: Catalog now has one obvious import entry; rare tools are hidden one level down.
 assertIncludes('<details className="cat-advanced-tools">', 'catalog advanced tools disclosure');
@@ -37,7 +37,7 @@ assertIncludes('⋯ Quản lý', 'quote manager disclosure action');
 
 // B7.1.5: import preview red-price rows visually disable the primary hero action too.
 assertIncludes('const hasPriceUnconfirmed = priceColumnUncertainRows().length > 0 && !priceColumnConfirmed;', 'price-confirm guard in hero');
-assertIncludes('? { label: "Cần xác nhận cột giá", onClick: () => {}, disabled: true }', 'disabled price-confirm hero action');
+assertIncludes('? { label: "Chọn loại giá trước khi nhập", onClick: () => {}, disabled: true }', 'disabled price-confirm hero action');
 assertIncludes('disabled={defaultAction.disabled}', 'disabled hero button');
 assertIncludes('Cần xác nhận cột giá', 'disabled save label');
 assertNotIncludes('background: priceColumnUncertainRows().length > 0 && !priceColumnConfirmed ? "#94A3B8"', 'hard-coded disabled primary background');

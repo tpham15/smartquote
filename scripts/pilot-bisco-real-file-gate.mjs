@@ -19,17 +19,17 @@ try {
   process.exit(3);
 }
 
-const [{ importFileForUI }, sanitizer, validator, semantics, identity] = await Promise.all([
+const [{ importFileForUI }, sanitizer, validator, identity, catalogMerge] = await Promise.all([
   import('../src/import-engine/uiAdapter.js'),
   import('../src/import-engine/productSanitizer.js'),
   import('../src/import-engine/businessValidator.js'),
-  import('../src/import-engine/productSemantics.js'),
   import('../src/import-engine/productIdentity.js'),
+  import('../src/import-engine/catalogImportMerge.js'),
 ]);
 const { sanitizeCatalogProducts, isUnsafeImportedProduct } = sanitizer;
 const { applyCommercialValidation } = validator;
-const { canonicalizeLegacyProductForMatching } = semantics;
-const { productIdentityKey, canAutoMergeIdentity, normalizeIdentitySku } = identity;
+const { normalizeIdentitySku } = identity;
+const { mergeCatalogImport } = catalogMerge;
 
 const fileBytes = fs.readFileSync(filePath);
 const fileHash = crypto.createHash('sha256').update(fileBytes).digest('hex');
@@ -113,37 +113,11 @@ let legacyCatalog = expected.map((e) => {
 });
 
 function mergeLikeCatalog(existing, incoming) {
-  const updated = existing.map((p) => canonicalizeLegacyProductForMatching(p));
-  for (const np of incoming) {
-    const key = productIdentityKey(np);
-    const candidates = [];
-    updated.forEach((p, idx) => {
-      if (key && productIdentityKey(p) === key && canAutoMergeIdentity(p, np)) candidates.push(idx);
-    });
-    assert.equal(candidates.length, 1, `${np.sku}: merge must resolve exactly one legacy record, got ${candidates.length}`);
-    const idx = candidates[0];
-    updated[idx] = {
-      ...updated[idx],
-      name: np.name || updated[idx].name,
-      sku: np.sku || updated[idx].sku,
-      category: np.category || updated[idx].category,
-      productType: np.productType || updated[idx].productType || '',
-      subtype: np.subtype || updated[idx].subtype || '',
-      model: np.model || updated[idx].model || '',
-      costPrice: np.costPrice || updated[idx].costPrice,
-      listPrice: np.listPrice || updated[idx].listPrice || 0,
-      specs: np.specs || updated[idx].specs,
-      supplier: np.supplier || updated[idx].supplier,
-      brand: np.brand || updated[idx].brand,
-      unit: np.unit || updated[idx].unit,
-      attributes: {
-        ...(updated[idx].attributes || {}),
-        ...(np.attributes || {}),
-        identity: { ...(updated[idx].attributes?.identity || {}), ...(np.attributes?.identity || {}) },
-      },
-    };
-  }
-  return updated;
+  const merged = mergeCatalogImport(existing, incoming, { idFactory: (_p, i) => `gate-${i}` });
+  assert.equal(merged.ambiguous, 0, `production merge path produced ${merged.ambiguous} ambiguous Bisco rows`);
+  assert.equal(merged.added, 0, `production merge path created ${merged.added} duplicate Bisco rows`);
+  assert.equal(merged.updated, incoming.length, `production merge path must update every Bisco row; updated=${merged.updated}`);
+  return merged.products;
 }
 
 legacyCatalog = mergeLikeCatalog(legacyCatalog, active);

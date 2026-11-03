@@ -29,6 +29,12 @@ export function productDisplayBasePrice(product = {}) {
 
 export function quoteLineSalePrice(product = {}, line = {}) {
   if (Number.isFinite(Number(line?.salePriceSnapshot))) return Math.max(0, Number(line.salePriceSnapshot));
+  // Deliberate per-quote price takes priority over the catalog/factor but can
+  // never silently modify the catalog price. Final snapshots remain immutable.
+  if (line?.manualSalePrice !== null && line?.manualSalePrice !== undefined && line?.manualSalePrice !== "") {
+    const manual = finiteNumber(line.manualSalePrice, NaN);
+    if (Number.isFinite(manual) && manual > 0) return Math.round(manual);
+  }
   if (!product) return 0;
   const base = productDisplayBasePrice(product);
   if (product.priceMode === "fixed") return base;

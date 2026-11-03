@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { planDocumentRoute, classifyPdfProbe } from "../src/import-engine/documentRouter.js";
 import { ENGINE_REGISTRY } from "../benchmarks/vietnam-docbench/engines/registry.mjs";
 
-const api = fs.readFileSync(new URL("../api/pdf-extract.js", import.meta.url), "utf8");
+const api = fs.readFileSync(new URL("../api/_lib/pdfTextGeometry.js", import.meta.url), "utf8");
 const pipeline = fs.readFileSync(new URL("../src/import-engine/pdf/pdfCatalogPipeline.js", import.meta.url), "utf8");
 assert.match(api, /buildPdfProbe/);
 assert.match(api, /classifyPdfProbe/);

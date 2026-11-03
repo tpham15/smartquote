@@ -2,11 +2,45 @@
 // Legacy catalog/price import helpers — tách khỏi React component.
 // ============================================================
 import * as XLSX from "xlsx";
-import { parsePdfCatalogWithPipeline } from "../pdf/pdfCatalogPipeline.js";
+import { parsePdfCatalogWithPipeline, supplierFallbackName } from "../pdf/pdfCatalogPipeline.js";
 import { expandPdfSellableVariants } from "../pdf/pdfVariants.js";
 import { priceUpdatePreviewFromLegacy, productsToImportPreviewResult } from "../previewResult.js";
 import { parseSafePrice, isLikelyNonProductRow, isLikelyBillableServiceRow, isLikelyOldQuoteSectionRow, extractSkuFromText, cleanSupplierName, isWarrantyPseudoSku, recoverQuoteSectionSchemaIdentity, dedupeCatalogIdentities, extractCommercialNameFromSpecs, resolveCanonicalQuoteIdentity } from "../productSanitizer.js";
 import { inferCategory } from "../categoryInference.js";
+import { foldIdentityText } from "../productIdentity.js";
+
+/** Same supplier hint the PDF pipeline receives (file name without extension). */
+export function pdfSupplierGuess(fileName = "") {
+  return String(fileName || "").replace(/\.pdf$/i, "").replace(/[_\-]/g, " ").slice(0, 30);
+}
+
+/**
+ * RC16 S1 (PDF): the PDF pipeline falls back to the file-name guess (or the
+ * placeholder "PDF Catalog") when the document itself names no supplier. That
+ * value is weak evidence: it must never overwrite a real catalog supplier or
+ * make a same-SKU row ambiguous. Label it exactly like the Excel engine does.
+ */
+export function labelPdfSupplierEvidence(items = [], supplierGuess = "") {
+  const weakValues = new Set([
+    foldIdentityText(supplierGuess),
+    foldIdentityText(supplierFallbackName(supplierGuess)),
+    foldIdentityText("PDF Catalog"),
+  ].filter(Boolean));
+  const out = (items || []).map((item) => {
+    if (!item) return item;
+    const supplier = foldIdentityText(item.supplier || "");
+    const already = String(item?._meta?.supplierSource || item?._meta?.source?.supplierSource || "").toLowerCase();
+    if (!supplier || already) return item;
+    const supplierSource = weakValues.has(supplier) ? "file_name" : "document";
+    const meta = { ...(item._meta || {}) };
+    meta.supplierSource = supplierSource;
+    if (supplierSource === "file_name") meta.supplierGuess = item.supplier;
+    if (meta.source && typeof meta.source === "object") meta.source = { ...meta.source, supplierSource };
+    return { ...item, _meta: meta };
+  });
+  if (items && items.importPreview) out.importPreview = items.importPreview;
+  return out;
+}
 
 const uid = (p = "imp") => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -14,6 +48,10 @@ function parseMappedPriceCell(value, rowText = "") {
   // Mapping thủ công đã biết chính xác cột giá. Luôn parse cell đó trước; chỉ dùng
   // cả row làm recovery khi cell không parse được. Nếu trộn rowText ngay từ đầu,
   // thông số như "1.267Gbps" có thể bị chọn nhầm thành 1.267đ thay cho 1.440.000đ.
+  // RC16: an UNMAPPED/empty price cell is 0 — never recover it from the row text.
+  // Otherwise "Giá công bố" / "Giá bán lẻ thấp nhất" left unmapped silently
+  // became the cost price (list = cost → zero margin, price-role check bypassed).
+  if (!String(value ?? "").trim()) return 0;
   const direct = parseSafePrice(value);
   return direct > 0 ? direct : parseSafePrice(value, rowText);
 }
@@ -70,6 +108,10 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       : { sku: schemaRecovery.recovered ? schemaRecovery.sku : rawSku, sourceSku: rawSku, evidence: "mapped_sku", changed: false };
     const sku = quoteIdentity.sku || extractSkuFromText(rowText);
     const supplier = cleanSupplierName(get("supplier"), opts.defaultSupplier || "");
+    // RC16 S1 (manual mapping): a supplier that only comes from opts.defaultSupplier
+    // (the file name) is weak evidence — label it like the engine path does.
+    const supplierFromColumn = cleanSupplierName(get("supplier"), "");
+    const supplierSource = supplierFromColumn ? "column" : (supplier ? (opts.defaultSupplierSource || "") : "");
     const brand = cleanSupplierName(get("brand"), "");
     const origin = get("origin");
     const category = inferCategory({ category: get("category"), name: schemaRecovery.name || get("name"), sku, specs: schemaRecovery.specs || get("specs"), supplier: brand || supplier, rawText: rowText, sheetName: opts.sheetName }, "Chung");
@@ -114,12 +156,15 @@ export function buildCatalogPreview(rawRows, colMap, opts = {}) {
       specs,
       image: get("image"),
       _meta: {
+        supplierSource,
+        ...(supplierSource === "file_name" ? { supplierGuess: supplier } : {}),
         source: {
           rawText: rowText,
           rowIndex: opts.startRowIndex != null ? opts.startRowIndex + rowOffset + 1 : rowOffset + 1,
           sheet: opts.sheetName || "",
           rawSku: rawSku || "",
           canonicalSkuEvidence: quoteIdentity.evidence || "",
+          supplierSource,
         }
       }
     };
@@ -263,7 +308,8 @@ export async function parsePdfCatalogWithClaude(file, opts = {}) {
   const cached = getCached?.(hash);
   if (cached) {
     onCacheHit?.();
-    const hydrated = cached.map(it => ({ ...it, id: uid("imp") }));
+    // RC16 S1: label filename-derived suppliers as weak (also for PDFs cached by RC15).
+    const hydrated = labelPdfSupplierEvidence(cached.map(it => ({ ...it, id: uid("imp") })), pdfSupplierGuess(file.name));
     const sourceKeys = new Set(hydrated.map((it, i) => {
       const src = it?._meta?.source || {};
       return `${src.page || "p"}:${src.row || i + 1}`;
@@ -290,7 +336,7 @@ export async function parsePdfCatalogWithClaude(file, opts = {}) {
     throw new Error(`Đã dùng hết ${quotaLimit} lượt đọc PDF tháng này. Dùng file Excel (miễn phí) hoặc nâng cấp gói.`);
   }
 
-  const supplierGuess = file.name.replace(/\.pdf$/i, "").replace(/[_\-]/g, " ").slice(0, 30);
+  const supplierGuess = pdfSupplierGuess(file.name);
   const sourceItems = await parsePdfCatalogWithPipeline({
     file,
     supplierGuess,
@@ -300,7 +346,7 @@ export async function parsePdfCatalogWithClaude(file, opts = {}) {
   // Phase 14.1A: source-row families are NOT necessarily sellable catalog items.
   // Expand only semantically-proven multi-SKU variant families. Commercial price
   // tiers for one SKU remain one product.
-  const expanded = expandPdfSellableVariants(sourceItems);
+  const expanded = expandPdfSellableVariants(labelPdfSupplierEvidence(sourceItems, supplierGuess));
   const finalItems = expanded.products;
   const variantWarning = expanded.stats.variantFamilies > 0
     ? [`PDF có ${expanded.stats.sourceRows} dòng nguồn; nhận diện ${expanded.stats.variantFamilies} family nhiều cấu hình và tạo ${expanded.stats.sellableSkus} SKU bán được, giữ đúng SKU ↔ cấu hình ↔ giá.`]

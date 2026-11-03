@@ -168,25 +168,29 @@ export function normalizeImportLine(line = {}, index = 0) {
 }
 
 function normalizeSource(source = {}, index = 0) {
+  // RC16 S1: never drop provenance at the preview boundary. P2.3.3 lost
+  // documentCategory and RC12–RC15 lost supplierSource because this function
+  // copied a fixed whitelist. Start from EVERY source field, then normalise the
+  // few fields the preview relies on.
+  const src = source && typeof source === "object" ? source : {};
   return {
-    sheet: source.sheet || source.sheetName || "",
-    row: Number(source.row ?? source.rowIndex ?? index + 1) || index + 1,
-    cells: source.cells || source.cellRefs || {},
-    rawText: source.rawText || "",
-    page: source.page || null,
-    fileName: source.fileName || "",
-    bbox: source.bbox || null,
-    parts: Array.isArray(source.parts) ? source.parts : [],
-    pageWidth: Number(source.pageWidth || 0) || null,
-    pageHeight: Number(source.pageHeight || 0) || null,
-    // Preserve source-level identity/taxonomy provenance across the canonical
-    // preview boundary. P2.3.3 originally extracted these fields correctly,
-    // but normalizeSource() dropped them before importPreviewLinesToProducts(),
-    // which made real XLSX imports lose Quy Cách/documentCategory.
-    documentCategory: source.documentCategory || source.quoteSpecification || "",
-    section: source.section || source.sectionName || "",
-    rawSku: source.rawSku || "",
-    canonicalSkuEvidence: source.canonicalSkuEvidence || "",
+    ...src,
+    sheet: src.sheet || src.sheetName || "",
+    row: Number(src.row ?? src.rowIndex ?? index + 1) || index + 1,
+    cells: src.cells || src.cellRefs || {},
+    rawText: src.rawText || "",
+    page: src.page || null,
+    fileName: src.fileName || "",
+    bbox: src.bbox || null,
+    parts: Array.isArray(src.parts) ? src.parts : [],
+    pageWidth: Number(src.pageWidth || 0) || null,
+    pageHeight: Number(src.pageHeight || 0) || null,
+    documentCategory: src.documentCategory || src.quoteSpecification || "",
+    section: src.section || src.sectionName || "",
+    rawSku: src.rawSku || "",
+    canonicalSkuEvidence: src.canonicalSkuEvidence || "",
+    supplierSource: src.supplierSource || "",
+    brandSource: src.brandSource || "",
   };
 }
 
@@ -356,11 +360,19 @@ export function importPreviewLinesToProducts(preview) {
       priceMode: Number(l.parsed.listPrice ?? l.parsed.publicPrice ?? 0) > 0 ? "fixed" : (l.parsed.priceMode || "markup"),
       specs: l.parsed.specs || "",
       image: "",
+      // RC16 S1: carry the full source (incl. supplierSource/brandSource) onto
+      // the product so a filename-guessed supplier stays WEAK evidence all the
+      // way to annotateCatalogMatches and mergeCatalogImport.
+      source: { ...(l.source || {}) },
       _meta: {
         confidence: l.confidence,
         status: l.status,
         issues: l.issues,
-        source: l.source,
+        source: { ...(l.source || {}) },
+        supplierSource: l.source?.supplierSource || "",
+        brandSource: l.source?.brandSource || "",
+        // The guessed value the weak label belongs to (see isWeakSupplierEvidence).
+        ...(l.source?.supplierSource === "file_name" ? { supplierGuess: l.parsed.supplier || "" } : {}),
         matchedProductId: l.matchedProduct?.productId || null,
         importId: preview.importId,
         lineId: l.lineId,

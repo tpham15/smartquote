@@ -18,11 +18,11 @@ Frozen identity:
 Private sources / labels stay under `benchmarks/vietnam-docbench/private/` and remain gitignored.
 
 ### Layer B — commercial truth (public, synthetic-but-business-exact)
-`commercial-scenarios.json` freezes five business-critical flows:
+`commercial-scenarios.json` v0.1.1 freezes five business-critical flows:
 1. happy resolved BOM -> markup/fixed pricing -> Final -> immutable reopen -> revision;
 2. unresolved BOM blocks before quote;
-3. cost-only x1 blocks before quote;
-4. below-cost Draft cannot become Final;
+3. cost-only x1 proceeds with warning and human review;
+4. below-cost Draft can become Final after explicit acknowledgement;
 5. required camera completeness decision blocks before quote.
 
 This data contains no customer documents. It tests deterministic business correctness after extraction.

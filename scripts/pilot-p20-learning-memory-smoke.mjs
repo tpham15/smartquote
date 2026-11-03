@@ -106,7 +106,11 @@ const app = fs.readFileSync(path.join(root, 'src/SmartQuote.jsx'), 'utf8');
 assert.match(app, /buildFinalQuoteLearningObservations\(/);
 assert.match(app, /recordQuoteLearningObservations\(observations\)/);
 assert.match(app, /recordCloudQuoteLearning\(cloud\.dealerId, savedId, observations\)/);
-assert.match(app, /applyQuoteIdentityLearning\(corrected\.products/);
+// RC16 note: the import learning step moved into import-engine/catalogImportPipeline.js
+// (applyImportLearning), which the importer calls via applyLearningIfAllowed.
+const importPipeline = fs.readFileSync(path.join(root, 'src/import-engine/catalogImportPipeline.js'), 'utf8');
+assert.match(importPipeline, /applyQuoteIdentityLearning\(corrected\.products/);
+assert.match(app, /return applyImportLearning\(items, meta\)/);
 assert.match(app, /SmartQuote Learning/);
 
 console.log('✓ P2.0 Final Quote Learning Memory regression PASS');

@@ -167,7 +167,9 @@ export function saveProductLearningBatch(products = [], meta = {}) {
   let saved = 0;
   for (const p of products || []) {
     const res = saveProductLearning(p, meta);
-    if (res.ok) saved += 1;
+    // RC16: only count rows for which a reusable rule was actually stored, so
+    // "✓ Đã học N dòng" never claims learning that cannot be applied later.
+    if (res.ok && (res.skuKey || res.rawKey)) saved += 1;
   }
   return { saved };
 }
@@ -188,6 +190,15 @@ function shouldUseLearnedText(current, learned) {
   const lCompact = compactLearningKey(l);
   if (cCompact.length <= 18 && lCompact.length > cCompact.length + 6) return true;
   return false;
+}
+
+function isOtherProductUnderSameCode(product = {}, fields = {}) {
+  const current = compactLearningKey(product?.name || "");
+  const learned = compactLearningKey(fields?.name || "");
+  if (!current || !learned || current === learned) return false;
+  // A short/SKU-like current name being upgraded to the learned name is the
+  // normal correction case; two different descriptive names are two products.
+  return !shouldUseLearnedText(product.name, fields.name);
 }
 
 function applyFields(product, fields, source) {
@@ -240,7 +251,12 @@ export function applyCorrectionLearning(products = [], context = {}) {
     const rawBaseKey = compactLearningKey(sourceRaw(product));
     const rawKey = hasScopedParty && rawBaseKey ? `${partyKey}:${rawBaseKey}` : "";
     let result = { product, applied: false };
-    if (skuKey && db.bySku[skuKey]?.fields) result = applyFields(result.product, db.bySku[skuKey].fields, "sku_scoped");
+    // RC16: suppliers legitimately reuse one code for several configurations
+    // (Roger "FU" 1/2/4 kênh). A SKU-scoped rule learned from a row with a
+    // DIFFERENT descriptive name belongs to another product — do not apply it.
+    if (skuKey && db.bySku[skuKey]?.fields && !isOtherProductUnderSameCode(product, db.bySku[skuKey].fields)) {
+      result = applyFields(result.product, db.bySku[skuKey].fields, "sku_scoped");
+    }
     if (!result.applied && rawKey && db.byRaw[rawKey]?.fields) result = applyFields(result.product, db.byRaw[rawKey].fields, "raw_text_scoped");
     if (result.applied) hits += 1;
     return result.product;

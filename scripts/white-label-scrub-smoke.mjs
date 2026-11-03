@@ -13,7 +13,7 @@ if (!/label:\s*"Mặc định",\s*value:\s*1\b/.test(smartQuote)) throw new Erro
 if (/costPrice\s*\*\s*1\.\d+\b/.test(smartQuote)) throw new Error('Hard-coded catalog markup detected');
 if (/onSetFactor\?\.\(1\.\d+\)/.test(smartQuote)) throw new Error('Hard-coded line-factor shortcut detected');
 if (!/previewFactors\.map\(\(factor\)/.test(smartQuote)) throw new Error('Catalog preview must use dealer-configured factors');
-if (!/templateFactor = Number\(markups\?\.\[0\]\?\.value\)/.test(smartQuote)) throw new Error('Template totals must use dealer-configured markup');
+if (!/templateFactor = chooseDefaultMarkupFactor\(markups\)/.test(smartQuote)) throw new Error('Template totals must use chooseDefaultMarkupFactor(markups)');
 
 // All bundled examples must be synthetic/generic.
 if (!smartQuote.includes('Báo giá khách hàng mẫu.xlsx')) throw new Error('Generic old-quote example missing');

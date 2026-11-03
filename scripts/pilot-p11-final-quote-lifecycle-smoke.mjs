@@ -67,8 +67,9 @@ const zeroMap = { p3: { ...zeroMarginProduct, id: 'p3' } };
 const zeroCommercial = assessQuoteCommercialSafety({ rooms: zeroRooms, productById: zeroMap });
 const zeroFrozen = buildQuoteSnapshotRooms(zeroRooms, zeroMap);
 const zeroGate = buildFinalQuoteGate({ commercialAssessment: zeroCommercial, customer: { name: 'K' }, vatPercent: 8, snapshotRooms: zeroFrozen });
-assert.equal(zeroGate.ready, false);
-assert(zeroGate.blockers.some((x) => x.id === 'margin'), 'at/below cost must block Final');
+assert.equal(zeroGate.ready, true, 'selling at cost is a permitted business decision');
+assert(!zeroGate.blockers.some((x) => x.id === 'margin'), 'margin must never block Final');
+assert(zeroGate.warnings.some((x) => x.id === 'margin'), 'at/below cost must be visible as a warning');
 
 assert.equal(normalizeQuoteWorkflow({}, 'sent').lifecycle, QUOTE_LIFECYCLE_DRAFT, 'legacy sent quote must require explicit new Final gate');
 const wf = buildQuoteWorkflow({ lifecycle: QUOTE_LIFECYCLE_FINAL, revision: 3, parentQuoteId: 'q2', rootQuoteId: 'q1', finalizedAt: '2026-09-06T10:00:00.000Z' });
@@ -116,7 +117,7 @@ assert(quoteStore.includes('calc,'), 'quoteStore must persist calc JSON containi
 assert(quoteStore.includes('rooms, customer, calc'), 'quoteStore list/load must retrieve lifecycle calc JSON');
 
 console.log('✓ Pilot P1.1 Final Quote Lifecycle smoke PASS');
-console.log('  - Final gate blocks missing customer/cost/zero-margin');
+console.log('  - Final gate blocks missing customer/cost; zero/negative margin triggers a warning');
 console.log('  - Final snapshot is required before Ready to send');
 console.log('  - legacy sent/won quote is not silently treated as immutable Final');
 console.log('  - revision rebases live catalog while preserving orphan snapshots');
