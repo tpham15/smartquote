@@ -1349,7 +1349,7 @@ export default function SmartQuote({ cloud = { enabled: false } } = {}) {
           ))}
         </nav>
         <div className="spacer" />
-        {cloud?.enabled && <SidebarUsageMini billing={billingStatus} usage={usageSnapshot} onUpgrade={openUpgrade} />}
+        {cloud?.enabled && tab !== "quote" && <SidebarUsageMini billing={billingStatus} usage={usageSnapshot} onUpgrade={openUpgrade} />}
         <div className="rail-footer-actions">
           <button
             className="theme-toggle"
@@ -2050,6 +2050,9 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   const [quoteListOpen, setQuoteListOpen] = useState(false);
   const [quoteManageOpen, setQuoteManageOpen] = useState(false);
   const [customerDetailsOpen, setCustomerDetailsOpen] = useState(false);
+  // UX v1: default to a short quoting workflow, without changing any quote math or gates.
+  const [advancedQuoteView, setAdvancedQuoteView] = useState(false);
+  const [showQuoteReview, setShowQuoteReview] = useState(false);
   const [showPassedQuoteChecks, setShowPassedQuoteChecks] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState("draft");
   const [quoteLifecycle, setQuoteLifecycle] = useState(QUOTE_LIFECYCLE_DRAFT);
@@ -2200,6 +2203,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setPickerRoomId(null);
     setEditingLine(null);
     setCustomerDetailsOpen(false);
+    setShowQuoteReview(false);
+    setAdvancedQuoteView(false);
     setShowPassedQuoteChecks(false);
     setQuoteManageOpen(false);
   };
@@ -2465,6 +2470,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
     setEditingLine(null);
     setCustomerDetailsOpen(Boolean(quote.customer?.address || quote.customer_address || quote.customer?.quoteNumber || quote.quote_number || quote.customer?.category || quote.category));
     setShowPassedQuoteChecks(false);
+    setShowQuoteReview(false);
     setQuoteListOpen(false);
   };
 
@@ -2812,12 +2818,26 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
   return (
     <div className="quote-grid">
       <div className="quote-main">
+        <div className="sq-quote-workflow-head">
+          <div>
+            <span className="sq-quote-eyebrow">BÁO GIÁ NHANH</span>
+            <h1>{isFinalQuote ? "Báo giá đã hoàn tất" : "Tạo báo giá"}</h1>
+            <p>Nhập khách hàng, thêm sản phẩm, rồi hoàn tất báo giá.</p>
+          </div>
+          <button className={`sq-advanced-toggle ${advancedQuoteView ? "on" : ""}`} type="button"
+            aria-expanded={advancedQuoteView}
+            onClick={() => setAdvancedQuoteView((open) => !open)}>
+            {advancedQuoteView ? "Thu gọn" : "Tùy chọn nâng cao"}
+            <span aria-hidden="true">{advancedQuoteView ? "−" : "+"}</span>
+          </button>
+        </div>
+
         {cloud?.enabled && (
           <section className="quote-manage-card quote-manage-bar">
-            <div className="quote-manage-head">
+            <div className="quote-manage-head sq-quick-manage-head">
               <div>
                 <h2>{isFinalQuote ? "Báo giá đã chốt" : (activeQuoteId ? "Báo giá nháp" : "Báo giá mới")}</h2>
-                <p>{currentQuoteTitle}</p>
+                <p>{isFinalQuote ? `Đã hoàn tất · Lần chỉnh sửa ${quoteRevision}` : activeQuoteId ? "Bản nháp đã lưu" : "Bắt đầu với khách hàng và sản phẩm"}</p>
               </div>
               <div className="quote-manage-head-actions">
                 {!isFinalQuote && (
@@ -2877,13 +2897,12 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           </section>
         )}
 
+
         {/* Thông tin khách hàng */}
         <section className="card quote-customer-card">
-          <h2>Thông tin khách hàng</h2>
-          <div className="field-grid">
-            <Field disabled={isFinalQuote} label="Khách hàng / Công ty *" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
-            <Field disabled={isFinalQuote} label="Số điện thoại" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
-            <Field disabled={isFinalQuote} label="Tên công trình" value={customer.project} onChange={(v) => setCustomer({ ...customer, project: v })} />
+          <div className="sq-section-heading"><span className="sq-step-number">1</span><h2>Khách hàng</h2></div>
+          <div className="sq-quote-customer-primary">
+            <Field disabled={isFinalQuote} label="Khách hàng / Công ty *" placeholder="Tên khách hàng hoặc công ty" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
           </div>
           <button
             className="quote-customer-more"
@@ -2893,8 +2912,10 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
           >
             {customerDetailsOpen ? "− Ẩn thông tin thêm" : "+ Thông tin thêm"}
           </button>
-          {customerDetailsOpen && (
+          {(customerDetailsOpen || advancedQuoteView || isFinalQuote && Boolean(customer.phone || customer.project || customer.address)) && (
             <div className="field-grid quote-customer-extra">
+              <Field disabled={isFinalQuote} label="Số điện thoại" value={customer.phone} onChange={(v) => setCustomer({ ...customer, phone: v })} />
+              <Field disabled={isFinalQuote} label="Tên công trình" value={customer.project} onChange={(v) => setCustomer({ ...customer, project: v })} />
               <Field disabled={isFinalQuote} label="Địa điểm" value={customer.address} onChange={(v) => setCustomer({ ...customer, address: v })} />
               <Field disabled={isFinalQuote} label="Hạng mục" value={customer.category || ""} onChange={(v) => setCustomer({ ...customer, category: v })} />
               <Field disabled={isFinalQuote} label="Số báo giá" value={customer.quoteNumber || ""} onChange={(v) => setCustomer({ ...customer, quoteNumber: v })} />
@@ -2904,10 +2925,16 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
 
         {/* Các phòng trong báo giá */}
         {rooms.map((room) => (
-          <section className="card room-card" key={room.id}>
+          <section className={`card room-card sq-quote-room ${rooms.length === 1 && !advancedQuoteView ? "sq-single-room" : ""}`} key={room.id}>
             <div className="room-head">
-              <textarea className="room-name" rows={2} disabled={isFinalQuote} value={room.name} onChange={(e) => renameRoom(room.id, e.target.value)} />
-              <div className="room-head-actions">
+              <div className="sq-room-heading">
+                {rooms.length === 1 && !advancedQuoteView ? (
+                  <div className="sq-section-heading"><span className="sq-step-number">2</span><h2>Sản phẩm</h2></div>
+                ) : (
+                  <textarea className="room-name" rows={2} aria-label="Tên hạng mục" disabled={isFinalQuote} value={room.name} onChange={(e) => renameRoom(room.id, e.target.value)} />
+                )}
+              </div>
+              <div className={`room-head-actions ${advancedQuoteView ? "" : "sq-advanced-actions-hidden"}`}>
                 <select
                   className="tpl-select"
                   value=""
@@ -2926,6 +2953,17 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
               </div>
             </div>
 
+            {!isFinalQuote && (
+              <div className="sq-quick-product-area">
+                <QuickQuoteProductSearch
+                  products={products}
+                  disabled={isFinalQuote}
+                  onPick={(pid) => addProductToRoom(room.id, pid)}
+                  onBrowse={() => setPickerRoomId((current) => current === room.id ? null : room.id)}
+                />
+              </div>
+            )}
+
             {!isFinalQuote && pickerRoomId === room.id && (
               <ProductPicker
                 products={products}
@@ -2937,19 +2975,23 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
             )}
 
             {room.lines.length === 0 ? (
-              <p className="empty-hint">Chưa có sản phẩm. Chọn “Thêm bộ sản phẩm” để dùng bộ dựng sẵn, hoặc “Thêm sản phẩm” để chọn lẻ.</p>
+              <div className="sq-quote-empty">
+                <div className="sq-empty-glyph" aria-hidden="true">＋</div>
+                <strong>Chưa có sản phẩm</strong>
+                <span>Tìm tên hoặc mã sản phẩm ở ô phía trên để bắt đầu.</span>
+              </div>
             ) : (
-              <table className="line-table">
+              <div className="sq-quote-table-scroll"><table className="line-table sq-quick-line-table">
                 <thead>
                   <tr>
-                    <th className="stt-col">STT</th>
-                    <th className="note-col">Hạng mục / Phân bổ</th>
+                    {advancedQuoteView && <th className="stt-col">STT</th>}
+                    {advancedQuoteView && <th className="note-col">Hạng mục / Phân bổ</th>}
                     <th>Sản phẩm</th>
-                    <th className="num">Niêm yết</th>
-                    <th className="num">Đơn giá</th>
-                    <th className="num qty-col">SL</th>
+                    {advancedQuoteView && <th className="num">Giá gốc</th>}
+                    <th className="num qty-col">Số lượng</th>
+                    <th className="num">Đơn giá bán</th>
                     <th className="num">Thành tiền</th>
-                    <th></th>
+                    <th aria-label="Thao tác"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2979,7 +3021,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
 
                     return (
                       <tr key={l.id} className={missingPrice ? "row-missing-price" : ""}>
-                        <td className="stt-col">
+                        {advancedQuoteView && <td className="stt-col">
                           <div className="stt-cell">
                             <span className="stt-num">{lineIdx + 1}</span>
                             <div className="stt-move">
@@ -2997,8 +3039,8 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                               >▼</button>
                             </div>
                           </div>
-                        </td>
-                        <td className="note-col">
+                        </td>}
+                        {advancedQuoteView && <td className="note-col">
                           <textarea
                             className="note-input"
                             value={l.note || ""}
@@ -3006,12 +3048,12 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                             onChange={(e) => setLineNote(room.id, l.id, e.target.value)}
                             rows={2}
                           />
-                        </td>
+                        </td>}
                         <td>
                           <div className="ln-name">{p.name}</div>
                           <div className="ln-sku">{p.sku}{p.supplier ? ` · ${p.supplier}` : ""}</div>
                         </td>
-                        <td className="num">
+                        {advancedQuoteView && <td className="num">
                           {missingPrice ? (
                             <div className="price-missing-cell">
                               <input
@@ -3029,48 +3071,53 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                           ) : (
                             <span className="muted">{VND(base)}</span>
                           )}
-                        </td>
-                        <td className="num">
-                          <div>{VND(sp)}</div>
-                          {!isFixed && f !== 1 && <span className="muted hs-inline-note">×{f}</span>}
-                        </td>
+                        </td>}
                         <td className="num qty-col">
-                          <input type="text" inputMode="numeric" className="qty-input" value={l.qty} disabled={isFinalQuote}
+                          <input type="text" inputMode="numeric" aria-label={`Số lượng ${p.name}`} className="qty-input" value={l.qty} disabled={isFinalQuote}
                             onChange={(e) => setQty(room.id, l.id, parseInt(e.target.value.replace(/\D/g, "")) || 0)} />
+                        </td>
+                        <td className="num sq-sale-price-col">
+                          <QuoteSalePriceInput
+                            value={sp}
+                            disabled={isFinalQuote}
+                            name={p.name}
+                            onCommit={(value) => setLineManualSalePrice(room.id, l.id, value)}
+                          />
+                          {advancedQuoteView && !isFixed && f !== 1 && <span className="muted hs-inline-note">×{f}</span>}
                         </td>
                         <td className="num strong">{VND(sp * l.qty)}</td>
                         <td className="ln-actions">
-                          <button className="ln-edit" disabled={isFinalQuote} title="Đổi sản phẩm" onClick={() => setEditingLine({ roomId: room.id, line: l })}>✎</button>
-                          <button className="x-btn" disabled={isFinalQuote} onClick={() => removeLine(room.id, l.id)}>×</button>
+                          <button className="ln-edit" disabled={isFinalQuote} aria-label={`Đổi hoặc chỉnh sửa ${p.name}`} title="Đổi sản phẩm / chỉnh giá" onClick={() => setEditingLine({ roomId: room.id, line: l })}>✎</button>
+                          <button className="x-btn" disabled={isFinalQuote} aria-label={`Xóa ${p.name}`} title="Xóa khỏi báo giá" onClick={() => removeLine(room.id, l.id)}>×</button>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </section>
         ))}
 
-        <div className="quote-actions-bottom">
+        {advancedQuoteView && <div className="quote-actions-bottom">
           {industryProfile.enableSolutionFamilies && <button className="btn-solution-family" disabled={isFinalQuote} onClick={() => setSolutionModalOpen(true)}>⚡ Tạo từ bộ giải pháp</button>}
           <button className="btn-add-room" disabled={isFinalQuote} onClick={addRoom}>+ Thêm hạng mục</button>
           <button className="btn-ghost" onClick={newQuote}>⟳ Báo giá mới</button>
-        </div>
+        </div>}
       </div>
 
       {/* Cột tổng kết bên phải */}
       <aside className="quote-side">
         <div className="card summary">
           <div className="s-body">
-            <div className="s-lbl">Tổng báo giá</div>
+            <div className="s-lbl">{isFinalQuote ? "Tổng báo giá" : "Tạm tính báo giá"}</div>
             <div className="s-total num">{VND(calc.grand).replace("đ", "")}<small>đ</small></div>
-            <div className={`s-margin ${grossMarginPct != null && grossMarginPct < 0 ? "danger" : ""}`}>
+            {(advancedQuoteView || commercialAssessment.atOrBelowCostCount > 0) && <div className={`s-margin ${grossMarginPct != null && grossMarginPct < 0 ? "danger" : ""}`}>
               {grossMarginPct == null
                 ? (commercialAssessment.unknownCostCount > 0 ? `Lãi gộp — · thiếu giá vốn ${commercialAssessment.unknownCostCount} dòng` : "Lãi gộp —")
                 : `${grossMarginPct < 0 ? "▼" : "▲"} Lãi gộp ${grossMarginPct}%`}
-            </div>
-            {shouldShowEngineeringPanel(engineeringAssessment, industryProfile?.id) && <div className={`engineering-panel ${engineeringAssessment.status.toLowerCase()}`}>
+            </div>}
+            {(isFinalQuote || advancedQuoteView || showQuoteReview) && shouldShowEngineeringPanel(engineeringAssessment, industryProfile?.id) && <div className={`engineering-panel ${engineeringAssessment.status.toLowerCase()}`}>
               <div className="engineering-panel-head">
                 <div>
                   <strong>Kiểm tra kỹ thuật</strong>
@@ -3108,7 +3155,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
               )}
               {engineeringAssessment.counts.pass > 0 && engineeringAssessment.issues.length > 0 && <details className="engineering-passed"><summary>{engineeringAssessment.counts.pass} kiểm tra đã đạt</summary>{engineeringAssessment.passed.slice(0, 8).map((item) => <div key={item.ruleCode}>✓ {item.title} · {item.detail}</div>)}</details>}
             </div>}
-            <div className={`quote-final-gate ${isFinalQuote ? "final" : (combinedFinalReady ? "ready" : "blocked")}`}>
+            {(isFinalQuote || showQuoteReview) && <div className={`quote-final-gate ${isFinalQuote ? "final" : (combinedFinalReady ? "ready" : "blocked")}`}>
               <div className="quote-final-gate-head">
                 <div>
                   <strong>{isFinalQuote ? `Đã chốt · Rev ${quoteRevision}` : (combinedFinalReady ? "Sẵn sàng để chốt" : "Chưa thể chốt báo giá")}</strong>
@@ -3132,7 +3179,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                 </button>
               )}
               {quoteFinalizedAt && isFinalQuote && <div className="quote-finalized-at">Chốt lúc: {new Date(quoteFinalizedAt).toLocaleString("vi-VN")}</div>}
-            </div>
+            </div>}
             {(commercialAssessment.hardErrorCount > 0 || commercialAssessment.atOrBelowCostCount > 0) && (
               <div className="quote-commercial-warning">
                 {commercialAssessment.hardErrorCount > 0
@@ -3142,7 +3189,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
             )}
             <div className="s-rows">
               <Row label={`Tiền hàng (${calc.pointCount} sản phẩm)`} value={VND(calc.deviceTotal)} />
-              <Row label={`Nhân công, lập trình (${effectiveQuoteCompany?.laborPercent || 0}%)`} value={VND(calc.laborTotal)} />
+              {(advancedQuoteView || Number(effectiveQuoteCompany?.laborPercent || 0) > 0) && <Row label={`Nhân công, lập trình (${effectiveQuoteCompany?.laborPercent || 0}%)`} value={VND(calc.laborTotal)} />}
               <div className="s-row vat-summary-row">
                 <span className="vat-summary-label">
                   VAT
@@ -3173,8 +3220,11 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                   {exporting ? "Đang tạo…" : `Xuất báo giá · Rev ${quoteRevision}`}
                 </button>
               ) : (
-                <button className="btn-export-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={finalizeCurrentQuote}>
-                  {combinedFinalReady ? "Chốt & khóa báo giá" : `Còn ${finalizeIssueCount} việc để chốt`}
+                <button className="btn-export-primary" disabled={quoteSaving || calc.pointCount === 0} onClick={() => {
+                  setShowQuoteReview(true);
+                  if (combinedFinalReady) finalizeCurrentQuote();
+                }}>
+                  {combinedFinalReady ? "Chốt & khóa báo giá" : showQuoteReview ? `Còn ${finalizeIssueCount} việc để chốt` : "Hoàn tất báo giá"}
                 </button>
               )}
               {isFinalQuote && (
@@ -3183,7 +3233,7 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                   <button className="btn-ghost" onClick={createRevisionFromFinal}>Tạo Rev {quoteRevision + 1}</button>
                 </div>
               )}
-              {excelQuoteTemplates.length > 0 && (
+              {advancedQuoteView && excelQuoteTemplates.length > 0 && (
                 <div className="excel-template-export-box">
                   <label>Mẫu Excel dùng khi xuất</label>
                   <select value={activeExcelTemplate?.id || ""} onChange={(e) => setSelectedExcelTemplateId(e.target.value)}>
@@ -3193,9 +3243,9 @@ function QuoteBuilder({ products, setProducts, productById: catalogProductById, 
                 </div>
               )}
             </div>
-            <p className="side-note">
+            {advancedQuoteView && <p className="side-note">
               Chỉ <strong>Final Quote</strong> mới được xuất gửi khách. Mặc định xuất <strong>Excel</strong>{activeExcelTemplate ? <> theo mẫu <strong>{activeExcelTemplate.name}</strong></> : <> theo mẫu SmartQuote mặc định</>}; PDF là lựa chọn phụ với mẫu <strong>{getQuoteTemplateLabel(quoteTemplateConfig?.presetId)}</strong>.
-            </p>
+            </p>}
           </div>
         </div>
       </aside>
@@ -3558,6 +3608,89 @@ function LineProductSwap({ products, markups = [], current, line, learningInsigh
           <button className="btn-ghost" onClick={onClose}>Hủy</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// UX Redesign v1 — quick product lookup directly in the quote form.
+function QuickQuoteProductSearch({ products = [], onPick, onBrowse, disabled = false }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const normalized = query.trim().toLocaleLowerCase("vi-VN");
+  const matches = useMemo(() => normalized ? products.filter((p) =>
+    String(p.name || "").toLocaleLowerCase("vi-VN").includes(normalized) ||
+    String(p.sku || "").toLocaleLowerCase("vi-VN").includes(normalized)
+  ).slice(0, 6) : [], [products, normalized]);
+  const choose = (product) => {
+    if (!product || disabled) return;
+    onPick(product.id);
+    setQuery("");
+    setOpen(false);
+    setActive(0);
+  };
+  return (
+    <div className="sq-quick-search">
+      <div className="sq-quick-search-field">
+        <span aria-hidden="true" className="sq-search-icon">⌕</span>
+        <input type="search" autoComplete="off" aria-label="Tìm sản phẩm để thêm vào báo giá"
+          aria-expanded={open && Boolean(normalized)}
+          value={query} disabled={disabled} placeholder="Tìm tên sản phẩm hoặc mã SKU…"
+          onFocus={() => setOpen(true)}
+          onChange={(e) => { setQuery(e.target.value); setActive(0); setOpen(true); }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") { setOpen(false); e.currentTarget.blur(); }
+            if (e.key === "ArrowDown" && matches.length) { e.preventDefault(); setActive((i) => (i + 1) % matches.length); }
+            if (e.key === "ArrowUp" && matches.length) { e.preventDefault(); setActive((i) => (i - 1 + matches.length) % matches.length); }
+            if (e.key === "Enter" && matches.length) { e.preventDefault(); choose(matches[active]); }
+          }}
+          onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+        />
+      </div>
+      {open && Boolean(normalized) && (
+        <div className="sq-search-results" role="listbox" aria-label="Kết quả tìm sản phẩm">
+          {matches.length ? matches.map((p, index) => (
+            <button type="button" role="option" aria-selected={active === index}
+              className={`sq-search-result ${active === index ? "active" : ""}`}
+              key={p.id} onMouseDown={(e) => e.preventDefault()} onClick={() => choose(p)}>
+              <span><strong>{p.name}</strong><small>{p.sku || "Chưa có SKU"}</small></span><span className="sq-result-add">+ Thêm</span>
+            </button>
+          )) : <div className="sq-search-no-results">Không tìm thấy sản phẩm phù hợp.</div>}
+        </div>
+      )}
+      <div className="sq-quick-search-foot">
+        <span>{products.length} sản phẩm trong danh mục</span>
+        <button type="button" disabled={disabled} onClick={onBrowse}>+ Thêm sản phẩm mới hoặc duyệt danh mục</button>
+      </div>
+    </div>
+  );
+}
+
+// Price edits apply to the quote line only, never to the catalog cost price.
+function QuoteSalePriceInput({ value, onCommit, disabled = false, name = "" }) {
+  const [draft, setDraft] = useState(() => String(Math.round(Number(value) || 0)));
+  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    if (!editing) setDraft(String(Math.round(Number(value) || 0)));
+  }, [value, editing]);
+  return (
+    <div className="sq-price-editor">
+      <input type="text" inputMode="numeric" aria-label={`Giá bán ${name}`}
+        disabled={disabled} value={editing ? draft : new Intl.NumberFormat("vi-VN").format(Math.round(Number(value) || 0))}
+        onFocus={() => { setDraft(String(Math.round(Number(value) || 0))); setEditing(true); }}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, ""))}
+        onBlur={() => {
+          setEditing(false);
+          const next = Number(draft);
+          if (draft.trim() !== "" && Number.isFinite(next) && next > 0 && next !== Math.round(Number(value) || 0)) onCommit(next);
+          else setDraft(String(Math.round(Number(value) || 0)));
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") { setDraft(String(Math.round(Number(value) || 0))); e.currentTarget.blur(); }
+        }}
+      />
+      <span aria-hidden="true">đ</span>
     </div>
   );
 }
@@ -11499,6 +11632,88 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .plan-banner-summary{gap:8px;}
   .plan-meter{width:72px;}
 }
+
+/* SmartQuote UX Redesign v1 — quick quote, same design tokens and business logic */
+.sq-quote-workflow-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:4px 0 18px;}
+.sq-quote-workflow-head h1{font-size:25px;letter-spacing:-.035em;color:var(--ink);margin:3px 0 3px;font-weight:800;}
+.sq-quote-workflow-head p{font-size:13px;line-height:1.55;color:var(--muted);margin:0;}
+.sq-quote-eyebrow{font-size:10px;font-weight:800;color:var(--brand);letter-spacing:.11em;}
+.sq-advanced-toggle{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;}
+.sq-advanced-toggle:hover,.sq-advanced-toggle.on{color:var(--brand);border-color:var(--brand);}
+.sq-advanced-toggle span{font-size:17px;line-height:.8;}
+.sq-section-heading{display:flex;align-items:center;gap:11px;}
+.sq-section-heading h2,.quote-customer-card .sq-section-heading h2,.sq-single-room .sq-section-heading h2{font-size:15px;letter-spacing:-.012em;font-weight:750;text-transform:none;color:var(--ink);margin:0;}
+.sq-step-number{display:inline-grid;place-items:center;flex:none;width:26px;height:26px;border-radius:8px;background:var(--primary-soft);color:var(--brand);font-size:12px;font-weight:800;}
+.quote-customer-card{padding:20px 22px;}
+.sq-quote-customer-primary{max-width:100%;margin-top:18px;}
+.sq-quote-customer-primary .field span{font-size:12px;}
+.sq-quote-customer-primary .field input{height:45px;font-size:14px;padding:10px 12px;}
+.quote-customer-card .quote-customer-more{margin-top:12px;font-size:12px;font-weight:650;}
+.sq-quote-room .room-head{padding:17px 20px;gap:12px;}
+.sq-quote-room .room-head:before{display:none;}
+.sq-room-heading{flex:1;min-width:0;}
+.sq-room-heading textarea{width:100%;}
+.sq-single-room .room-head-actions.sq-advanced-actions-hidden{display:none;}
+.sq-quote-room .room-head-actions.sq-advanced-actions-hidden{display:none;}
+.sq-quick-product-area{padding:16px 20px 4px;}
+.sq-quick-search{position:relative;}
+.sq-quick-search-field{height:47px;display:flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--surface);border-radius:11px;padding:0 12px;transition:border-color .15s,box-shadow .15s;}
+.sq-quick-search-field:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--primary-soft);}
+.sq-search-icon{font-size:25px;color:var(--faint);line-height:1;}
+.sq-quick-search-field input{border:0;outline:0;background:transparent;flex:1;min-width:0;padding:11px 0;color:var(--ink);font:inherit;font-size:14px;box-shadow:none;}
+.sq-quick-search-field input:focus{outline:0;box-shadow:none;}
+.sq-search-results{position:absolute;z-index:15;top:50px;left:0;right:0;max-height:306px;overflow-y:auto;border:1px solid var(--line2);border-radius:12px;background:var(--card);box-shadow:0 14px 30px rgba(0,0,0,.17);padding:5px;}
+.sq-search-result{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:0;border-radius:8px;padding:10px 11px;color:var(--ink);background:transparent;cursor:pointer;font:inherit;}
+.sq-search-result:hover,.sq-search-result.active{background:var(--primary-soft);}
+.sq-search-result strong{display:block;font-size:13px;font-weight:700;}
+.sq-search-result small{display:block;color:var(--muted);font-size:11px;margin-top:3px;}
+.sq-result-add{color:var(--brand);white-space:nowrap;font-size:12px;font-weight:700;}
+.sq-search-no-results{padding:14px;font-size:12px;color:var(--muted);}
+.sq-quick-search-foot{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:9px 0 12px;color:var(--muted);font-size:11.5px;}
+.sq-quick-search-foot button{border:0;background:transparent;color:var(--brand);font-weight:700;font-family:inherit;font-size:12px;cursor:pointer;padding:4px 0;text-align:right;}
+.sq-quick-search-foot button:hover{text-decoration:underline;}
+.sq-quote-room .picker{margin:0 20px 12px;}
+.sq-quote-empty{display:flex;align-items:center;flex-direction:column;justify-content:center;gap:5px;min-height:142px;padding:22px 12px 27px;text-align:center;color:var(--muted);font-size:12px;}
+.sq-quote-empty strong{font-size:13px;font-weight:700;color:var(--ink);}
+.sq-empty-glyph{font-size:23px;color:var(--brand);width:34px;height:34px;border:1px solid var(--line);background:var(--surface2);border-radius:12px;line-height:32px;margin-bottom:5px;}
+.sq-quote-table-scroll{max-width:100%;overflow-x:auto;}
+.sq-quick-line-table{min-width:550px;}
+.sq-quick-line-table th{font-size:10px;letter-spacing:0;text-transform:none;font-weight:700;padding:10px 9px;}
+.sq-quick-line-table td{padding:12px 9px;}
+.sq-quick-line-table .ln-name{max-width:250px;line-height:1.4;font-size:12.5px;}
+.sq-quick-line-table .qty-col{width:72px;}
+.sq-quick-line-table .qty-input{height:34px;width:52px;border-radius:8px;}
+.sq-sale-price-col{min-width:120px;}
+.sq-price-editor{display:flex;align-items:center;justify-content:flex-end;gap:4px;}
+.sq-price-editor input{width:94px;height:34px;border-radius:8px;border:1px solid var(--line);padding:5px 7px;text-align:right;background:var(--surface);color:var(--ink);font-size:12.5px;font-family:inherit;font-variant-numeric:tabular-nums;}
+.sq-price-editor input:focus{outline:2px solid var(--primary-ring);border-color:var(--brand);}
+.sq-price-editor input:disabled{background:transparent;border-color:transparent;opacity:.75;}
+.sq-price-editor span{color:var(--muted);font-size:12px;}
+.quote-side .summary .s-body{padding:20px;}
+.quote-side .summary .s-lbl{font-size:11px;letter-spacing:.055em;}
+.quote-side .summary .s-total{margin:6px 0 13px;}
+.quote-side .summary .s-rows{margin:16px 0 4px;}
+.quote-side .summary .s-actions{margin-top:14px;}
+.quote-side .summary .btn-export-primary{min-height:46px;font-size:13px;border-radius:10px;}
+.quote-side .summary .quote-final-gate{margin:12px 0;}
+.quote-manage-head-actions .btn-ghost{min-height:34px;}
+@media(max-width:760px){
+ .sq-quote-workflow-head{align-items:flex-start;flex-direction:column;gap:10px;}
+ .sq-quote-workflow-head h1{font-size:23px;}
+ .sq-advanced-toggle{align-self:flex-end;}
+ .sq-quick-product-area{padding:12px 13px 2px;}
+ .sq-quote-room .room-head{padding:13px;}
+ .sq-quote-room .picker{margin:0 13px 12px;}
+ .sq-quick-search-foot{flex-wrap:wrap;}
+ .quote-customer-card{padding:15px;}
+ .quote-side .summary .s-body{padding:16px;}
+}
+
+.sq-quick-manage-head{padding:0;}
+.quote-manage-bar{border:0;border-radius:0;background:transparent;box-shadow:none;padding:0;margin:0 0 18px;}
+.sq-quick-manage-head h2{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:0;}
+.sq-quick-manage-head p{font-size:11px;}
+.quote-manage-bar .quote-manage-body{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px;margin-top:12px;}
 
 `;
 

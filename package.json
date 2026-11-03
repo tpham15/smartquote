@@ -152,7 +152,8 @@
     "smoke:e2e-import": "node --import ./scripts/register-vite-url-loader.mjs scripts/e2e-import-smoke.mjs",
     "golden:e2e-import:update": "node --import ./scripts/register-vite-url-loader.mjs scripts/e2e-import-smoke.mjs --update",
     "fixtures:e2e-import": "node scripts/e2e-import-fixtures.mjs",
-    "smoke:flexible-pricing": "node scripts/pilot-flexible-pricing-smoke.mjs"
+    "smoke:flexible-pricing": "node scripts/pilot-flexible-pricing-smoke.mjs",
+    "smoke:ux-quick-quote-v1": "node scripts/ux-quick-quote-v1-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
